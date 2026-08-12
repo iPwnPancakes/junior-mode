@@ -5,7 +5,11 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
+use App\UserRole;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -24,10 +28,23 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        return User::create([
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'password' => $input['password'],
-        ]);
+        return Cache::lock('installation-bootstrap', 10)->block(
+            5,
+            fn (): User => DB::transaction(function () use ($input): User {
+                if (User::query()->exists()) {
+                    throw ValidationException::withMessages([
+                        'email' => __('This installation already has a primary Mentor.'),
+                    ]);
+                }
+
+                return User::create([
+                    'name' => $input['name'],
+                    'email' => $input['email'],
+                    'password' => $input['password'],
+                    'role' => UserRole::Mentor,
+                    'mentor_id' => null,
+                ]);
+            }),
+        );
     }
 }
