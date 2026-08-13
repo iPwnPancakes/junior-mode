@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\UserRole;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,6 +30,8 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => UserRole::Mentor,
+            'mentor_id' => null,
             'remember_token' => Str::random(10),
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
@@ -43,6 +46,28 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a Mentor.
+     */
+    public function mentor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Mentor,
+            'mentor_id' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a Learner assigned to a Mentor.
+     */
+    public function learner(?User $mentor = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Learner,
+            'mentor_id' => $mentor ?? User::factory()->mentor(),
         ]);
     }
 
