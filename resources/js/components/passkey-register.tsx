@@ -1,9 +1,9 @@
 import { usePasskeyRegister } from '@laravel/passkeys/react';
 import { useState } from 'react';
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/form-field';
+import { SubmitButton } from '@/components/submit-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 type Props = {
     onSuccess: () => void;
@@ -77,8 +77,12 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
             onSubmit={handleSubmit}
             className="space-y-4 rounded-lg border border-border bg-muted/50 p-4"
         >
-            <div className="grid gap-2">
-                <Label htmlFor="passkey-name">Passkey name</Label>
+            <FormField
+                id="passkey-name"
+                label="Passkey name"
+                error={error || undefined}
+                description="A name helps you identify this passkey later."
+            >
                 <Input
                     id="passkey-name"
                     type="text"
@@ -87,18 +91,23 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
                     placeholder="e.g., MacBook Pro, iPhone"
                     className="mt-1 block w-full border-foreground/20"
                     autoFocus
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={
+                        error
+                            ? 'passkey-name-error'
+                            : 'passkey-name-description'
+                    }
                 />
-                <p className="text-xs text-muted-foreground">
-                    A name helps you identify this passkey later.
-                </p>
-            </div>
-
-            {error && <InputError message={error} />}
+            </FormField>
 
             <div className="flex gap-2">
-                <Button type="submit" disabled={isLoading || !name.trim()}>
-                    {isLoading ? 'Registering...' : 'Register passkey'}
-                </Button>
+                <SubmitButton
+                    processing={isLoading}
+                    processingLabel="Registering…"
+                    disabled={!name.trim()}
+                >
+                    Register passkey
+                </SubmitButton>
                 <Button type="button" variant="ghost" onClick={handleCancel}>
                     Cancel
                 </Button>

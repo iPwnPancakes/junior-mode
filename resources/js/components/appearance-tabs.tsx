@@ -1,45 +1,50 @@
-import type { LucideIcon } from 'lucide-react';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import type { HTMLAttributes } from 'react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { Appearance } from '@/hooks/use-appearance';
 import { useAppearance } from '@/hooks/use-appearance';
-import { cn } from '@/lib/utils';
 
 export default function AppearanceToggleTab({
     className = '',
-    ...props
-}: HTMLAttributes<HTMLDivElement>) {
+}: {
+    className?: string;
+}) {
     const { appearance, updateAppearance } = useAppearance();
 
-    const tabs: { value: Appearance; icon: LucideIcon; label: string }[] = [
+    const tabs = [
         { value: 'light', icon: Sun, label: 'Light' },
         { value: 'dark', icon: Moon, label: 'Dark' },
         { value: 'system', icon: Monitor, label: 'System' },
-    ];
+    ] satisfies Array<{
+        value: Appearance;
+        icon: typeof Sun;
+        label: string;
+    }>;
 
     return (
-        <div
-            className={cn(
-                'inline-flex gap-1 rounded-lg bg-neutral-100 p-1 dark:bg-neutral-800',
-                className,
-            )}
-            {...props}
+        <ToggleGroup
+            value={[appearance]}
+            onValueChange={(values) => {
+                const value = values[0] as Appearance | undefined;
+
+                if (value !== undefined) {
+                    updateAppearance(value);
+                }
+            }}
+            variant="outline"
+            className={className}
+            aria-label="Color theme"
         >
             {tabs.map(({ value, icon: Icon, label }) => (
-                <button
+                <ToggleGroupItem
                     key={value}
-                    onClick={() => updateAppearance(value)}
-                    className={cn(
-                        'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
-                        appearance === value
-                            ? 'bg-white shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
-                            : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
-                    )}
+                    value={value}
+                    aria-label={`Use ${label.toLowerCase()} theme`}
+                    className="gap-2 px-3"
                 >
-                    <Icon className="-ml-1 h-4 w-4" />
-                    <span className="ml-1.5 text-sm">{label}</span>
-                </button>
+                    <Icon aria-hidden="true" className="size-4" />
+                    <span className="text-sm">{label}</span>
+                </ToggleGroupItem>
             ))}
-        </div>
+        </ToggleGroup>
     );
 }

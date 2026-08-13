@@ -1,13 +1,14 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { CircleCheck } from 'lucide-react';
+import { FormField } from '@/components/form-field';
 import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
+import { SubmitButton } from '@/components/submit-button';
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
@@ -37,8 +38,11 @@ export default function Login({
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                            <FormField
+                                id="email"
+                                label="Email address"
+                                error={errors.email}
+                            >
                                 <Input
                                     id="email"
                                     type="email"
@@ -48,23 +52,29 @@ export default function Login({
                                     tabIndex={1}
                                     autoComplete="email"
                                     placeholder="email@example.com"
+                                    aria-invalid={Boolean(errors.email)}
+                                    aria-describedby={
+                                        errors.email ? 'email-error' : undefined
+                                    }
                                 />
-                                <InputError message={errors.email} />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    {canResetPassword && (
+                            <FormField
+                                id="password"
+                                label="Password"
+                                error={errors.password}
+                                labelAction={
+                                    canResetPassword ? (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-sm"
+                                            className="text-xs"
                                             tabIndex={5}
                                         >
                                             Forgot your password?
                                         </TextLink>
-                                    )}
-                                </div>
+                                    ) : null
+                                }
+                            >
                                 <PasswordInput
                                     id="password"
                                     name="password"
@@ -72,9 +82,14 @@ export default function Login({
                                     tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder="Password"
+                                    aria-invalid={Boolean(errors.password)}
+                                    aria-describedby={
+                                        errors.password
+                                            ? 'password-error'
+                                            : undefined
+                                    }
                                 />
-                                <InputError message={errors.password} />
-                            </div>
+                            </FormField>
 
                             <div className="flex items-center space-x-3">
                                 <Checkbox
@@ -85,16 +100,15 @@ export default function Login({
                                 <Label htmlFor="remember">Remember me</Label>
                             </div>
 
-                            <Button
-                                type="submit"
+                            <SubmitButton
                                 className="mt-4 w-full"
                                 tabIndex={4}
-                                disabled={processing}
+                                processing={processing}
+                                processingLabel="Logging in…"
                                 data-test="login-button"
                             >
-                                {processing && <Spinner />}
                                 Log in
-                            </Button>
+                            </SubmitButton>
                         </div>
 
                         {canRegister && (
@@ -110,9 +124,10 @@ export default function Login({
             </Form>
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
+                <Alert variant="success" className="mt-6">
+                    <CircleCheck aria-hidden="true" />
+                    <AlertDescription>{status}</AlertDescription>
+                </Alert>
             )}
         </>
     );

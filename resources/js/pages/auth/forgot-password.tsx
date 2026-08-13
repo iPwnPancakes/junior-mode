@@ -1,11 +1,10 @@
-// Components
 import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import InputError from '@/components/input-error';
+import { CircleCheck } from 'lucide-react';
+import { FormField } from '@/components/form-field';
+import { SubmitButton } from '@/components/submit-button';
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
@@ -15,17 +14,21 @@ export default function ForgotPassword({ status }: { status?: string }) {
             <Head title="Forgot password" />
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
+                <Alert variant="success" className="mb-6">
+                    <CircleCheck aria-hidden="true" />
+                    <AlertDescription>{status}</AlertDescription>
+                </Alert>
             )}
 
             <div className="space-y-6">
                 <Form {...email.form()}>
                     {({ processing, errors }) => (
                         <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                            <FormField
+                                id="email"
+                                label="Email address"
+                                error={errors.email}
+                            >
                                 <Input
                                     id="email"
                                     type="email"
@@ -33,22 +36,22 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     autoComplete="off"
                                     autoFocus
                                     placeholder="email@example.com"
+                                    aria-invalid={Boolean(errors.email)}
+                                    aria-describedby={
+                                        errors.email ? 'email-error' : undefined
+                                    }
                                 />
-
-                                <InputError message={errors.email} />
-                            </div>
+                            </FormField>
 
                             <div className="my-6 flex items-center justify-start">
-                                <Button
+                                <SubmitButton
                                     className="w-full"
-                                    disabled={processing}
+                                    processing={processing}
+                                    processingLabel="Sending link…"
                                     data-test="email-password-reset-link-button"
                                 >
-                                    {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                    )}
                                     Email password reset link
-                                </Button>
+                                </SubmitButton>
                             </div>
                         </>
                     )}

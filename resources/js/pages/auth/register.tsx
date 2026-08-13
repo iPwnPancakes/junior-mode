@@ -1,11 +1,9 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/form-field';
 import PasswordInput from '@/components/password-input';
+import { SubmitButton } from '@/components/submit-button';
 import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
@@ -26,8 +24,11 @@ export default function Register({ passwordRules }: Props) {
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                            <FormField
+                                id="name"
+                                label="Name"
+                                error={errors.name}
+                            >
                                 <Input
                                     id="name"
                                     type="text"
@@ -37,15 +38,18 @@ export default function Register({ passwordRules }: Props) {
                                     autoComplete="name"
                                     name="name"
                                     placeholder="Full name"
+                                    aria-invalid={Boolean(errors.name)}
+                                    aria-describedby={
+                                        errors.name ? 'name-error' : undefined
+                                    }
                                 />
-                                <InputError
-                                    message={errors.name}
-                                    className="mt-2"
-                                />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                            <FormField
+                                id="email"
+                                label="Email address"
+                                error={errors.email}
+                            >
                                 <Input
                                     id="email"
                                     type="email"
@@ -54,12 +58,18 @@ export default function Register({ passwordRules }: Props) {
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
+                                    aria-invalid={Boolean(errors.email)}
+                                    aria-describedby={
+                                        errors.email ? 'email-error' : undefined
+                                    }
                                 />
-                                <InputError message={errors.email} />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                            <FormField
+                                id="password"
+                                label="Password"
+                                error={errors.password}
+                            >
                                 <PasswordInput
                                     id="password"
                                     required
@@ -68,14 +78,20 @@ export default function Register({ passwordRules }: Props) {
                                     name="password"
                                     placeholder="Password"
                                     passwordrules={passwordRules}
+                                    aria-invalid={Boolean(errors.password)}
+                                    aria-describedby={
+                                        errors.password
+                                            ? 'password-error'
+                                            : undefined
+                                    }
                                 />
-                                <InputError message={errors.password} />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
+                            <FormField
+                                id="password_confirmation"
+                                label="Confirm password"
+                                error={errors.password_confirmation}
+                            >
                                 <PasswordInput
                                     id="password_confirmation"
                                     required
@@ -84,21 +100,26 @@ export default function Register({ passwordRules }: Props) {
                                     name="password_confirmation"
                                     placeholder="Confirm password"
                                     passwordrules={passwordRules}
+                                    aria-invalid={Boolean(
+                                        errors.password_confirmation,
+                                    )}
+                                    aria-describedby={
+                                        errors.password_confirmation
+                                            ? 'password_confirmation-error'
+                                            : undefined
+                                    }
                                 />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
+                            </FormField>
 
-                            <Button
-                                type="submit"
+                            <SubmitButton
                                 className="mt-2 w-full"
                                 tabIndex={5}
+                                processing={processing}
+                                processingLabel="Creating account…"
                                 data-test="register-user-button"
                             >
-                                {processing && <Spinner />}
                                 Create account
-                            </Button>
+                            </SubmitButton>
                         </div>
 
                         <div className="text-center text-sm text-muted-foreground">

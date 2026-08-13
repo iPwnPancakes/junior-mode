@@ -1,15 +1,14 @@
 import { Form, Head } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/form-field';
 import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
 import ManagePasskeys from '@/components/manage-passkeys';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
 import ManageTwoFactor from '@/components/manage-two-factor';
 import PasswordInput from '@/components/password-input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { SectionHeading } from '@/components/section-heading';
+import { SubmitButton } from '@/components/submit-button';
 import { edit } from '@/routes/security';
 
 type Props = {
@@ -25,11 +24,8 @@ export default function Security(props: Props) {
         <>
             <Head title="Security settings" />
 
-            <h1 className="sr-only">Security settings</h1>
-
             <div className="space-y-6">
-                <Heading
-                    variant="small"
+                <SectionHeading
                     title="Update password"
                     description="Ensure your account is using a long, random password to stay secure"
                 />
@@ -58,11 +54,11 @@ export default function Security(props: Props) {
                 >
                     {({ errors, processing }) => (
                         <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="current_password">
-                                    Current password
-                                </Label>
-
+                            <FormField
+                                id="current_password"
+                                label="Current password"
+                                error={errors.current_password}
+                            >
                                 <PasswordInput
                                     id="current_password"
                                     ref={currentPasswordInput}
@@ -70,14 +66,22 @@ export default function Security(props: Props) {
                                     className="mt-1 block w-full"
                                     autoComplete="current-password"
                                     placeholder="Current password"
+                                    aria-invalid={Boolean(
+                                        errors.current_password,
+                                    )}
+                                    aria-describedby={
+                                        errors.current_password
+                                            ? 'current_password-error'
+                                            : undefined
+                                    }
                                 />
+                            </FormField>
 
-                                <InputError message={errors.current_password} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">New password</Label>
-
+                            <FormField
+                                id="password"
+                                label="New password"
+                                error={errors.password}
+                            >
                                 <PasswordInput
                                     id="password"
                                     ref={passwordInput}
@@ -86,16 +90,20 @@ export default function Security(props: Props) {
                                     autoComplete="new-password"
                                     placeholder="New password"
                                     passwordrules={props.passwordRules}
+                                    aria-invalid={Boolean(errors.password)}
+                                    aria-describedby={
+                                        errors.password
+                                            ? 'password-error'
+                                            : undefined
+                                    }
                                 />
+                            </FormField>
 
-                                <InputError message={errors.password} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
-
+                            <FormField
+                                id="password_confirmation"
+                                label="Confirm password"
+                                error={errors.password_confirmation}
+                            >
                                 <PasswordInput
                                     id="password_confirmation"
                                     name="password_confirmation"
@@ -103,20 +111,25 @@ export default function Security(props: Props) {
                                     autoComplete="new-password"
                                     placeholder="Confirm password"
                                     passwordrules={props.passwordRules}
+                                    aria-invalid={Boolean(
+                                        errors.password_confirmation,
+                                    )}
+                                    aria-describedby={
+                                        errors.password_confirmation
+                                            ? 'password_confirmation-error'
+                                            : undefined
+                                    }
                                 />
-
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
+                            </FormField>
 
                             <div className="flex items-center gap-4">
-                                <Button
-                                    disabled={processing}
+                                <SubmitButton
+                                    processing={processing}
+                                    processingLabel="Saving…"
                                     data-test="update-password-button"
                                 >
                                     Save
-                                </Button>
+                                </SubmitButton>
                             </div>
                         </>
                     )}

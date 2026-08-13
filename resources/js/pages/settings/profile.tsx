@@ -1,12 +1,14 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
+import { CircleCheck, MailWarning } from 'lucide-react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/form-field';
+import { SectionHeading } from '@/components/section-heading';
+import { SubmitButton } from '@/components/submit-button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { Auth } from '@/types';
@@ -28,11 +30,8 @@ export default function Profile({
         <>
             <Head title="Profile settings" />
 
-            <h1 className="sr-only">Profile settings</h1>
-
             <div className="space-y-6">
-                <Heading
-                    variant="small"
+                <SectionHeading
                     title="Profile"
                     description="Update your name and email address"
                 />
@@ -46,9 +45,11 @@ export default function Profile({
                 >
                     {({ processing, errors }) => (
                         <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-
+                            <FormField
+                                id="name"
+                                label="Name"
+                                error={errors.name}
+                            >
                                 <Input
                                     id="name"
                                     className="mt-1 block w-full"
@@ -57,17 +58,18 @@ export default function Profile({
                                     required
                                     autoComplete="name"
                                     placeholder="Full name"
+                                    aria-invalid={Boolean(errors.name)}
+                                    aria-describedby={
+                                        errors.name ? 'name-error' : undefined
+                                    }
                                 />
+                            </FormField>
 
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.name}
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-
+                            <FormField
+                                id="email"
+                                label="Email address"
+                                error={errors.email}
+                            >
                                 <Input
                                     id="email"
                                     type="email"
@@ -77,46 +79,58 @@ export default function Profile({
                                     required
                                     autoComplete="username"
                                     placeholder="Email address"
+                                    aria-invalid={Boolean(errors.email)}
+                                    aria-describedby={
+                                        errors.email ? 'email-error' : undefined
+                                    }
                                 />
-
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.email}
-                                />
-                            </div>
+                            </FormField>
 
                             {mustVerifyEmail &&
                                 auth.user.email_verified_at === null && (
-                                    <div>
-                                        <p className="-mt-4 text-sm text-muted-foreground">
-                                            Your email address is unverified.{' '}
-                                            <Link
-                                                href={send()}
-                                                as="button"
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                                            >
-                                                Click here to re-send the
-                                                verification email.
-                                            </Link>
-                                        </p>
+                                    <Alert variant="warning">
+                                        <MailWarning aria-hidden="true" />
+                                        <AlertDescription>
+                                            <p>
+                                                Your email address is
+                                                unverified.{' '}
+                                                <Link
+                                                    href={send()}
+                                                    as="button"
+                                                    className={buttonVariants({
+                                                        variant: 'link',
+                                                        className: 'h-auto p-0',
+                                                    })}
+                                                >
+                                                    Re-send the verification
+                                                    email.
+                                                </Link>
+                                            </p>
 
-                                        {status ===
-                                            'verification-link-sent' && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
-                                                A new verification link has been
-                                                sent to your email address.
-                                            </div>
-                                        )}
-                                    </div>
+                                            {status ===
+                                                'verification-link-sent' && (
+                                                <p className="flex items-center gap-2 font-medium">
+                                                    <CircleCheck
+                                                        aria-hidden="true"
+                                                        className="size-4"
+                                                    />
+                                                    A new verification link has
+                                                    been sent to your email
+                                                    address.
+                                                </p>
+                                            )}
+                                        </AlertDescription>
+                                    </Alert>
                                 )}
 
                             <div className="flex items-center gap-4">
-                                <Button
-                                    disabled={processing}
+                                <SubmitButton
+                                    processing={processing}
+                                    processingLabel="Saving…"
                                     data-test="update-profile-button"
                                 >
                                     Save
-                                </Button>
+                                </SubmitButton>
                             </div>
                         </>
                     )}
