@@ -79,6 +79,16 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(ClientConnection::class, 'learner_id')->latest();
     }
 
+    /**
+     * Get this Learner's Competency Catalog nodes.
+     *
+     * @return HasMany<Competency, $this>
+     */
+    public function competencies(): HasMany
+    {
+        return $this->hasMany(Competency::class, 'learner_id');
+    }
+
     public function isMentor(): bool
     {
         return $this->role === UserRole::Mentor;

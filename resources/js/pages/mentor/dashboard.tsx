@@ -1,13 +1,15 @@
-import { Form, Head } from '@inertiajs/react';
-import { Inbox, Mail, UserPlus, Users } from 'lucide-react';
+import { Form, Head, Link } from '@inertiajs/react';
+import { BookOpen, Inbox, Mail, UserPlus, Users } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { SectionCard } from '@/components/section-card';
 import { StatusBadge } from '@/components/status-badge';
 import { SubmitButton } from '@/components/submit-button';
+import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
+import { show as showCatalog } from '@/routes/competency-catalogs';
 import { store } from '@/routes/learner-invitations';
 
 type Learner = {
@@ -69,9 +71,21 @@ export default function MentorDashboard({
                                                 {learner.email}
                                             </p>
                                         </div>
-                                        <StatusBadge tone="info">
-                                            Learner
-                                        </StatusBadge>
+                                        <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                            <StatusBadge tone="info">
+                                                Learner
+                                            </StatusBadge>
+                                            <Link
+                                                href={showCatalog(learner.id)}
+                                                className={buttonVariants({
+                                                    variant: 'outline',
+                                                    size: 'sm',
+                                                })}
+                                            >
+                                                <BookOpen aria-hidden="true" />
+                                                Open catalog
+                                            </Link>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
