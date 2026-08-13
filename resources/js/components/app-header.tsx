@@ -1,10 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import { Github, LayoutGrid, Menu } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -49,19 +49,13 @@ const mainNavItems: NavItem[] = [
 
 const rightNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Junior Mode on GitHub',
+        href: 'https://github.com/iPwnPancakes/junior-mode',
+        icon: Github,
     },
 ];
 
-const activeItemStyles =
-    'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+const activeItemStyles = 'bg-accent text-accent-foreground';
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
@@ -76,14 +70,17 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
-                            <SheetTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="mr-2 h-[34px] w-[34px]"
-                                >
-                                    <Menu className="h-5 w-5" />
-                                </Button>
+                            <SheetTrigger
+                                render={
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="mr-2 h-[34px] w-[34px]"
+                                        aria-label="Open navigation menu"
+                                    />
+                                }
+                            >
+                                <Menu className="h-5 w-5" />
                             </SheetTrigger>
                             <SheetContent
                                 side="left"
@@ -93,7 +90,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                     Navigation menu
                                 </SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
-                                    <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
+                                    <AppLogoIcon className="h-6 w-6 fill-current text-primary" />
                                 </SheetHeader>
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
@@ -102,10 +99,15 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                 <Link
                                                     key={item.title}
                                                     href={item.href}
-                                                    className="flex items-center space-x-2 font-medium"
+                                                    className={cn(
+                                                        buttonVariants({
+                                                            variant: 'ghost',
+                                                        }),
+                                                        'justify-start',
+                                                    )}
                                                 >
                                                     {item.icon && (
-                                                        <item.icon className="h-5 w-5" />
+                                                        <item.icon className="size-5" />
                                                     )}
                                                     <span>{item.title}</span>
                                                 </Link>
@@ -119,10 +121,15 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                     href={toUrl(item.href)}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center space-x-2 font-medium"
+                                                    className={cn(
+                                                        buttonVariants({
+                                                            variant: 'ghost',
+                                                        }),
+                                                        'justify-start',
+                                                    )}
                                                 >
                                                     {item.icon && (
-                                                        <item.icon className="h-5 w-5" />
+                                                        <item.icon className="size-5" />
                                                     )}
                                                     <span>{item.title}</span>
                                                 </a>
@@ -168,7 +175,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                             {item.title}
                                         </Link>
                                         {isCurrentUrl(item.href) && (
-                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
+                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-primary"></div>
                                         )}
                                     </NavigationMenuItem>
                                 ))}
@@ -177,31 +184,29 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     </div>
 
                     <div className="ml-auto flex items-center space-x-2">
-                        <div className="relative flex items-center space-x-1">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="group h-9 w-9 cursor-pointer"
-                            >
-                                <Search className="!size-5 opacity-80 group-hover:opacity-100" />
-                            </Button>
-                            <div className="ml-1 hidden gap-1 lg:flex">
+                        <div className="relative flex items-center gap-1">
+                            <div className="hidden gap-1 lg:flex">
                                 {rightNavItems.map((item) => (
                                     <Tooltip key={item.title}>
-                                        <TooltipTrigger>
-                                            <a
-                                                href={toUrl(item.href)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="group inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-sm font-medium text-accent-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                            >
-                                                <span className="sr-only">
-                                                    {item.title}
-                                                </span>
-                                                {item.icon && (
-                                                    <item.icon className="size-5 opacity-80 group-hover:opacity-100" />
-                                                )}
-                                            </a>
+                                        <TooltipTrigger
+                                            render={
+                                                <a
+                                                    href={toUrl(item.href)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={buttonVariants({
+                                                        variant: 'ghost',
+                                                        size: 'icon',
+                                                    })}
+                                                />
+                                            }
+                                        >
+                                            <span className="sr-only">
+                                                {item.title}
+                                            </span>
+                                            {item.icon && (
+                                                <item.icon className="size-5" />
+                                            )}
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <p>{item.title}</p>
@@ -211,21 +216,23 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             </div>
                         </div>
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    className="size-10 rounded-full p-1"
-                                >
-                                    <Avatar className="size-8 overflow-hidden rounded-full">
-                                        <AvatarImage
-                                            src={auth.user?.avatar}
-                                            alt={auth.user?.name}
-                                        />
-                                        <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                            {getInitials(auth.user?.name ?? '')}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                </Button>
+                            <DropdownMenuTrigger
+                                render={
+                                    <Button
+                                        variant="ghost"
+                                        className="size-10 rounded-full p-1"
+                                    />
+                                }
+                            >
+                                <Avatar className="size-8 overflow-hidden rounded-full">
+                                    <AvatarImage
+                                        src={auth.user?.avatar}
+                                        alt={auth.user?.name}
+                                    />
+                                    <AvatarFallback className="rounded-lg bg-secondary text-secondary-foreground">
+                                        {getInitials(auth.user?.name ?? '')}
+                                    </AvatarFallback>
+                                </Avatar>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end">
                                 {auth.user && (
@@ -238,7 +245,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
             </div>
             {breadcrumbs.length > 1 && (
                 <div className="flex w-full border-b border-sidebar-border/70">
-                    <div className="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">
+                    <div className="mx-auto flex h-12 w-full items-center justify-start px-4 text-muted-foreground md:max-w-7xl">
                         <Breadcrumbs breadcrumbs={breadcrumbs} />
                     </div>
                 </div>

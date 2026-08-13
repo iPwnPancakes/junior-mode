@@ -1,10 +1,10 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { UserRoundPlus } from 'lucide-react';
+import { FormField } from '@/components/form-field';
 import PasswordInput from '@/components/password-input';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/submit-button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/learner-invitations/accept';
 
 type Props = {
@@ -31,15 +31,24 @@ export default function AcceptLearnerInvitation({
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="rounded-lg border bg-muted/50 p-4 text-sm">
-                            <span className="font-medium">{mentorName}</span>{' '}
-                            invited <span className="font-medium">{email}</span>{' '}
-                            to join as a Learner.
-                        </div>
+                        <Alert variant="info">
+                            <UserRoundPlus aria-hidden="true" />
+                            <AlertDescription>
+                                <span className="font-medium">
+                                    {mentorName}
+                                </span>{' '}
+                                invited{' '}
+                                <span className="font-medium">{email}</span> to
+                                join as a Learner.
+                            </AlertDescription>
+                        </Alert>
 
                         <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                            <FormField
+                                id="name"
+                                label="Name"
+                                error={errors.name}
+                            >
                                 <Input
                                     id="name"
                                     name="name"
@@ -47,42 +56,61 @@ export default function AcceptLearnerInvitation({
                                     autoComplete="name"
                                     autoFocus
                                     required
+                                    aria-invalid={Boolean(errors.name)}
+                                    aria-describedby={
+                                        errors.name ? 'name-error' : undefined
+                                    }
                                 />
-                                <InputError message={errors.name} />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                            <FormField
+                                id="password"
+                                label="Password"
+                                error={errors.password}
+                            >
                                 <PasswordInput
                                     id="password"
                                     name="password"
                                     autoComplete="new-password"
                                     passwordrules={passwordRules}
                                     required
+                                    aria-invalid={Boolean(errors.password)}
+                                    aria-describedby={
+                                        errors.password
+                                            ? 'password-error'
+                                            : undefined
+                                    }
                                 />
-                                <InputError message={errors.password} />
-                            </div>
+                            </FormField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
+                            <FormField
+                                id="password_confirmation"
+                                label="Confirm password"
+                                error={errors.password_confirmation}
+                            >
                                 <PasswordInput
                                     id="password_confirmation"
                                     name="password_confirmation"
                                     autoComplete="new-password"
                                     passwordrules={passwordRules}
                                     required
+                                    aria-invalid={Boolean(
+                                        errors.password_confirmation,
+                                    )}
+                                    aria-describedby={
+                                        errors.password_confirmation
+                                            ? 'password_confirmation-error'
+                                            : undefined
+                                    }
                                 />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
+                            </FormField>
 
-                            <Button type="submit" disabled={processing}>
-                                {processing && <Spinner />}
+                            <SubmitButton
+                                processing={processing}
+                                processingLabel="Joining workspace…"
+                            >
                                 Join as a Learner
-                            </Button>
+                            </SubmitButton>
                         </div>
                     </>
                 )}

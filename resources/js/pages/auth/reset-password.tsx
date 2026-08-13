@@ -1,10 +1,8 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/form-field';
 import PasswordInput from '@/components/password-input';
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/submit-button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { update } from '@/routes/password';
 
 type Props = {
@@ -25,8 +23,11 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
             >
                 {({ processing, errors }) => (
                     <div className="grid gap-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                        <FormField
+                            id="email"
+                            label="Email"
+                            error={errors.email}
+                        >
                             <Input
                                 id="email"
                                 type="email"
@@ -35,15 +36,18 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 value={email}
                                 className="mt-1 block w-full"
                                 readOnly
+                                aria-invalid={Boolean(errors.email)}
+                                aria-describedby={
+                                    errors.email ? 'email-error' : undefined
+                                }
                             />
-                            <InputError
-                                message={errors.email}
-                                className="mt-2"
-                            />
-                        </div>
+                        </FormField>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                        <FormField
+                            id="password"
+                            label="Password"
+                            error={errors.password}
+                        >
                             <PasswordInput
                                 id="password"
                                 name="password"
@@ -52,14 +56,20 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 autoFocus
                                 placeholder="Password"
                                 passwordrules={passwordRules}
+                                aria-invalid={Boolean(errors.password)}
+                                aria-describedby={
+                                    errors.password
+                                        ? 'password-error'
+                                        : undefined
+                                }
                             />
-                            <InputError message={errors.password} />
-                        </div>
+                        </FormField>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation">
-                                Confirm password
-                            </Label>
+                        <FormField
+                            id="password_confirmation"
+                            label="Confirm password"
+                            error={errors.password_confirmation}
+                        >
                             <PasswordInput
                                 id="password_confirmation"
                                 name="password_confirmation"
@@ -67,22 +77,25 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 className="mt-1 block w-full"
                                 placeholder="Confirm password"
                                 passwordrules={passwordRules}
+                                aria-invalid={Boolean(
+                                    errors.password_confirmation,
+                                )}
+                                aria-describedby={
+                                    errors.password_confirmation
+                                        ? 'password_confirmation-error'
+                                        : undefined
+                                }
                             />
-                            <InputError
-                                message={errors.password_confirmation}
-                                className="mt-2"
-                            />
-                        </div>
+                        </FormField>
 
-                        <Button
-                            type="submit"
+                        <SubmitButton
                             className="mt-4 w-full"
-                            disabled={processing}
+                            processing={processing}
+                            processingLabel="Resetting password…"
                             data-test="reset-password-button"
                         >
-                            {processing && <Spinner />}
                             Reset password
-                        </Button>
+                        </SubmitButton>
                     </div>
                 )}
             </Form>

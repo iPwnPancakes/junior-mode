@@ -3,12 +3,10 @@ import {
     index as confirmOptions,
     store as confirmStore,
 } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/form-field';
 import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import { SubmitButton } from '@/components/submit-button';
 import { store } from '@/routes/password/confirm';
 
 export default function ConfirmPassword() {
@@ -29,28 +27,35 @@ export default function ConfirmPassword() {
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                        <FormField
+                            id="password"
+                            label="Password"
+                            error={errors.password}
+                        >
                             <PasswordInput
                                 id="password"
                                 name="password"
                                 placeholder="Password"
                                 autoComplete="current-password"
                                 autoFocus
+                                aria-invalid={Boolean(errors.password)}
+                                aria-describedby={
+                                    errors.password
+                                        ? 'password-error'
+                                        : undefined
+                                }
                             />
-
-                            <InputError message={errors.password} />
-                        </div>
+                        </FormField>
 
                         <div className="flex items-center">
-                            <Button
+                            <SubmitButton
                                 className="w-full"
-                                disabled={processing}
+                                processing={processing}
+                                processingLabel="Confirming…"
                                 data-test="confirm-password-button"
                             >
-                                {processing && <Spinner />}
                                 Confirm password
-                            </Button>
+                            </SubmitButton>
                         </div>
                     </div>
                 )}

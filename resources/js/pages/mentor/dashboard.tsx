@@ -1,19 +1,12 @@
 import { Form, Head } from '@inertiajs/react';
-import { UserPlus, Users } from 'lucide-react';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Inbox, Mail, UserPlus, Users } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
+import { FormField } from '@/components/form-field';
+import { PageHeader } from '@/components/page-header';
+import { SectionCard } from '@/components/section-card';
+import { StatusBadge } from '@/components/status-badge';
+import { SubmitButton } from '@/components/submit-button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { dashboard } from '@/routes';
 import { store } from '@/routes/learner-invitations';
 
@@ -42,159 +35,130 @@ export default function MentorDashboard({
     return (
         <>
             <Head title="Mentor dashboard" />
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-                <Heading
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
+                <PageHeader
                     title="Mentor dashboard"
                     description="Invite Learners and guide their development from one private workspace."
+                    eyebrow="Mentor workspace"
                 />
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                                    <Users
-                                        aria-hidden="true"
-                                        className="size-5"
-                                    />
-                                </div>
-                                <div className="grid gap-1">
-                                    <CardTitle role="heading" aria-level={2}>
-                                        Your Learners
-                                    </CardTitle>
-                                    <CardDescription>
-                                        People whose coaching record you manage.
-                                    </CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            {learners.length === 0 ? (
-                                <div className="rounded-lg border border-dashed p-8 text-center">
-                                    <p className="font-medium">
-                                        No Learners yet
-                                    </p>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Send an invitation to start your private
-                                        mentoring workspace.
-                                    </p>
-                                </div>
-                            ) : (
-                                <ul
-                                    className="grid gap-3"
-                                    aria-label="Learners"
+                    <SectionCard
+                        title="Your Learners"
+                        description="People whose coaching record you manage."
+                        icon={Users}
+                    >
+                        {learners.length === 0 ? (
+                            <EmptyState
+                                icon={Inbox}
+                                title="No Learners yet"
+                                description="Send an invitation to start your private mentoring workspace."
+                            />
+                        ) : (
+                            <ul className="grid gap-3" aria-label="Learners">
+                                {learners.map((learner) => (
+                                    <li
+                                        key={learner.id}
+                                        className="flex min-w-0 flex-col gap-3 rounded-lg border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="truncate font-medium">
+                                                {learner.name}
+                                            </p>
+                                            <p className="truncate text-sm text-muted-foreground">
+                                                {learner.email}
+                                            </p>
+                                        </div>
+                                        <StatusBadge tone="info">
+                                            Learner
+                                        </StatusBadge>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        {pendingInvitations.length > 0 && (
+                            <section
+                                className="mt-6 grid gap-3 border-t pt-6"
+                                aria-labelledby="pending-invitations"
+                            >
+                                <h3
+                                    id="pending-invitations"
+                                    className="text-sm font-medium"
                                 >
-                                    {learners.map((learner) => (
+                                    Pending invitations
+                                </h3>
+                                <ul className="grid gap-2">
+                                    {pendingInvitations.map((invitation) => (
                                         <li
-                                            key={learner.id}
-                                            className="flex items-center justify-between gap-4 rounded-lg border p-4"
+                                            key={invitation.id}
+                                            className="flex min-w-0 flex-col gap-2 rounded-md bg-muted/40 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
                                         >
-                                            <div className="min-w-0">
-                                                <p className="truncate font-medium">
-                                                    {learner.name}
-                                                </p>
-                                                <p className="truncate text-sm text-muted-foreground">
-                                                    {learner.email}
-                                                </p>
-                                            </div>
-                                            <Badge variant="secondary">
-                                                Learner
-                                            </Badge>
+                                            <span className="flex min-w-0 items-center gap-2">
+                                                <Mail
+                                                    aria-hidden="true"
+                                                    className="size-4 shrink-0 text-muted-foreground"
+                                                />
+                                                <span className="truncate">
+                                                    {invitation.email}
+                                                </span>
+                                            </span>
+                                            <span className="shrink-0 text-xs text-muted-foreground">
+                                                Expires {invitation.expiresAt}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
-                            )}
+                            </section>
+                        )}
+                    </SectionCard>
 
-                            {pendingInvitations.length > 0 && (
-                                <section
-                                    className="mt-6 grid gap-3"
-                                    aria-labelledby="pending-invitations"
-                                >
-                                    <h3
-                                        id="pending-invitations"
-                                        className="text-sm font-medium"
+                    <SectionCard
+                        title="Invite a Learner"
+                        description="Invitations expire after seven days."
+                        icon={UserPlus}
+                        className="h-fit"
+                    >
+                        <Form
+                            {...store.form()}
+                            resetOnSuccess
+                            disableWhileProcessing
+                            className="grid gap-4"
+                        >
+                            {({ errors, processing }) => (
+                                <>
+                                    <FormField
+                                        id="learner-email"
+                                        label="Learner email"
+                                        error={errors.email}
                                     >
-                                        Pending invitations
-                                    </h3>
-                                    <ul className="grid gap-2">
-                                        {pendingInvitations.map(
-                                            (invitation) => (
-                                                <li
-                                                    key={invitation.id}
-                                                    className="flex items-center justify-between gap-4 text-sm"
-                                                >
-                                                    <span className="truncate">
-                                                        {invitation.email}
-                                                    </span>
-                                                    <span className="shrink-0 text-muted-foreground">
-                                                        Expires{' '}
-                                                        {invitation.expiresAt}
-                                                    </span>
-                                                </li>
-                                            ),
-                                        )}
-                                    </ul>
-                                </section>
+                                        <Input
+                                            id="learner-email"
+                                            name="email"
+                                            type="email"
+                                            autoComplete="email"
+                                            placeholder="learner@example.com"
+                                            aria-invalid={Boolean(errors.email)}
+                                            aria-describedby={
+                                                errors.email
+                                                    ? 'learner-email-error'
+                                                    : undefined
+                                            }
+                                            required
+                                        />
+                                    </FormField>
+                                    <SubmitButton
+                                        processing={processing}
+                                        processingLabel="Sending…"
+                                    >
+                                        Send invitation
+                                    </SubmitButton>
+                                </>
                             )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="h-fit">
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <UserPlus
-                                    aria-hidden="true"
-                                    className="size-5"
-                                />
-                                <div className="grid gap-1">
-                                    <CardTitle role="heading" aria-level={2}>
-                                        Invite a Learner
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Invitations expire after seven days.
-                                    </CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <Form
-                                {...store.form()}
-                                resetOnSuccess
-                                disableWhileProcessing
-                                className="grid gap-4"
-                            >
-                                {({ errors, processing }) => (
-                                    <>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="learner-email">
-                                                Learner email
-                                            </Label>
-                                            <Input
-                                                id="learner-email"
-                                                name="email"
-                                                type="email"
-                                                autoComplete="email"
-                                                placeholder="learner@example.com"
-                                                required
-                                            />
-                                            <InputError
-                                                message={errors.email}
-                                            />
-                                        </div>
-                                        <Button
-                                            type="submit"
-                                            disabled={processing}
-                                        >
-                                            {processing && <Spinner />}
-                                            Send invitation
-                                        </Button>
-                                    </>
-                                )}
-                            </Form>
-                        </CardContent>
-                    </Card>
+                        </Form>
+                    </SectionCard>
                 </div>
-            </main>
+            </div>
         </>
     );
 }
