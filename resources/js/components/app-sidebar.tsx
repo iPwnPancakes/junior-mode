@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, MonitorSmartphone } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,6 +13,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as clientConnections } from '@/routes/client-connections';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -24,6 +25,11 @@ export function AppSidebar() {
             title: workspaceName,
             href: dashboard(),
             icon: LayoutGrid,
+        },
+        {
+            title: 'Codex clients',
+            href: clientConnections(),
+            icon: MonitorSmartphone,
         },
     ];
 

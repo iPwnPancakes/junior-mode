@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\BootstrapRegistrationController;
 use App\Http\Controllers\Auth\LearnerInvitationAcceptanceController;
+use App\Http\Controllers\ClientConnectionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LearnerInvitationController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::post('learner-invitations', [LearnerInvitationController::class, 'store'])
         ->name('learner-invitations.store');
+    Route::get('client-connections', [ClientConnectionController::class, 'index'])
+        ->name('client-connections.index');
+    Route::delete('client-connections/{clientConnection}', [ClientConnectionController::class, 'destroy'])
+        ->name('client-connections.destroy');
 });
 
 require __DIR__.'/settings.php';
