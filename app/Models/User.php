@@ -69,6 +69,16 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(LearnerInvitation::class, 'mentor_id');
     }
 
+    /**
+     * Get this Learner's named Codex client connections.
+     *
+     * @return HasMany<ClientConnection, $this>
+     */
+    public function clientConnections(): HasMany
+    {
+        return $this->hasMany(ClientConnection::class, 'learner_id')->latest();
+    }
+
     public function isMentor(): bool
     {
         return $this->role === UserRole::Mentor;
