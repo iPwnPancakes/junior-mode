@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
@@ -39,6 +40,12 @@ class ClientConnection extends Model
     public function authorization(): HasOne
     {
         return $this->hasOne(ClientAuthorization::class);
+    }
+
+    /** @return HasMany<CatalogProposal, $this> */
+    public function catalogProposals(): HasMany
+    {
+        return $this->hasMany(CatalogProposal::class);
     }
 
     public function isRevoked(): bool

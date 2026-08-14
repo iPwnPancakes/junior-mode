@@ -89,6 +89,18 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(Competency::class, 'learner_id');
     }
 
+    /** @return HasMany<CatalogProposal, $this> */
+    public function catalogProposals(): HasMany
+    {
+        return $this->hasMany(CatalogProposal::class, 'learner_id')->latest();
+    }
+
+    /** @return HasMany<Assessment, $this> */
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class, 'learner_id')->latest('assessed_at');
+    }
+
     public function isMentor(): bool
     {
         return $this->role === UserRole::Mentor;

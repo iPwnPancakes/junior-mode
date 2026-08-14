@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mentor Mode"
+  short_description: "Interview Mentors and propose Learner catalogs"
+  default_prompt: "Use $mentor-mode to interview me and propose a Competency Catalog for my Learner."

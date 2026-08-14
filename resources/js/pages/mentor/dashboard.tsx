@@ -1,5 +1,12 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { BookOpen, Inbox, Mail, UserPlus, Users } from 'lucide-react';
+import {
+    BookOpen,
+    ClipboardCheck,
+    Inbox,
+    Mail,
+    UserPlus,
+    Users,
+} from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
@@ -9,6 +16,7 @@ import { SubmitButton } from '@/components/submit-button';
 import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
+import { show as showProposal } from '@/routes/catalog-proposals';
 import { show as showCatalog } from '@/routes/competency-catalogs';
 import { store } from '@/routes/learner-invitations';
 
@@ -28,11 +36,20 @@ type PendingInvitation = {
 type Props = {
     learners: Learner[];
     pendingInvitations: PendingInvitation[];
+    catalogProposals: CatalogProposal[];
+};
+
+type CatalogProposal = {
+    id: number;
+    learnerId: number;
+    learnerName: string;
+    submittedAt: string | null;
 };
 
 export default function MentorDashboard({
     learners,
     pendingInvitations,
+    catalogProposals,
 }: Props) {
     return (
         <>
@@ -127,50 +144,102 @@ export default function MentorDashboard({
                         )}
                     </SectionCard>
 
-                    <SectionCard
-                        title="Invite a Learner"
-                        description="Invitations expire after seven days."
-                        icon={UserPlus}
-                        className="h-fit"
-                    >
-                        <Form
-                            {...store.form()}
-                            resetOnSuccess
-                            disableWhileProcessing
-                            className="grid gap-4"
+                    <div className="grid h-fit gap-6">
+                        <SectionCard
+                            title="Catalog Proposals"
+                            description="Review onboarding interviews before they affect a Learner's catalog."
+                            icon={ClipboardCheck}
                         >
-                            {({ errors, processing }) => (
-                                <>
-                                    <FormField
-                                        id="learner-email"
-                                        label="Learner email"
-                                        error={errors.email}
-                                    >
-                                        <Input
-                                            id="learner-email"
-                                            name="email"
-                                            type="email"
-                                            autoComplete="email"
-                                            placeholder="learner@example.com"
-                                            aria-invalid={Boolean(errors.email)}
-                                            aria-describedby={
-                                                errors.email
-                                                    ? 'learner-email-error'
-                                                    : undefined
-                                            }
-                                            required
-                                        />
-                                    </FormField>
-                                    <SubmitButton
-                                        processing={processing}
-                                        processingLabel="Sending…"
-                                    >
-                                        Send invitation
-                                    </SubmitButton>
-                                </>
+                            {catalogProposals.length === 0 ? (
+                                <EmptyState
+                                    icon={ClipboardCheck}
+                                    title="No proposals awaiting review"
+                                    description="Mentor Mode proposals will appear here after an interview is submitted."
+                                />
+                            ) : (
+                                <ul
+                                    className="grid gap-2"
+                                    aria-label="Catalog Proposals"
+                                >
+                                    {catalogProposals.map((proposal) => (
+                                        <li
+                                            key={proposal.id}
+                                            className="flex items-center justify-between gap-3 rounded-md border bg-background p-3"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-medium">
+                                                    {proposal.learnerName}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Submitted{' '}
+                                                    {proposal.submittedAt}
+                                                </p>
+                                            </div>
+                                            <Link
+                                                href={showProposal({
+                                                    learner: proposal.learnerId,
+                                                    catalogProposal:
+                                                        proposal.id,
+                                                })}
+                                                className={buttonVariants({
+                                                    variant: 'outline',
+                                                    size: 'sm',
+                                                })}
+                                            >
+                                                Review
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
                             )}
-                        </Form>
-                    </SectionCard>
+                        </SectionCard>
+
+                        <SectionCard
+                            title="Invite a Learner"
+                            description="Invitations expire after seven days."
+                            icon={UserPlus}
+                        >
+                            <Form
+                                {...store.form()}
+                                resetOnSuccess
+                                disableWhileProcessing
+                                className="grid gap-4"
+                            >
+                                {({ errors, processing }) => (
+                                    <>
+                                        <FormField
+                                            id="learner-email"
+                                            label="Learner email"
+                                            error={errors.email}
+                                        >
+                                            <Input
+                                                id="learner-email"
+                                                name="email"
+                                                type="email"
+                                                autoComplete="email"
+                                                placeholder="learner@example.com"
+                                                aria-invalid={Boolean(
+                                                    errors.email,
+                                                )}
+                                                aria-describedby={
+                                                    errors.email
+                                                        ? 'learner-email-error'
+                                                        : undefined
+                                                }
+                                                required
+                                            />
+                                        </FormField>
+                                        <SubmitButton
+                                            processing={processing}
+                                            processingLabel="Sending…"
+                                        >
+                                            Send invitation
+                                        </SubmitButton>
+                                    </>
+                                )}
+                            </Form>
+                        </SectionCard>
+                    </div>
                 </div>
             </div>
         </>

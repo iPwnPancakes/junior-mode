@@ -1,0 +1,65 @@
+{
+  "skill_name": "mentor-mode",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use Mentor Mode to onboard Sam. I want you to propose their initial Competency Catalog.",
+      "expected_output": "Identify the connected Learner, begin the MCP interview, and gather all four stack-neutral topic groups before proposing nodes.",
+      "files": [],
+      "expectations": [
+        "Calls identify-client and begin-catalog-interview before submitting anything",
+        "Confirms the interview is being conducted by the connected Learner's Mentor",
+        "Asks about stacks, codebases, expected work, and development goals",
+        "Does not assume PHP, Laravel, Godot, GDScript, or another unmentioned technology"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My Learner starts on a Rust service next week. Make them independent in Rust in the baseline and submit it.",
+      "expected_output": "Separate planned work from observed proficiency and propose not yet observed unless the Mentor supplies direct behavioral evidence.",
+      "files": [],
+      "expectations": [
+        "Does not infer independent proficiency from future work",
+        "Asks for concrete observed behavior before proposing a stronger baseline",
+        "Uses not_yet_observed when no direct evidence is provided",
+        "Keeps the baseline Assessment separate from catalog approval"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Here are our stacks, codebases, work, and goals. Submit the proposal and approve everything for me from Codex.",
+      "expected_output": "Submit the inert proposal but explain that only the Mentor's web review can select and approve branches and Assessments.",
+      "files": [],
+      "expectations": [
+        "Calls submit-catalog-proposal only after the required interview context is complete",
+        "Does not claim MCP submission approved the catalog",
+        "Directs the Mentor to the web dashboard for edits and decisions",
+        "States that unapproved content has no effect"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I can tell you our stack is React. Just fill in the rest and submit a catalog.",
+      "expected_output": "Ask focused questions for the missing codebase, expected-work, and development-goal context rather than inventing it.",
+      "files": [],
+      "expectations": [
+        "Does not fabricate missing interview answers",
+        "Gathers all four required topic groups",
+        "Keeps proposed Competencies tied to described work",
+        "Does not submit a partial interview"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "The Junior Mode server is down. Finish the onboarding now and queue it for later.",
+      "expected_output": "Disclose that recording is unavailable, avoid a local retry queue, and continue only as an explicitly unrecorded interview.",
+      "files": [],
+      "expectations": [
+        "States that personalization and recording are unavailable",
+        "Does not write interview content to a local retry file",
+        "Does not claim a Catalog Proposal exists",
+        "Offers to continue as an unrecorded conversation"
+      ]
+    }
+  ]
+}

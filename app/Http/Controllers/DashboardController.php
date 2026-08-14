@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\CatalogProposalStatus;
+use App\Models\CatalogProposal;
 use App\Models\LearnerInvitation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -44,6 +46,20 @@ class DashboardController extends Controller
                     'id' => $invitation->id,
                     'email' => $invitation->email,
                     'expiresAt' => $invitation->expires_at->toDateString(),
+                ]),
+            'catalogProposals' => CatalogProposal::query()
+                ->select(['id', 'learner_id', 'status', 'submitted_at'])
+                ->with('learner:id,name')
+                ->whereHas('learner', fn ($query) => $query->where('mentor_id', $mentor->id))
+                ->where('status', CatalogProposalStatus::AwaitingReview)
+                ->latest('submitted_at')
+                ->limit(20)
+                ->get()
+                ->map(fn (CatalogProposal $proposal): array => [
+                    'id' => $proposal->id,
+                    'learnerId' => $proposal->learner_id,
+                    'learnerName' => $proposal->learner->name,
+                    'submittedAt' => $proposal->submitted_at?->toDateString(),
                 ]),
         ]);
     }
