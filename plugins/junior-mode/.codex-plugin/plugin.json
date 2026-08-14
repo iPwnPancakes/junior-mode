@@ -1,0 +1,26 @@
+{
+  "name": "junior-mode",
+  "version": "0.1.0",
+  "description": "Learning-first coaching and Mentor onboarding for self-hosted Junior Mode.",
+  "author": {
+    "name": "iPwnPancakes",
+    "url": "https://github.com/iPwnPancakes"
+  },
+  "repository": "https://github.com/iPwnPancakes/junior-mode",
+  "license": "MIT",
+  "keywords": ["learning", "mentoring", "codex", "competencies"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Junior Mode",
+    "shortDescription": "Coach Learners through real engineering work.",
+    "longDescription": "Junior Mode connects Codex to a self-hosted learning record. Mentor Mode interviews Mentors and submits reviewable Competency Catalog proposals without changing approved learning state.",
+    "developerName": "iPwnPancakes",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Interview me for my Learner's Competency Catalog.",
+      "Propose a stack-neutral baseline for my Learner."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

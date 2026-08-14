@@ -2,6 +2,11 @@
 
 use App\Http\Controllers\Auth\BootstrapRegistrationController;
 use App\Http\Controllers\Auth\LearnerInvitationAcceptanceController;
+use App\Http\Controllers\BaselineAssessmentProposalDecisionController;
+use App\Http\Controllers\CatalogProposalController;
+use App\Http\Controllers\CatalogProposalDecisionController;
+use App\Http\Controllers\CatalogProposalNodeController;
+use App\Http\Controllers\CatalogProposalSelectionController;
 use App\Http\Controllers\ClientConnectionController;
 use App\Http\Controllers\CompetencyArchiveController;
 use App\Http\Controllers\CompetencyCatalogController;
@@ -53,6 +58,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('competencies.merge');
     Route::post('learners/{learner}/competency-template-copies', CompetencyTemplateCopyController::class)
         ->name('competency-template-copies.store');
+    Route::get('learners/{learner}/catalog-proposals/{catalogProposal}', [CatalogProposalController::class, 'show'])
+        ->scopeBindings()
+        ->name('catalog-proposals.show');
+    Route::post('learners/{learner}/catalog-proposals/{catalogProposal}/nodes', [CatalogProposalNodeController::class, 'store'])
+        ->scopeBindings()
+        ->name('catalog-proposal-nodes.store');
+    Route::patch('learners/{learner}/catalog-proposals/{catalogProposal}/nodes/{node}', [CatalogProposalNodeController::class, 'update'])
+        ->scopeBindings()
+        ->name('catalog-proposal-nodes.update');
+    Route::delete('learners/{learner}/catalog-proposals/{catalogProposal}/nodes/{node}', [CatalogProposalNodeController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('catalog-proposal-nodes.destroy');
+    Route::patch('learners/{learner}/catalog-proposals/{catalogProposal}/nodes/{node}/selection', CatalogProposalSelectionController::class)
+        ->scopeBindings()
+        ->name('catalog-proposal-selections.update');
+    Route::post('learners/{learner}/catalog-proposals/{catalogProposal}/decision', CatalogProposalDecisionController::class)
+        ->scopeBindings()
+        ->name('catalog-proposal-decisions.store');
+    Route::post('learners/{learner}/catalog-proposals/{catalogProposal}/baseline-assessments/{baselineAssessment}/decision', BaselineAssessmentProposalDecisionController::class)
+        ->scopeBindings()
+        ->name('baseline-assessment-proposal-decisions.store');
 });
 
 require __DIR__.'/settings.php';

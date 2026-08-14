@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "junior-mode": {
+      "type": "http",
+      "url": "${JUNIOR_MODE_URL}/mcp",
+      "bearer_token_env_var": "JUNIOR_MODE_TOKEN"
+    }
+  }
+}

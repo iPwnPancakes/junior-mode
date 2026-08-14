@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use Database\Factories\CompetencyFactory;
+use Database\Factories\CatalogProposalNodeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
- * @property int $learner_id
+ * @property int $catalog_proposal_id
  * @property int|null $parent_id
  * @property int $position
  * @property string $name
@@ -21,13 +21,11 @@ use Illuminate\Support\Carbon;
  * @property array<int, string>|null $prerequisites
  * @property array<int, string>|null $work_opportunities
  * @property array<int, string>|null $technologies
- * @property Carbon|null $archived_at
- * @property int|null $merged_into_id
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property bool $selected
+ * @property int|null $copied_competency_id
  */
 #[Fillable([
-    'learner_id',
+    'catalog_proposal_id',
     'parent_id',
     'position',
     'name',
@@ -36,62 +34,47 @@ use Illuminate\Support\Carbon;
     'prerequisites',
     'work_opportunities',
     'technologies',
-    'archived_at',
-    'merged_into_id',
+    'selected',
+    'copied_competency_id',
 ])]
-class Competency extends Model
+class CatalogProposalNode extends Model
 {
-    /** @use HasFactory<CompetencyFactory> */
+    /** @use HasFactory<CatalogProposalNodeFactory> */
     use HasFactory;
 
     protected $attributes = [
         'position' => 0,
+        'selected' => true,
     ];
 
-    /** @return BelongsTo<User, $this> */
-    public function learner(): BelongsTo
+    /** @return BelongsTo<CatalogProposal, $this> */
+    public function proposal(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'learner_id');
+        return $this->belongsTo(CatalogProposal::class, 'catalog_proposal_id');
     }
 
-    /** @return BelongsTo<Competency, $this> */
+    /** @return BelongsTo<CatalogProposalNode, $this> */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');
     }
 
-    /** @return HasMany<Competency, $this> */
+    /** @return HasMany<CatalogProposalNode, $this> */
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id')->orderBy('position')->orderBy('id');
     }
 
     /** @return BelongsTo<Competency, $this> */
-    public function mergeTarget(): BelongsTo
+    public function copiedCompetency(): BelongsTo
     {
-        return $this->belongsTo(self::class, 'merged_into_id');
+        return $this->belongsTo(Competency::class, 'copied_competency_id');
     }
 
-    /** @return HasMany<CompetencyMerge, $this> */
-    public function incomingMerges(): HasMany
+    /** @return HasOne<BaselineAssessmentProposal, $this> */
+    public function baselineAssessment(): HasOne
     {
-        return $this->hasMany(CompetencyMerge::class, 'target_competency_id');
-    }
-
-    /** @return HasMany<Assessment, $this> */
-    public function assessments(): HasMany
-    {
-        return $this->hasMany(Assessment::class)->latest('assessed_at');
-    }
-
-    public function isArchived(): bool
-    {
-        return $this->archived_at !== null;
-    }
-
-    public function isMerged(): bool
-    {
-        return $this->merged_into_id !== null;
+        return $this->hasOne(BaselineAssessmentProposal::class);
     }
 
     /** @return array<string, string> */
@@ -101,7 +84,7 @@ class Competency extends Model
             'prerequisites' => 'array',
             'work_opportunities' => 'array',
             'technologies' => 'array',
-            'archived_at' => 'datetime',
+            'selected' => 'boolean',
         ];
     }
 }
