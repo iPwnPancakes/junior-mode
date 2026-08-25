@@ -23,6 +23,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property UserRole $role
  * @property int|null $mentor_id
+ * @property int $default_priority_duration_days
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -32,12 +33,16 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'role', 'mentor_id'])]
+#[Fillable(['name', 'email', 'password', 'role', 'mentor_id', 'default_priority_duration_days'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    protected $attributes = [
+        'default_priority_duration_days' => 7,
+    ];
 
     /**
      * Get this Learner's Mentor.
@@ -111,6 +116,12 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(Assessment::class, 'learner_id')->latest('assessed_at');
     }
 
+    /** @return HasMany<CoachingPriority, $this> */
+    public function coachingPriorities(): HasMany
+    {
+        return $this->hasMany(CoachingPriority::class, 'learner_id')->latest();
+    }
+
     public function isMentor(): bool
     {
         return $this->role === UserRole::Mentor;
@@ -132,6 +143,7 @@ class User extends Authenticatable implements PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'default_priority_duration_days' => 'integer',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }

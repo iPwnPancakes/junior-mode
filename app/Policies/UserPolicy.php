@@ -19,4 +19,14 @@ class UserPolicy
             && $learner->isLearner()
             && $learner->mentor_id === $user->id;
     }
+
+    public function viewCoachingRecord(User $user, User $learner): bool
+    {
+        return $this->viewCompetencyCatalog($user, $learner);
+    }
+
+    public function manageCoachingRecord(User $user, User $learner): bool
+    {
+        return $this->manageCompetencyCatalog($user, $learner);
+    }
 }

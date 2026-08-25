@@ -69,6 +69,10 @@ class DashboardController extends Controller
         $mentor = $learner->mentor()->firstOrFail(['id', 'name', 'email']);
 
         return Inertia::render('learner/dashboard', [
+            'learner' => [
+                'id' => $learner->id,
+                'name' => $learner->name,
+            ],
             'mentor' => [
                 'id' => $mentor->id,
                 'name' => $mentor->name,
