@@ -90,6 +90,12 @@ class Competency extends Model
         return $this->hasMany(CoachingPriority::class)->latest();
     }
 
+    /** @return HasMany<CoachingSession, $this> */
+    public function coachingSessions(): HasMany
+    {
+        return $this->hasMany(CoachingSession::class, 'primary_learning_objective_id');
+    }
+
     public function isArchived(): bool
     {
         return $this->archived_at !== null;

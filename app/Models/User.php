@@ -122,6 +122,12 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(CoachingPriority::class, 'learner_id')->latest();
     }
 
+    /** @return HasMany<CoachingSession, $this> */
+    public function coachingSessions(): HasMany
+    {
+        return $this->hasMany(CoachingSession::class, 'learner_id')->latest('last_active_at');
+    }
+
     public function isMentor(): bool
     {
         return $this->role === UserRole::Mentor;

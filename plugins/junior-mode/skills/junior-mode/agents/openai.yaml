@@ -1,0 +1,6 @@
+interface:
+    display_name: 'Junior Mode'
+    short_description: 'Coach one bounded change in enrolled work'
+    default_prompt: 'Use $junior-mode for this Work Item.'
+policy:
+    allow_implicit_invocation: false

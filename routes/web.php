@@ -14,6 +14,7 @@ use App\Http\Controllers\CoachingPriorityRenewalController;
 use App\Http\Controllers\CoachingPriorityReplacementController;
 use App\Http\Controllers\CoachingPriorityResolutionController;
 use App\Http\Controllers\CoachingRecordController;
+use App\Http\Controllers\CoachingSessionController;
 use App\Http\Controllers\CompetencyArchiveController;
 use App\Http\Controllers\CompetencyCatalogController;
 use App\Http\Controllers\CompetencyController;
@@ -54,6 +55,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('client-connections.destroy');
     Route::get('repositories', [EnrolledRepositoryController::class, 'index'])
         ->name('enrolled-repositories.index');
+    Route::get('coaching-sessions', [CoachingSessionController::class, 'index'])
+        ->name('coaching-sessions.index');
     Route::post('learners/{learner}/repositories', [EnrolledRepositoryController::class, 'store'])
         ->name('enrolled-repositories.store');
     Route::patch('learners/{learner}/repositories/{enrolledRepository}', [EnrolledRepositoryController::class, 'update'])

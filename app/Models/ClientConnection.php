@@ -48,6 +48,12 @@ class ClientConnection extends Model
         return $this->hasMany(CatalogProposal::class);
     }
 
+    /** @return HasMany<CoachingSession, $this> */
+    public function coachingSessions(): HasMany
+    {
+        return $this->hasMany(CoachingSession::class);
+    }
+
     public function isRevoked(): bool
     {
         return $this->revoked_at !== null;

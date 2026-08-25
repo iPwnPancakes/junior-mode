@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -46,6 +47,12 @@ class EnrolledRepository extends Model
     public function isEnrolled(): bool
     {
         return $this->unenrolled_at === null;
+    }
+
+    /** @return HasMany<WorkItem, $this> */
+    public function workItems(): HasMany
+    {
+        return $this->hasMany(WorkItem::class);
     }
 
     /** @return array<string, string> */
