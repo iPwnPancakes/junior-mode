@@ -7,6 +7,7 @@ describe('Learner dashboard', () => {
     it('renders the Learner empty state and attributed Mentor', () => {
         renderPage(
             <LearnerDashboard
+                learner={{ id: 2, name: 'Lee Learner' }}
                 mentor={{
                     id: 1,
                     name: 'Morgan Mentor',
@@ -21,9 +22,10 @@ describe('Learner dashboard', () => {
         expect(
             screen.getByRole('heading', { name: 'Your learning record' }),
         ).toBeInTheDocument();
+        expect(screen.getByText('Your complete record')).toBeInTheDocument();
         expect(
-            screen.getByText('No coaching activity yet'),
-        ).toBeInTheDocument();
+            screen.getByRole('link', { name: 'View coaching record' }),
+        ).toHaveAttribute('href', '/learners/2/coaching-record');
         expect(
             screen.getByRole('heading', { name: 'Your Mentor' }),
         ).toBeInTheDocument();

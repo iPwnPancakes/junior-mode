@@ -1,12 +1,18 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { BookOpenCheck, Compass, UserRound } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { SectionCard } from '@/components/section-card';
 import { StatusBadge } from '@/components/status-badge';
+import { buttonVariants } from '@/components/ui/button';
 import { dashboard } from '@/routes';
+import { show as showCoachingRecord } from '@/routes/coaching-records';
 
 type Props = {
+    learner: {
+        id: number;
+        name: string;
+    };
     mentor: {
         id: number;
         name: string;
@@ -14,7 +20,7 @@ type Props = {
     };
 };
 
-export default function LearnerDashboard({ mentor }: Props) {
+export default function LearnerDashboard({ learner, mentor }: Props) {
     return (
         <>
             <Head title="Learner dashboard" />
@@ -31,11 +37,19 @@ export default function LearnerDashboard({ mentor }: Props) {
                         description="Coaching Priorities, Competencies, and recent Observations."
                         icon={BookOpenCheck}
                     >
-                        <EmptyState
-                            icon={Compass}
-                            title="No coaching activity yet"
-                            description="Your record will grow after your Mentor prepares your Competency Catalog and Coaching Priorities."
-                        />
+                        <div className="grid gap-4">
+                            <EmptyState
+                                icon={Compass}
+                                title="Your complete record"
+                                description="Review Assessments and Coaching Priorities chosen by your Mentor."
+                            />
+                            <Link
+                                href={showCoachingRecord(learner.id)}
+                                className={buttonVariants()}
+                            >
+                                View coaching record
+                            </Link>
+                        </div>
                     </SectionCard>
 
                     <SectionCard

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\Auth\BootstrapRegistrationController;
 use App\Http\Controllers\Auth\LearnerInvitationAcceptanceController;
 use App\Http\Controllers\BaselineAssessmentProposalDecisionController;
@@ -8,6 +9,11 @@ use App\Http\Controllers\CatalogProposalDecisionController;
 use App\Http\Controllers\CatalogProposalNodeController;
 use App\Http\Controllers\CatalogProposalSelectionController;
 use App\Http\Controllers\ClientConnectionController;
+use App\Http\Controllers\CoachingPriorityController;
+use App\Http\Controllers\CoachingPriorityRenewalController;
+use App\Http\Controllers\CoachingPriorityReplacementController;
+use App\Http\Controllers\CoachingPriorityResolutionController;
+use App\Http\Controllers\CoachingRecordController;
 use App\Http\Controllers\CompetencyArchiveController;
 use App\Http\Controllers\CompetencyCatalogController;
 use App\Http\Controllers\CompetencyController;
@@ -16,6 +22,7 @@ use App\Http\Controllers\CompetencyTemplateCopyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnrolledRepositoryController;
 use App\Http\Controllers\LearnerInvitationController;
+use App\Http\Controllers\MentorCoachingSettingsController;
 use App\Http\Controllers\RepositoryEnrollmentController;
 use Illuminate\Support\Facades\Route;
 
@@ -60,6 +67,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('repository-enrollments.destroy');
     Route::get('learners/{learner}/competency-catalog', CompetencyCatalogController::class)
         ->name('competency-catalogs.show');
+    Route::get('learners/{learner}/coaching-record', CoachingRecordController::class)
+        ->name('coaching-records.show');
+    Route::post('learners/{learner}/assessments', [AssessmentController::class, 'store'])
+        ->name('assessments.store');
+    Route::post('learners/{learner}/coaching-priorities', [CoachingPriorityController::class, 'store'])
+        ->name('coaching-priorities.store');
+    Route::patch('learners/{learner}/coaching-priorities/{coachingPriority}', [CoachingPriorityController::class, 'update'])
+        ->scopeBindings()
+        ->name('coaching-priorities.update');
+    Route::post('learners/{learner}/coaching-priorities/{coachingPriority}/renewal', CoachingPriorityRenewalController::class)
+        ->scopeBindings()
+        ->name('coaching-priority-renewals.store');
+    Route::post('learners/{learner}/coaching-priorities/{coachingPriority}/resolution', CoachingPriorityResolutionController::class)
+        ->scopeBindings()
+        ->name('coaching-priority-resolutions.store');
+    Route::post('learners/{learner}/coaching-priorities/{coachingPriority}/replacement', CoachingPriorityReplacementController::class)
+        ->scopeBindings()
+        ->name('coaching-priority-replacements.store');
+    Route::patch('mentor/coaching-settings', MentorCoachingSettingsController::class)
+        ->name('mentor-coaching-settings.update');
     Route::post('learners/{learner}/competencies', [CompetencyController::class, 'store'])
         ->name('competencies.store');
     Route::patch('learners/{learner}/competencies/{competency}', [CompetencyController::class, 'update'])

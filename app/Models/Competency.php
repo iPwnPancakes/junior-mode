@@ -84,6 +84,12 @@ class Competency extends Model
         return $this->hasMany(Assessment::class)->latest('assessed_at');
     }
 
+    /** @return HasMany<CoachingPriority, $this> */
+    public function coachingPriorities(): HasMany
+    {
+        return $this->hasMany(CoachingPriority::class)->latest();
+    }
+
     public function isArchived(): bool
     {
         return $this->archived_at !== null;

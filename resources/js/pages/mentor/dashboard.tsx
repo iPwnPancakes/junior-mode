@@ -4,6 +4,7 @@ import {
     ClipboardCheck,
     Inbox,
     Mail,
+    Target,
     UserPlus,
     Users,
 } from 'lucide-react';
@@ -17,6 +18,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
 import { show as showProposal } from '@/routes/catalog-proposals';
+import { show as showCoachingRecord } from '@/routes/coaching-records';
 import { show as showCatalog } from '@/routes/competency-catalogs';
 import { store } from '@/routes/learner-invitations';
 
@@ -101,6 +103,18 @@ export default function MentorDashboard({
                                             >
                                                 <BookOpen aria-hidden="true" />
                                                 Open catalog
+                                            </Link>
+                                            <Link
+                                                href={showCoachingRecord(
+                                                    learner.id,
+                                                )}
+                                                className={buttonVariants({
+                                                    variant: 'outline',
+                                                    size: 'sm',
+                                                })}
+                                            >
+                                                <Target aria-hidden="true" />
+                                                Coaching record
                                             </Link>
                                         </div>
                                     </li>
