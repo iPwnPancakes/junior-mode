@@ -80,6 +80,16 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Get the repositories explicitly enrolled for this Learner.
+     *
+     * @return HasMany<EnrolledRepository, $this>
+     */
+    public function enrolledRepositories(): HasMany
+    {
+        return $this->hasMany(EnrolledRepository::class, 'learner_id')->latest();
+    }
+
+    /**
      * Get this Learner's Competency Catalog nodes.
      *
      * @return HasMany<Competency, $this>
