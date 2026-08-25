@@ -14,7 +14,9 @@ use App\Http\Controllers\CompetencyController;
 use App\Http\Controllers\CompetencyMergeController;
 use App\Http\Controllers\CompetencyTemplateCopyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EnrolledRepositoryController;
 use App\Http\Controllers\LearnerInvitationController;
+use App\Http\Controllers\RepositoryEnrollmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -43,6 +45,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('client-connections.index');
     Route::delete('client-connections/{clientConnection}', [ClientConnectionController::class, 'destroy'])
         ->name('client-connections.destroy');
+    Route::get('repositories', [EnrolledRepositoryController::class, 'index'])
+        ->name('enrolled-repositories.index');
+    Route::post('learners/{learner}/repositories', [EnrolledRepositoryController::class, 'store'])
+        ->name('enrolled-repositories.store');
+    Route::patch('learners/{learner}/repositories/{enrolledRepository}', [EnrolledRepositoryController::class, 'update'])
+        ->scopeBindings()
+        ->name('enrolled-repositories.update');
+    Route::post('learners/{learner}/repositories/{enrolledRepository}/enrollment', [RepositoryEnrollmentController::class, 'store'])
+        ->scopeBindings()
+        ->name('repository-enrollments.store');
+    Route::delete('learners/{learner}/repositories/{enrolledRepository}/enrollment', [RepositoryEnrollmentController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('repository-enrollments.destroy');
     Route::get('learners/{learner}/competency-catalog', CompetencyCatalogController::class)
         ->name('competency-catalogs.show');
     Route::post('learners/{learner}/competencies', [CompetencyController::class, 'store'])
