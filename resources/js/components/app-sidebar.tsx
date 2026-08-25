@@ -1,5 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
-import { FolderGit2, LayoutGrid, MonitorSmartphone } from 'lucide-react';
+import {
+    FolderGit2,
+    LayoutGrid,
+    MessagesSquare,
+    MonitorSmartphone,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -14,6 +19,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { index as clientConnections } from '@/routes/client-connections';
+import { index as coachingSessions } from '@/routes/coaching-sessions';
 import { index as enrolledRepositories } from '@/routes/enrolled-repositories';
 import type { NavItem } from '@/types';
 
@@ -36,6 +42,11 @@ export function AppSidebar() {
             title: 'Repositories',
             href: enrolledRepositories(),
             icon: FolderGit2,
+        },
+        {
+            title: 'Coaching Sessions',
+            href: coachingSessions(),
+            icon: MessagesSquare,
         },
     ];
 

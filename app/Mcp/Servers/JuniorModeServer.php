@@ -3,8 +3,10 @@
 namespace App\Mcp\Servers;
 
 use App\Mcp\Tools\BeginCatalogInterview;
+use App\Mcp\Tools\GetCoachingBrief;
 use App\Mcp\Tools\IdentifyClient;
 use App\Mcp\Tools\ResolveRepositoryEnrollment;
+use App\Mcp\Tools\StartCoachingSession;
 use App\Mcp\Tools\SubmitCatalogProposal;
 use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
@@ -19,6 +21,8 @@ class JuniorModeServer extends Server
     protected array $tools = [
         IdentifyClient::class,
         ResolveRepositoryEnrollment::class,
+        GetCoachingBrief::class,
+        StartCoachingSession::class,
         BeginCatalogInterview::class,
         SubmitCatalogProposal::class,
     ];

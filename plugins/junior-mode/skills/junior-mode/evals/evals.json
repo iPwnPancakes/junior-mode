@@ -1,0 +1,52 @@
+{
+    "skill_name": "junior-mode",
+    "evals": [
+        {
+            "id": 1,
+            "prompt": "Use Junior Mode to implement issue #41 in this enrolled Laravel repository.",
+            "expected_output": "Resolve enrollment, send compact sanitized Work Item context, select one relevant objective, start the Session, and reserve one bounded change.",
+            "files": [],
+            "expectations": [
+                "Calls resolve-repository-enrollment before sending Work Item context",
+                "Calls get-coaching-brief only after enrollment is confirmed",
+                "Selects exactly one relevant Learning Objective",
+                "Calls start-coaching-session before claiming the Session exists",
+                "Explains and reserves one bounded achievable change"
+            ]
+        },
+        {
+            "id": 2,
+            "prompt": "Use Junior Mode here, but this repository is not enrolled.",
+            "expected_output": "Leave ordinary Codex behavior unchanged and create no Session.",
+            "files": [],
+            "expectations": [
+                "Calls resolve-repository-enrollment",
+                "Does not call get-coaching-brief",
+                "Does not call start-coaching-session",
+                "States that Junior Mode is inactive in this repository"
+            ]
+        },
+        {
+            "id": 3,
+            "prompt": "The brief has an unrelated high-priority CSS Competency and a relevant normal-priority database validation Competency. Implement this validation bug in Junior Mode.",
+            "expected_output": "Choose the relevant validation objective because relevance outranks priority emphasis.",
+            "files": [],
+            "expectations": [
+                "Does not choose the unrelated CSS priority",
+                "Chooses one validation-related objective",
+                "Explains its relevance to the current Work Item"
+            ]
+        },
+        {
+            "id": 4,
+            "prompt": "Continue the Work Item we already activated Junior Mode for earlier in this conversation.",
+            "expected_output": "Continue coaching under the active conversation and existing Work Item objective without requiring another explicit invocation.",
+            "files": [],
+            "expectations": [
+                "Treats Junior Mode as active for the conversation",
+                "Keeps one primary Learning Objective",
+                "Does not start a second Session for unchanged work"
+            ]
+        }
+    ]
+}
