@@ -70,6 +70,14 @@ export default function DeleteUser() {
                                     errors,
                                 }) => (
                                     <>
+                                        {errors.account && (
+                                            <p
+                                                role="alert"
+                                                className="text-sm text-destructive"
+                                            >
+                                                {errors.account}
+                                            </p>
+                                        )}
                                         <FormField
                                             id="delete-password"
                                             label="Password"

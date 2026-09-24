@@ -9,6 +9,7 @@ import { SubmitButton } from '@/components/submit-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { exportMethod as exportLearningRecord } from '@/routes/learning-record';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { Auth } from '@/types';
@@ -137,6 +138,20 @@ export default function Profile({
                 </Form>
             </div>
 
+            {auth.user.role === 'learner' && (
+                <div className="space-y-4">
+                    <SectionHeading
+                        title="Your learning record"
+                        description="Download your catalog, sessions, evidence, corrections, and handoff history as JSON. You may be asked to confirm your password."
+                    />
+                    <a
+                        href={exportLearningRecord.url()}
+                        className={buttonVariants({ variant: 'outline' })}
+                    >
+                        Download learning record
+                    </a>
+                </div>
+            )}
             <DeleteUser />
         </>
     );

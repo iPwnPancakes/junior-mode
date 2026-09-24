@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\LearningRecordExportController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -13,6 +14,10 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('settings/learning-record/export', LearningRecordExportController::class)
+        ->middleware([RequirePassword::class, 'throttle:6,1'])
+        ->name('learning-record.export');
+
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/security', [SecurityController::class, 'edit'])
