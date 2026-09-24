@@ -47,7 +47,7 @@ beforeEach(function () {
 test('a blocked Help Me MCP flow reads context without writes then explicitly prepares a private review', function () {
     Notification::fake();
     $beforeProgress = app(BuildLearningProgress::class)->handle($this->learner);
-    $beforeSession = $this->session->getAttributes();
+    $beforeSession = $this->session->fresh()->getAttributes();
     $args = handoffArguments($this->session);
     $this->withToken($this->token)->postJson('/mcp', handoffTool('get-handoff-context', $args))->assertOk()
         ->assertJsonPath('result.isError', false)
