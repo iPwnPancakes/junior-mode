@@ -52,7 +52,7 @@ class BuildHandoffContext
         $progress = app(BuildLearningProgress::class)->handle($session->learner, $session->primary_learning_objective_id);
 
         return [
-            'projection_version' => '1',
+            'projection_version' => $progress['projection_version'],
             'scope' => 'Current Learning Objective; latest 20 current evidence events. Snapshot taken before sharing.',
             'competencies' => array_map(function (array $competency): array {
                 return [
@@ -68,10 +68,12 @@ class BuildHandoffContext
                             'id' => $event['id'],
                             'session_id' => $event['session_id'],
                             'qualifies' => $event['qualifies'],
+                            'solution_escape_used' => $event['solution_escape_used'],
+                            'recorded_hints_used' => $event['recorded_hints_used'],
                             'recorded_at' => $event['recorded_at'],
                             'activity' => $evidence['activity'],
                             'assistance' => $evidence['assistance'],
-                            'hints_used' => $evidence['hints_used'],
+                            'hints_used' => max($evidence['hints_used'], $event['recorded_hints_used']),
                             'ownership' => $evidence['ownership'],
                             'learner_work' => $this->text->clean($evidence['learner_work']),
                             'verification' => [

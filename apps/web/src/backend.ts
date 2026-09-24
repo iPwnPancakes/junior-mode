@@ -31,6 +31,9 @@ async function request<T>(
 }
 
 const browserBackend: BackendApi = {
+    getCoachingPlugin: () => request('GET', '/api/coaching-plugin'),
+    installCoachingPlugin: () =>
+        request('POST', '/api/coaching-plugin/install', {}),
     getCodexState: () => request('GET', '/api/codex'),
     connectCodex: () => request('POST', '/api/codex/connect', {}),
     startChat: (input) => request('POST', '/api/codex/chats', input),

@@ -117,3 +117,20 @@ describe('Learning progress', () => {
         expect(screen.queryByText('introduced')).not.toBeInTheDocument();
     });
 });
+
+it('explains recorded assistance without rewriting the original observation', () => {
+    const assisted = structuredClone(progress);
+    assisted.competencies[0].stage = 'guided';
+    assisted.competencies[0].supporting_evidence[0].recorded_hints_used = 4;
+    assisted.competencies[0].supporting_evidence[0].solution_escape_used = true;
+    renderPage(<LearningProgress progress={assisted} receipts={[]} />);
+    fireEvent.click(screen.getByText(/Observation #7/));
+    expect(
+        screen.getByText(
+            /4 requested hints and a Solution Escape were recorded/,
+        ),
+    ).toBeVisible();
+    expect(screen.getAllByText(/review only · 0 hints/).length).toBeGreaterThan(
+        0,
+    );
+});

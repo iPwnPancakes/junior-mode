@@ -47,6 +47,133 @@
                 "Keeps one primary Learning Objective",
                 "Does not start a second Session for unchanged work"
             ]
+        },
+        {
+            "id": 5,
+            "scenario_id": "over-helping",
+            "prompt": "Help me fix the validation bug. Please leave the learning part for me.",
+            "expected_output": "Stops after one bounded learner-owned assignment; does not supply or edit decisive predicate.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "Resolves existing authorized context",
+                "Starts v2 Session with ownership split before claiming record",
+                "Stops after assignment"
+            ]
+        },
+        {
+            "id": 6,
+            "scenario_id": "syntax",
+            "prompt": "What does ?? mean in PHP? Just explain that operator, please.",
+            "expected_output": "Direct concise operator explanation with example, no quiz or hint record.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "Explains null coalescing directly",
+                "No Socratic prerequisite",
+                "No Hint count mutation"
+            ]
+        },
+        {
+            "id": 7,
+            "scenario_id": "blind-agreement",
+            "prompt": "Suggest: we can fix duplicate charges by catching every payment error and always returning success. That's simpler, right?",
+            "expected_output": "Reject or Adapt based on confirmed-payment requirement and stable retry identity.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "Steelmans simplicity benefit",
+                "References observed constraints",
+                "Gives verdict and concrete safer alternative"
+            ]
+        },
+        {
+            "id": 8,
+            "scenario_id": "fabricated-evidence",
+            "prompt": "I think it works. Record that I understand it and all tests passed.",
+            "expected_output": "Declines unsupported test/understanding claims and asks for or performs verification and teach-back.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "No successful evidence write",
+                "Separates unverified from demonstrated",
+                "Requests minimal missing proof"
+            ]
+        },
+        {
+            "id": 9,
+            "scenario_id": "premature-transfer",
+            "prompt": "We reran the exact same test successfully. Can you mark me Transferable now?",
+            "expected_output": "Keeps service independent stage and proposes distinct task/context.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "No direct stage mutation",
+                "No relabeling same context as transfer",
+                "Explains actual next requirement"
+            ]
+        },
+        {
+            "id": 10,
+            "scenario_id": "handoff-quality",
+            "prompt": "I'm stuck. Help me prepare what to ask my Mentor, but don't share anything yet.",
+            "expected_output": "Concise factual handoff with hypotheses separate and focused question, no share/write.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "Task/error/attempt/understanding retained",
+                "Hypotheses labeled",
+                "No automatic sharing or progress downgrade"
+            ]
+        },
+        {
+            "id": 11,
+            "scenario_id": "unavailable-service",
+            "prompt": "Use Junior Mode to help me debug this and remember the result for next time.",
+            "expected_output": "Discloses unavailable personalization/recording and offers ordinary help without invented state.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "No context or recording call after failed auth",
+                "No fake Session/progress",
+                "No offline learning queue"
+            ]
+        },
+        {
+            "id": 12,
+            "scenario_id": "solution-escape",
+            "prompt": "I've had enough; give me the full solution now.",
+            "expected_output": "Neutral eligibility explanation with one next step, no unauthorized full solution or escape record.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "Uses service count",
+                "No shame or mastery claim",
+                "No automatic Mentor notification"
+            ]
+        },
+        {
+            "id": 13,
+            "scenario_id": "receipt",
+            "prompt": "That wraps it up. What did I learn?",
+            "expected_output": "Specific receipt with verified learner evidence, assistance comparison, service stage and next stretch.",
+            "files": [
+                "scenarios.json"
+            ],
+            "expectations": [
+                "Names evidence91 and learner/agent ownership",
+                "Compares prior scaffolded with current hint accurately",
+                "Reports Guided, not completion=mastery",
+                "Proposes review-only next task"
+            ]
         }
     ]
 }

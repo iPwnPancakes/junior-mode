@@ -1,6 +1,8 @@
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createCodexService } from './codex.mjs';
+import { fileURLToPath } from 'node:url';
+import { createCoachingPlugin, coachingPluginKey } from './coaching-plugin.mjs';
 import { createPlatformAuthorization } from './platform-auth.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -19,6 +21,8 @@ export async function createBackend({
     codexProcessFactory,
     credentialCodec,
     openExternal,
+    marketplaceRoot = fileURLToPath(new URL('../../../', import.meta.url)),
+    pluginCommand,
 }) {
     let state = emptyState();
     const authorization = await createPlatformAuthorization({
@@ -27,10 +31,25 @@ export async function createBackend({
         fetchImpl,
         credentialCodec,
     });
+    const plugin = await createCoachingPlugin({
+        marketplaceRoot,
+        statePath: join(dirname(settingsPath), 'coaching-plugin.json'),
+        runCommand: pluginCommand,
+    });
     const codex = await createCodexService({
         statePath: join(dirname(settingsPath), 'codex-chats.json'),
         processFactory: codexProcessFactory,
-        processOptions: () => authorization.processOptions(),
+        processOptions: () => {
+            const options = authorization.processOptions();
+            return {
+                ...options,
+                config: { ...options.config, ...plugin.config },
+            };
+        },
+        coachingSkill: () => plugin.skill(),
+        coachingThreadConfig: (coaching) => ({
+            [`${coachingPluginKey}.enabled`]: coaching,
+        }),
         redact: (value) => authorization.redact(value),
         authorizeCoaching: async (cwd) => {
             try {
@@ -143,6 +162,12 @@ export async function createBackend({
 
     return {
         ...codex,
+        getCoachingPlugin: () => serialize(() => plugin.state()),
+        installCoachingPlugin: () =>
+            serialize(async () => {
+                await codex.resetConnection();
+                return plugin.install();
+            }),
         openPlatformAuthorization: () =>
             serialize(async () => {
                 const url = authorization.snapshot().authorizationUrl;

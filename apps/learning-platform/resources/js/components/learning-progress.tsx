@@ -26,6 +26,8 @@ type Observation = {
     session_id: number;
     qualifies: boolean;
     recorded_at: string;
+    recorded_hints_used?: number;
+    solution_escape_used?: boolean;
     evidence: Evidence;
 };
 export type Progress = {
@@ -64,7 +66,15 @@ export type LearningReceipt = {
 
 const label = (value: string) => value.replaceAll('_', ' ');
 
-function EvidenceSummary({ evidence }: { evidence: Evidence }) {
+function EvidenceSummary({
+    evidence,
+    recordedHints = 0,
+    solutionEscape = false,
+}: {
+    evidence: Evidence;
+    recordedHints?: number;
+    solutionEscape?: boolean;
+}) {
     return (
         <dl className="grid gap-2 text-sm">
             <div>
@@ -82,6 +92,18 @@ function EvidenceSummary({ evidence }: { evidence: Evidence }) {
                     {label(evidence.ownership)} ownership
                 </dd>
             </div>
+            {(recordedHints > 0 || solutionEscape) && (
+                <div>
+                    <dt className="font-medium">Recorded Session assistance</dt>
+                    <dd>
+                        {recordedHints} requested hints
+                        {solutionEscape ? ' and a Solution Escape' : ''} were
+                        recorded for this Session. This assistance limits
+                        independence even when the original observation above
+                        reports less help.
+                    </dd>
+                </div>
+            )}
             <div>
                 <dt className="font-medium">Verification</dt>
                 <dd>
@@ -355,6 +377,12 @@ export function LearningProgress({
                                 <div className="mt-3">
                                     <EvidenceSummary
                                         evidence={observation.evidence}
+                                        recordedHints={
+                                            observation.recorded_hints_used
+                                        }
+                                        solutionEscape={
+                                            observation.solution_escape_used
+                                        }
                                     />
                                     <Correction observation={observation} />
                                 </div>

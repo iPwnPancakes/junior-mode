@@ -156,3 +156,18 @@ test('an escaped session cannot erase independent evidence from a separate sessi
     CoachingActivityEvent::factory()->create(['learner_id' => $this->learner->id, 'coaching_session_id' => $this->session->id, 'kind' => 'solution_escape']);
     expect(app(BuildLearningProgress::class)->handle($this->learner)['competencies'][0]['stage'])->toBe('independent');
 });
+
+test('durable requested hints prevent claimed unassisted evidence from becoming Independent', function () {
+    $this->postJson('/mcp', escapeTool('record-coaching-activity', escapeActivity($this->session, 'recorded-hint')))->assertJsonPath('result.isError', false);
+    $this->postJson('/mcp', escapeTool('record-learning-evidence', [
+        'schema_version' => 1, 'session_id' => $this->session->id, 'competency_id' => $this->objective->id, 'idempotency_key' => 'underreported-hint',
+        'activity' => 'implementation', 'assistance' => 'review_only', 'hints_used' => 0, 'ownership' => 'learner',
+        'learner_work' => 'Implemented input boundary validation', 'agent_work' => '',
+        'verification' => ['passed' => true, 'reference' => 'Boundary validation tests passed'],
+        'teach_back' => ['demonstrated' => true, 'summary' => 'Explained the zero boundary'],
+        'context_key' => 'validation', 'context_description' => 'HTTP input validation', 'source' => 'agent',
+    ]))->assertJsonPath('result.isError', false)
+        ->assertJsonPath('result.structuredContent.progress.competencies.0.stage', 'guided')
+        ->assertJsonPath('result.structuredContent.progress.competencies.0.assistance_trend.0.hints_used', 1)
+        ->assertJsonPath('result.structuredContent.progress.competencies.0.supporting_evidence.0.recorded_hints_used', 1);
+});

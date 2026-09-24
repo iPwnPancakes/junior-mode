@@ -45,6 +45,8 @@ test('IPC calls backend capabilities and rejects untrusted frames before side ef
         'beginPlatformAuthorization',
         'completePlatformAuthorization',
         'checkPlatformAuthorization',
+        'getCoachingPlugin',
+        'installCoachingPlugin',
         'getCodexState',
         'connectCodex',
         'startChat',

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, execFile } from 'node:child_process';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -19,6 +19,8 @@ test(
         const directory = await mkdtemp(
             join(tmpdir(), 'junior-real-coaching-'),
         );
+        const codexHome = join(directory, 'codex-home');
+        await mkdir(codexHome);
         const platform = fileURLToPath(
             new URL('../learning-platform', import.meta.url),
         );
@@ -96,13 +98,30 @@ test(
         );
         backend = await createBackend({
             settingsPath: join(directory, 'connection.json'),
+            pluginCommand: (command, args, options) =>
+                promisify(execFile)(command, args, {
+                    ...options,
+                    env: { ...options.env, CODEX_HOME: codexHome },
+                }),
             codexProcessFactory: (handlers) =>
-                (child = createCodexProcess(handlers)),
+                (child = createCodexProcess({
+                    ...handlers,
+                    env: { ...handlers.env, CODEX_HOME: codexHome },
+                    config: {
+                        ...handlers.config,
+                        model_provider: 'fixture',
+                        'model_providers.fixture.name': 'Fixture',
+                        'model_providers.fixture.base_url': `${url}/unused-model`,
+                        'model_providers.fixture.wire_api': 'responses',
+                        'model_providers.fixture.requires_openai_auth': false,
+                    },
+                })),
         });
         assert.equal(
             (await backend.checkPlatformAuthorization()).learner,
             'Integration Learner',
         );
+        await backend.installCoachingPlugin();
         const state = await backend.startChat({
             cwd: directory,
             coaching: true,
