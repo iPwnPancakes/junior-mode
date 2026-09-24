@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Actions\DeleteLearningAccount;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,13 +48,13 @@ class ProfileController extends Controller
     /**
      * Delete the user's profile.
      */
-    public function destroy(ProfileDeleteRequest $request): RedirectResponse
+    public function destroy(ProfileDeleteRequest $request, DeleteLearningAccount $delete): RedirectResponse
     {
+        /** @var User $user */
         $user = $request->user();
+        $delete->handle($user);
 
         Auth::logout();
-
-        $user->delete();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
