@@ -50,6 +50,10 @@ export async function createCodexService({
     statePath,
     processFactory = createCodexProcess,
     processOptions = () => ({}),
+    coachingSkill = async () => {
+        throw new Error('The coaching plugin is unavailable.');
+    },
+    coachingThreadConfig = () => ({}),
     authorizeCoaching = async () => {
         throw new Error('Authorize the learning platform first.');
     },
@@ -305,12 +309,16 @@ export async function createCodexService({
     async function resume(id) {
         const saved = state.threads.find((entry) => entry.id === id);
         if (!saved) throw new Error('Unknown Junior Mode chat.');
-        if (saved.coaching) await authorizeCoaching(saved.cwd);
+        if (saved.coaching) {
+            await coachingSkill();
+            await authorizeCoaching(saved.cwd);
+        }
         const { thread } = await transport.request('thread/resume', {
             threadId: id,
             cwd: saved.cwd,
             config: {
                 'mcp_servers.junior-mode.enabled': Boolean(saved.coaching),
+                ...coachingThreadConfig(Boolean(saved.coaching)),
             },
             ...policy,
         });
@@ -371,13 +379,19 @@ export async function createCodexService({
                 if (!(await stat(cwd)).isDirectory())
                     throw new Error('The repository path must be a directory.');
                 const coaching = input.coaching === true;
-                if (coaching) await authorizeCoaching(cwd);
+                if (coaching) {
+                    await coachingSkill();
+                    await authorizeCoaching(cwd);
+                }
                 await connect();
                 idle();
                 if (!state.account) throw new Error(state.error);
                 const { thread } = await transport.request('thread/start', {
                     cwd,
-                    config: { 'mcp_servers.junior-mode.enabled': coaching },
+                    config: {
+                        'mcp_servers.junior-mode.enabled': coaching,
+                        ...coachingThreadConfig(coaching),
+                    },
                     ...policy,
                 });
                 const saved = {
@@ -435,7 +449,10 @@ export async function createCodexService({
                     // item/started supplies the authoritative user message and ID.
                     const result = await transport.request('turn/start', {
                         threadId: thread.id,
-                        input: [{ type: 'text', text: text.trim() }],
+                        input: [
+                            ...(thread.coaching ? [await coachingSkill()] : []),
+                            { type: 'text', text: text.trim() },
+                        ],
                     });
                     if (thread.status === 'running')
                         thread.turnId = result.turn.id;

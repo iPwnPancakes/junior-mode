@@ -1,0 +1,20 @@
+{
+  "name": "junior-mode-desktop",
+  "interface": {
+    "displayName": "Junior Mode Desktop"
+  },
+  "plugins": [
+    {
+      "name": "junior-mode",
+      "source": {
+        "source": "local",
+        "path": "./plugins/junior-mode"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Models\CoachingActivityEvent;
 use App\Models\LearningEvidence;
 use App\Models\User;
 
@@ -14,14 +15,16 @@ class BuildLearningProgress
         $events = LearningEvidence::query()->where('learner_id', $learner->id)
             ->when($competencyId !== null, fn ($query) => $query->where('competency_id', $competencyId))
             ->with('coachingSession.workItem')->orderBy('id')->get();
+        $escapedSessions = CoachingActivityEvent::query()->where('learner_id', $learner->id)->where('kind', 'solution_escape')->pluck('coaching_session_id');
+        $hintCounts = CoachingActivityEvent::query()->where('learner_id', $learner->id)->where('kind', 'hint')->get()->countBy('coaching_session_id');
         $superseded = $events->pluck('supersedes_id')->filter();
         $current = $events->reject(fn (LearningEvidence $event) => $superseded->contains($event->id));
 
         return [
             'contract_version' => '1',
-            'projection_version' => '1',
+            'projection_version' => '2',
             'assessment_relationship' => 'Independence stages derive only from learning evidence. Mentor assessments remain separate judgments and do not advance these stages.',
-            'competencies' => $competencies->map(function ($competency) use ($current, $events): array {
+            'competencies' => $competencies->map(function ($competency) use ($current, $events, $escapedSessions, $hintCounts): array {
                 $evidence = $current->where('competency_id', $competency->id)->values();
                 $qualified = $evidence->filter(function (LearningEvidence $event): bool {
                     $data = $event->evidence;
@@ -34,7 +37,7 @@ class BuildLearningProgress
                         && in_array($data['activity'], ['implementation', 'debugging', 'modification'], true)
                         && $data['source'] !== 'automated_check';
                 });
-                $independent = $qualified->filter(fn (LearningEvidence $event) => $event->evidence['assistance'] === 'review_only' && $event->evidence['hints_used'] === 0);
+                $independent = $qualified->filter(fn (LearningEvidence $event) => ! $escapedSessions->contains($event->coaching_session_id) && $hintCounts->get($event->coaching_session_id, 0) === 0 && $event->evidence['assistance'] === 'review_only' && $event->evidence['hints_used'] === 0);
                 $transferable = $independent->contains(fn (LearningEvidence $first) => $independent->contains(fn (LearningEvidence $second) => ($second->evidence['transfer_from_id'] ?? null) === $first->id
                     && $first->coachingSession->workItem->fingerprint !== $second->coachingSession->workItem->fingerprint
                     && $first->evidence['context_key'] !== $second->evidence['context_key']
@@ -49,9 +52,9 @@ class BuildLearningProgress
                     'stage' => $stage,
                     'has_evidence' => $evidence->isNotEmpty(),
                     'mentor_assessment' => $assessment === null ? null : ['level' => $assessment->level->value, 'assessed_at' => $assessment->assessed_at->toIso8601String()],
-                    'supporting_evidence' => $evidence->map(fn (LearningEvidence $event) => ['id' => $event->id, 'session_id' => $event->coaching_session_id, 'qualifies' => $qualified->contains('id', $event->id), 'recorded_at' => $event->created_at->toIso8601String(), 'recorded_by_id' => $event->recorded_by_id, 'client_connection_id' => $event->client_connection_id, 'evidence' => $event->evidence])->all(),
+                    'supporting_evidence' => $evidence->map(fn (LearningEvidence $event) => ['id' => $event->id, 'session_id' => $event->coaching_session_id, 'qualifies' => $qualified->contains('id', $event->id), 'recorded_at' => $event->created_at->toIso8601String(), 'recorded_by_id' => $event->recorded_by_id, 'client_connection_id' => $event->client_connection_id, 'solution_escape_used' => $escapedSessions->contains($event->coaching_session_id), 'recorded_hints_used' => $hintCounts->get($event->coaching_session_id, 0), 'evidence' => $event->evidence])->all(),
                     'correction_history' => $events->where('competency_id', $competency->id)->whereNotNull('supersedes_id')->map(fn (LearningEvidence $event) => ['id' => $event->id, 'supersedes_id' => $event->supersedes_id, 'reason' => $event->evidence['correction_reason'], 'original_evidence' => $events->firstWhere('id', $event->supersedes_id)?->evidence])->values()->all(),
-                    'assistance_trend' => $evidence->map(fn (LearningEvidence $event) => ['evidence_id' => $event->id, 'assistance' => $event->evidence['assistance'], 'hints_used' => $event->evidence['hints_used']])->all(),
+                    'assistance_trend' => $evidence->map(fn (LearningEvidence $event) => ['evidence_id' => $event->id, 'assistance' => $event->evidence['assistance'], 'hints_used' => max($event->evidence['hints_used'], $hintCounts->get($event->coaching_session_id, 0))])->all(),
                     'suggested_support' => match ($stage) {
                         'introduced' => 'scaffolded', 'guided' => 'conceptual_hint', default => 'review_only'
                     },

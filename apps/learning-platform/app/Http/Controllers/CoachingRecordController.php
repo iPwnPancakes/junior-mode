@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\BuildLearningProgress;
 use App\Models\Assessment;
+use App\Models\CoachingActivityEvent;
 use App\Models\CoachingPriority;
 use App\Models\Competency;
 use App\Models\User;
@@ -28,6 +29,7 @@ class CoachingRecordController extends Controller
                 'name' => $learner->name,
                 'email' => $learner->email,
             ],
+            'learningActivities' => CoachingActivityEvent::query()->where('learner_id', $learner->id)->with('coachingSession.workItem')->latest('id')->get()->map(fn ($event): array => ['id' => $event->id, 'kind' => $event->kind, 'session_title' => $event->coachingSession->workItem->title, 'payload' => $event->payload]),
             'learningProgress' => app(BuildLearningProgress::class)->handle($learner),
             'learningReceipts' => $learner->coachingSessions()->whereNotNull('completed_at')->with('workItem')->get()->map(fn ($session): array => ['id' => $session->id, 'title' => $session->workItem->title, 'completion' => $session->completion]),
             'canManage' => $request->user()?->can('manageCoachingRecord', $learner) === true,

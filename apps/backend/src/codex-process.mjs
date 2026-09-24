@@ -4,6 +4,21 @@ import { delimiter, join } from 'node:path';
 import process from 'node:process';
 import { createInterface } from 'node:readline';
 
+export function codexEnvironment(env = {}) {
+    return {
+        ...process.env,
+        ...env,
+        PATH: [
+            process.env.PATH,
+            join(homedir(), '.local', 'bin'),
+            '/opt/homebrew/bin',
+            '/usr/local/bin',
+        ]
+            .filter(Boolean)
+            .join(delimiter),
+    };
+}
+
 // Keep Codex's protocol behind our own capabilities. Never expose arbitrary RPC
 // or executable arguments to the renderer.
 export function createCodexProcess({
@@ -28,18 +43,7 @@ export function createCodexProcess({
             cwd: homedir(),
             windowsHide: true,
             stdio: ['pipe', 'pipe', 'pipe'],
-            env: {
-                ...process.env,
-                ...env,
-                PATH: [
-                    process.env.PATH,
-                    join(homedir(), '.local', 'bin'),
-                    '/opt/homebrew/bin',
-                    '/usr/local/bin',
-                ]
-                    .filter(Boolean)
-                    .join(delimiter),
-            },
+            env: codexEnvironment(env),
         },
     );
     const pending = new Map();

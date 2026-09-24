@@ -79,6 +79,9 @@ app.whenReady()
     .then(async () => {
         const backend = await createBackend({
             settingsPath: join(app.getPath('userData'), 'connection.json'),
+            marketplaceRoot: app.isPackaged
+                ? join(process.resourcesPath, 'coaching-marketplace')
+                : fileURLToPath(new URL('../../', import.meta.url)),
             openExternal: (url) => shell.openExternal(url),
             credentialCodec: {
                 encrypt(value) {

@@ -2,6 +2,10 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 // Expose capabilities, never ipcRenderer, arbitrary HTTP, or filesystem access.
 contextBridge.exposeInMainWorld('juniorMode', {
+    getCoachingPlugin: () =>
+        ipcRenderer.invoke('junior-mode:getCoachingPlugin'),
+    installCoachingPlugin: () =>
+        ipcRenderer.invoke('junior-mode:installCoachingPlugin'),
     getCodexState: () => ipcRenderer.invoke('junior-mode:getCodexState'),
     connectCodex: () => ipcRenderer.invoke('junior-mode:connectCodex'),
     startChat: (input) => ipcRenderer.invoke('junior-mode:startChat', input),

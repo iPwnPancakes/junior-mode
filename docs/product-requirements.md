@@ -101,12 +101,12 @@ Only an explicitly requested Hint advances the count. Clarifying questions and f
 
 A Solution Escape is eligible only after:
 
-- Four requested Hints have been recorded, and
+- The configured number of requested Hints have been recorded (default four; `COACHING_SOLUTION_ESCAPE_REQUIRED_HINTS`), and
 - Codex has accepted at least one substantive Learner Attempt.
 
-A substantive attempt must engage with the reserved work through code, a diff, detailed pseudocode, or a concrete debugging hypothesis. Copying the prompt, saying "I don't know," or making an unrelated edit does not qualify. Codex records a short rationale when accepting an attempt; the backend enforces that an accepted attempt and four Hints exist.
+A substantive attempt must engage with the reserved work through code, a diff, detailed pseudocode, or a concrete debugging hypothesis. Copying the prompt, saying "I don't know," or making an unrelated edit does not qualify. Codex records a short rationale when accepting an attempt; the backend enforces that an accepted attempt and the configured requested Hint count exist.
 
-When requesting a Solution Escape, the Learner selects `still_stuck`, `deadline`, `blocked_by_environment`, or `other`, with optional explanatory text. The backend records the event and immediately sends an in-app and email notification to the Mentor. Notification failure must not block access to the solution. A Session using the escape can produce no stronger than a `partially_demonstrated` outcome.
+When requesting a Solution Escape, the Learner selects `still_stuck`, `deadline`, `blocked_by_environment`, or `other`, with optional explanatory text. The backend records an idempotent event visible in the Coaching Record. It sends no automatic Mentor notification; this follows the current project’s explicit-sharing boundary. A Session using the escape can produce no stronger than Guided in the evidence-derived independence projection; agent-only or solution-provided work does not qualify as a demonstrated competency. Existing valid evidence from other Sessions remains intact. Recorded requested Hints also prevent the same Session from qualifying as Independent even if an evidence submission claims zero hints.
 
 ### Explanation review
 
@@ -372,7 +372,7 @@ The first release must support this complete vertical slice:
 7. Codex reserves bounded work and conducts the attempt, Hint, explanation, and review loop.
 8. The backend enforces Solution Escape eligibility and records the Session.
 9. Both dashboards show the resulting evidence and Competency State.
-10. The Mentor receives escape notifications and completes a Weekly Review.
+10. The Mentor reviews shared learning records, including recorded Solution Escapes, and completes a Weekly Review.
 11. The Mentor creates and records a Mentor Exercise.
 12. Session artifacts expire while structured evidence remains.
 

@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { createBackend } from '../src/index.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -16,6 +17,14 @@ async function fixture(t) {
         enrolled = true,
         approved = false;
     const options = {
+        pluginCommand: async () => ({
+            stdout: JSON.stringify({
+                pluginId: 'junior-mode@junior-mode-desktop',
+                installedPath: fileURLToPath(
+                    new URL('../../../plugins/junior-mode', import.meta.url),
+                ),
+            }),
+        }),
         settingsPath: join(directory, 'connection.json'),
         fetchImpl: async (url, init) => {
             if (unavailable) throw new TypeError('private network details');
@@ -81,6 +90,7 @@ async function fixture(t) {
         await rm(directory, { recursive: true, force: true });
     });
     await backend.connectPlatform('http://platform.test');
+    await backend.installCoachingPlugin();
     return {
         directory,
         backend,

@@ -96,6 +96,12 @@ export function createBackendServer(backend) {
             }
             let result;
             switch (route) {
+                case 'GET /api/coaching-plugin':
+                    result = await backend.getCoachingPlugin();
+                    break;
+                case 'POST /api/coaching-plugin/install':
+                    result = await backend.installCoachingPlugin();
+                    break;
                 case 'GET /api/authorization':
                     result = await backend.getPlatformAuthorization();
                     break;

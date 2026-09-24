@@ -62,6 +62,17 @@ type Props = {
     learner: Learner;
     learningProgress?: Progress;
     learningReceipts?: LearningReceipt[];
+    learningActivities?: {
+        id: number;
+        kind: string;
+        session_title: string;
+        payload: {
+            summary: string;
+            reason?: string;
+            explanation?: string;
+            acceptance_rationale?: string;
+        };
+    }[];
     canManage: boolean;
     defaultPriorityDurationDays: number;
     competencies: Competency[];
@@ -242,6 +253,7 @@ export default function CoachingRecord({
     priorities,
     learningProgress,
     learningReceipts = [],
+    learningActivities = [],
 }: Props) {
     return (
         <>
@@ -267,6 +279,61 @@ export default function CoachingRecord({
                         progress={learningProgress}
                         receipts={learningReceipts}
                     />
+                )}
+
+                {learningActivities.length > 0 && (
+                    <SectionCard
+                        title="Coaching activity"
+                        description="Requested hints, accepted attempts and Solution Escapes remain visible in your learning record."
+                    >
+                        <div className="grid gap-3">
+                            {learningActivities.map((activity) => (
+                                <article
+                                    key={activity.id}
+                                    className="rounded-md border p-3 text-sm"
+                                >
+                                    <h3 className="font-medium">
+                                        {activity.kind.replaceAll('_', ' ')} ·{' '}
+                                        {activity.session_title}
+                                    </h3>
+                                    <p className="mt-1">
+                                        {activity.payload.summary}
+                                    </p>
+                                    {activity.payload.acceptance_rationale && (
+                                        <p className="mt-1">
+                                            Accepted because:{' '}
+                                            {
+                                                activity.payload
+                                                    .acceptance_rationale
+                                            }
+                                        </p>
+                                    )}
+                                    {activity.payload.reason && (
+                                        <p className="mt-1">
+                                            Reason:{' '}
+                                            {activity.payload.reason.replaceAll(
+                                                '_',
+                                                ' ',
+                                            )}
+                                        </p>
+                                    )}
+                                    {activity.payload.explanation && (
+                                        <p className="mt-1">
+                                            {activity.payload.explanation}
+                                        </p>
+                                    )}
+                                    {activity.kind === 'solution_escape' && (
+                                        <p className="mt-1 text-muted-foreground">
+                                            Evidence from this Session can
+                                            support Guided progress at most.
+                                            Agent-provided solutions do not
+                                            demonstrate independence.
+                                        </p>
+                                    )}
+                                </article>
+                            ))}
+                        </div>
+                    </SectionCard>
                 )}
 
                 {canManage && (

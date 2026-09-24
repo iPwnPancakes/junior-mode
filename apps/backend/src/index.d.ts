@@ -66,7 +66,14 @@ export interface CodexAnswer {
     answers?: Record<string, string>;
 }
 
+export interface CoachingPluginState {
+    installed: boolean;
+    version: string;
+}
+
 export interface BackendApi {
+    getCoachingPlugin(): Promise<CoachingPluginState>;
+    installCoachingPlugin(): Promise<CoachingPluginState>;
     getCodexState(): Promise<CodexState>;
     connectCodex(): Promise<CodexState>;
     startChat(input: { cwd: string; coaching?: boolean }): Promise<CodexState>;

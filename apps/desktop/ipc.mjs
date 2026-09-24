@@ -1,5 +1,7 @@
 export function registerBackendIpc(ipcMain, backend, isTrustedSender) {
     const methods = [
+        'getCoachingPlugin',
+        'installCoachingPlugin',
         'getCodexState',
         'connectCodex',
         'startChat',

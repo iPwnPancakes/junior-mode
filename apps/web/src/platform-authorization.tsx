@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { PlatformAuthorization } from '@junior-mode/backend';
+import type {
+    CoachingPluginState,
+    PlatformAuthorization,
+} from '@junior-mode/backend';
 import { backend } from './backend';
 
 export function PlatformAuthorizationPanel({
@@ -8,10 +11,15 @@ export function PlatformAuthorizationPanel({
     connected: boolean;
 }) {
     const [state, setState] = useState<PlatformAuthorization | null>(null);
+    const [plugin, setPlugin] = useState<CoachingPluginState | null>(null);
     const [name, setName] = useState('My Junior Mode desktop');
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
     useEffect(() => {
+        void backend
+            .getCoachingPlugin()
+            .then(setPlugin)
+            .catch(() => setError('Could not read coaching plugin state.'));
         void backend
             .getPlatformAuthorization()
             .then(setState)
@@ -103,6 +111,33 @@ export function PlatformAuthorizationPanel({
                     </button>
                 </div>
             )}
+            <h3>Coaching plugin</h3>
+            <p>
+                {plugin?.installed
+                    ? `Version ${plugin.version} installed`
+                    : 'Install the bundled coaching workflows before enabling coaching.'}
+            </p>
+            <p className="hint">
+                Installation adds only the Junior Mode plugin to Codex. Coaching
+                starts only when you enable it for a chat in an enrolled
+                repository.
+            </p>
+            <button
+                disabled={busy}
+                onClick={() => {
+                    setBusy(true);
+                    setError('');
+                    void backend
+                        .installCoachingPlugin()
+                        .then(setPlugin)
+                        .catch((error) => setError(error.message))
+                        .finally(() => setBusy(false));
+                }}
+            >
+                {plugin?.installed
+                    ? 'Reinstall coaching plugin'
+                    : 'Install coaching plugin'}
+            </button>
             {error && (
                 <p className="error" role="alert">
                     {error}
