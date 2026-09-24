@@ -96,6 +96,20 @@ export function createBackendServer(backend) {
             }
             let result;
             switch (route) {
+                case 'GET /api/authorization':
+                    result = await backend.getPlatformAuthorization();
+                    break;
+                case 'POST /api/authorization/begin':
+                    result = await backend.beginPlatformAuthorization(
+                        body.name,
+                    );
+                    break;
+                case 'POST /api/authorization/complete':
+                    result = await backend.completePlatformAuthorization();
+                    break;
+                case 'POST /api/authorization/check':
+                    result = await backend.checkPlatformAuthorization();
+                    break;
                 case 'GET /api/connection':
                     result = await backend.getConnection();
                     break;

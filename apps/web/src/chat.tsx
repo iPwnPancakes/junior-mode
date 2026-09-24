@@ -93,6 +93,7 @@ function RequestCard({
 export function Chat() {
     const [state, setState] = useState<CodexState | null>(null);
     const [cwd, setCwd] = useState('');
+    const [coaching, setCoaching] = useState(false);
     const [message, setMessage] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -178,7 +179,9 @@ export function Chat() {
                         }
                         onClick={() => void run(backend.connectCodex)}
                     >
-                        {state?.status === 'ready' ? 'Reconnect Codex' : 'Connect Codex'}
+                        {state?.status === 'ready'
+                            ? 'Reconnect Codex'
+                            : 'Connect Codex'}
                     </button>
                 </div>
                 {!state?.account && (
@@ -193,7 +196,9 @@ export function Chat() {
                     onSubmit={(event) => {
                         event.preventDefault();
                         follow.current = true;
-                        void run(() => backend.startChat({ cwd: cwd.trim() }));
+                        void run(() =>
+                            backend.startChat({ cwd: cwd.trim(), coaching }),
+                        );
                     }}
                 >
                     <label htmlFor="repository-path">Repository path</label>
@@ -215,6 +220,17 @@ export function Chat() {
                         {state?.host || 'the Codex machine'}. Codex can edit
                         files and run commands in it.
                     </p>
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={coaching}
+                            onChange={(event) =>
+                                setCoaching(event.target.checked)
+                            }
+                            disabled={busy || running}
+                        />{' '}
+                        Enable coaching for this enrolled repository
+                    </label>
                     <button disabled={!cwd.trim() || busy || running}>
                         New chat
                     </button>

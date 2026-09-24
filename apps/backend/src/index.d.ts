@@ -5,7 +5,16 @@ export interface ConnectionState {
     message: string | null;
 }
 
+export interface PlatformAuthorization {
+    status: string;
+    learner: string | null;
+    client: string | null;
+    authorizationUrl: string | null;
+    userCode: string | null;
+}
+
 export interface ChatSummary {
+    coaching?: boolean;
     id: string;
     cwd: string;
     title: string;
@@ -60,7 +69,7 @@ export interface CodexAnswer {
 export interface BackendApi {
     getCodexState(): Promise<CodexState>;
     connectCodex(): Promise<CodexState>;
-    startChat(input: { cwd: string }): Promise<CodexState>;
+    startChat(input: { cwd: string; coaching?: boolean }): Promise<CodexState>;
     openChat(id: string): Promise<CodexState>;
     sendMessage(text: string): Promise<CodexState>;
     interruptChat(): Promise<CodexState>;
@@ -70,6 +79,11 @@ export interface BackendApi {
         onError?: (message: string) => void,
     ): () => void;
 
+    openPlatformAuthorization(): Promise<void>;
+    getPlatformAuthorization(): Promise<PlatformAuthorization>;
+    beginPlatformAuthorization(name: string): Promise<PlatformAuthorization>;
+    completePlatformAuthorization(): Promise<PlatformAuthorization>;
+    checkPlatformAuthorization(): Promise<PlatformAuthorization>;
     getConnection(): Promise<ConnectionState>;
     connectPlatform(url: string): Promise<ConnectionState>;
     checkPlatform(): Promise<ConnectionState>;

@@ -89,6 +89,22 @@ const browserBackend: BackendApi = {
         void stream();
         return () => controller.abort();
     },
+    openPlatformAuthorization: async () => {
+        const state = await browserBackend.getPlatformAuthorization();
+        if (state.authorizationUrl)
+            window.open(
+                state.authorizationUrl,
+                '_blank',
+                'noopener,noreferrer',
+            );
+    },
+    getPlatformAuthorization: () => request('GET', '/api/authorization'),
+    beginPlatformAuthorization: (name) =>
+        request('POST', '/api/authorization/begin', { name }),
+    completePlatformAuthorization: () =>
+        request('POST', '/api/authorization/complete', {}),
+    checkPlatformAuthorization: () =>
+        request('POST', '/api/authorization/check', {}),
     getConnection: () => request('GET', '/api/connection'),
     connectPlatform: (url) => request('PUT', '/api/connection', { url }),
     checkPlatform: () => request('POST', '/api/connection/check'),

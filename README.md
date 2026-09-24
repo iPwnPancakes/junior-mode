@@ -60,7 +60,7 @@ The root `packageManager` field pins pnpm 11.25.0. If your Node installation doe
 | `pnpm check` | Client checks and the platform's complete CI checks |
 | `pnpm build` | Both frontend production builds |
 
-Open `http://localhost:5174` for the new client or `http://localhost:8000` for the learning platform. In the Learning platform tab, enter `http://localhost:8000` as the platform address. This checks compatibility and availability; it does not sign you in.
+Open `http://localhost:5174` for the new client or `http://localhost:8000` for the learning platform. In the Learning platform tab, enter `http://localhost:8000` as the platform address. This checks compatibility and availability. In Coaching authorization, name this client, open the approval page in your browser, sign in as a Learner, approve the displayed code, and select **I approved this client**. Codex login remains separate.
 
 | Process | Default address | Responsibility |
 | --- | --- | --- |
@@ -165,11 +165,13 @@ Junior Mode launches `codex app-server` as a child process and uses its JSON-RPC
 
 Threads use Codex's `workspace-write` sandbox and `on-request` approval policy, with approvals routed to the user. Command/file approval requests and questions appear in the chat. Unsupported request types return an explicit error; the app never silently grants them. Codex manages its own transcripts; Junior Mode stores an index of its own chat IDs and repository paths in `codex-chats.json` alongside its connection settings. It does not list unrelated Codex sessions.
 
-This is the chat foundation, with CLI-based sign-in and plain-text transcripts. It does not yet implement model selection, attachments, remote repository selection inside Electron, or enrollment/coaching-record synchronization. Opening a Codex chat does not enroll a repository or create a Coaching Session. See [ADR 0004](docs/adr/0004-run-codex-through-the-local-backend.md).
+Select **Enable coaching for this enrolled repository** when starting a chat to connect its managed Codex thread to the platform MCP. The backend resolves the origin Git remote against the authenticated Learner’s enrollments before starting and before each turn. Unknown repositories, revoked authorization, or an unavailable platform block coaching; plain chats remain available. Install the versioned Junior Mode plugin separately for its coaching policy; this connection supplies the authenticated MCP transport.
+
+This is the chat foundation, with CLI-based sign-in and plain-text transcripts. It does not yet implement model selection, attachments, or remote repository selection inside Electron. Opening a Codex chat does not enroll a repository or create a Coaching Session. See [ADR 0004](docs/adr/0004-run-codex-through-the-local-backend.md).
 
 ## State and verification
 
-Laravel owns the learning records and account data. The browser-preview backend saves its platform address in `apps/.local/connection.json` (overridable with `JUNIOR_SETTINGS_PATH`). Electron saves its address in `connection.json` under Electron's per-user application data directory. These are separate local settings, not copies of the learning database.
+Laravel owns the learning records and account data. The browser-preview backend saves its platform address in `apps/.local/connection.json` (overridable with `JUNIOR_SETTINGS_PATH`). Electron saves its address in `connection.json` under Electron's per-user application data directory. These are separate local settings, not copies of the learning database. Platform credentials live separately in `platform-credentials.json`: Electron uses operating-system encryption and refuses to save when secure storage is unavailable; browser preview uses a private mode-0600 file on the preview host. Disconnect removes the local credential and stops its Codex connection; revoke the named client on the platform to invalidate it server-side. The renderer receives only authorization status, names, and the short-lived browser approval link. Process-scoped Codex overrides and environment variables configure `/mcp`; no global Codex configuration is written.
 
 Run checks from the repository root:
 
@@ -181,5 +183,7 @@ pnpm test:electron
 ```
 
 Use `pnpm check:client` or `pnpm check:platform` for focused checks. Platform checks include PHP tests, PHPStan, Pint, frontend lint/format/types, and component tests. `pnpm build:client` builds only the new frontend and needs no PHP; `pnpm build:platform` builds the Laravel website and requires its Composer dependencies.
+
+With PHP dependencies and Codex CLI installed, `JUNIOR_TEST_REAL_CODEX=1 node --test apps/tests/coaching-platform.test.mjs` tests the real managed Codex-to-Laravel MCP path against a temporary SQLite database. It checks identity, enrollment, and Coaching Brief retrieval without a model turn.
 
 The Electron test requires the binary installed by `setup:desktop`, built frontend assets, and a display. On headless Linux, use `xvfb-run -a pnpm test:electron`. It uses local platform and Codex protocol fixtures to verify the IPC-to-HTTP path, streamed chats, approval/input handling, interruption, and history restoration without making model requests. CI also tests the packaged Linux application; see [.github/workflows/tests.yml](.github/workflows/tests.yml).

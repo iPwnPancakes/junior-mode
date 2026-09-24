@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import type { ConnectionState } from '@junior-mode/backend';
 import { backend, isDesktop } from './backend';
 import './style.css';
+import { PlatformAuthorizationPanel } from './platform-authorization';
 import { Chat } from './chat';
 
 const labels: Record<ConnectionState['status'], string> = {
@@ -200,6 +201,10 @@ function App() {
                             </div>
                         )}
                     </section>
+                    <PlatformAuthorizationPanel
+                        key={connection?.platformUrl}
+                        connected={Boolean(connection?.platformUrl)}
+                    />
                     <p className="footnote">
                         Connecting checks platform availability. It does not
                         sign you in.

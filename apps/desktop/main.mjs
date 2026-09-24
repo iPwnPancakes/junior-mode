@@ -2,7 +2,15 @@ import { join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { createBackend } from '@junior-mode/backend';
-import { app, BrowserWindow, dialog, ipcMain, Menu } from 'electron';
+import {
+    app,
+    BrowserWindow,
+    dialog,
+    ipcMain,
+    Menu,
+    safeStorage,
+    shell,
+} from 'electron';
 import { registerBackendIpc } from './ipc.mjs';
 import { rendererLocation, isRendererUrl } from './renderer-url.mjs';
 
@@ -71,6 +79,22 @@ app.whenReady()
     .then(async () => {
         const backend = await createBackend({
             settingsPath: join(app.getPath('userData'), 'connection.json'),
+            openExternal: (url) => shell.openExternal(url),
+            credentialCodec: {
+                encrypt(value) {
+                    if (
+                        !safeStorage.isEncryptionAvailable() ||
+                        (process.platform === 'linux' &&
+                            safeStorage.getSelectedStorageBackend() ===
+                                'basic_text')
+                    )
+                        throw new Error(
+                            'Secure credential storage is unavailable. Enable your operating system keyring and try again.',
+                        );
+                    return safeStorage.encryptString(value);
+                },
+                decrypt: (value) => safeStorage.decryptString(value),
+            },
         });
         app.on('before-quit', () => backend.dispose());
         backend.subscribeCodex((state) => {
