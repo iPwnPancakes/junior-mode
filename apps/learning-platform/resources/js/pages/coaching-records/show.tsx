@@ -1,9 +1,10 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { BookOpen, CalendarClock, ClipboardCheck, Target } from 'lucide-react';
 import { useState } from 'react';
-import { LearningProgress, type Progress, type LearningReceipt } from '@/components/learning-progress';
 import { EmptyState } from '@/components/empty-state';
 import { FormField } from '@/components/form-field';
+import { LearningProgress } from '@/components/learning-progress';
+import type { Progress, LearningReceipt } from '@/components/learning-progress';
 import { PageHeader } from '@/components/page-header';
 import { SectionCard } from '@/components/section-card';
 import { StatusBadge } from '@/components/status-badge';
@@ -261,7 +262,12 @@ export default function CoachingRecord({
                     }
                 />
 
-                {learningProgress && <LearningProgress progress={learningProgress} receipts={learningReceipts} />}
+                {learningProgress && (
+                    <LearningProgress
+                        progress={learningProgress}
+                        receipts={learningReceipts}
+                    />
+                )}
 
                 {canManage && (
                     <div className="grid gap-6 lg:grid-cols-2">

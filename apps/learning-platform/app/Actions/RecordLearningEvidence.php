@@ -19,6 +19,11 @@ class RecordLearningEvidence
     {
         abort_unless($actor->id === $session->learner_id || ($actor->isMentor() && $session->learner->mentor_id === $actor->id), 403);
         abort_if($client !== null && $client->learner_id !== $session->learner_id, 403);
+        foreach (['learner_work', 'agent_work'] as $field) {
+            if (array_key_exists($field, $input) && $input[$field] === null) {
+                $input[$field] = '';
+            }
+        }
         $data = Validator::make($input, self::rules())->validate();
         LearningContract::validateSummaries($data);
         if ($client !== null && ! in_array($data['source'], ['agent', 'automated_check'], true)) {
@@ -31,6 +36,12 @@ class RecordLearningEvidence
         $data['teach_back']['demonstrated'] = (bool) $data['teach_back']['demonstrated'];
         $data['hints_used'] = (int) $data['hints_used'];
         $data['competency_id'] = (int) $data['competency_id'];
+        $data['schema_version'] = (int) $data['schema_version'];
+        foreach (['transfer_from_id', 'supersedes_id'] as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = (int) $data[$field];
+            }
+        }
         $hash = LearningContract::hash($data);
 
         return DB::transaction(function () use ($actor, $session, $client, $data, $hash): LearningEvidence {

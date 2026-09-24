@@ -12,7 +12,10 @@ class LearningContract
         return hash('sha256', json_encode(self::canonicalize($data), JSON_THROW_ON_ERROR));
     }
 
-    /** @param array<mixed> $data @return array<mixed> */
+    /**
+     * @param  array<mixed>  $data
+     * @return array<mixed>
+     */
     private static function canonicalize(array $data): array
     {
         if (! array_is_list($data)) {

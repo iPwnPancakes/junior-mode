@@ -33,7 +33,7 @@ class CompleteCoachingSession
             User::query()->whereKey($session->learner_id)->lockForUpdate()->firstOrFail();
             $session->refresh();
             if ($session->status !== CoachingSessionStatus::Active) {
-                if ($session->completion_key === $key && LearningContract::hash($session->completion) === LearningContract::hash($data)) {
+                if ($session->completion !== null && $session->completion_key === $key && LearningContract::hash($session->completion) === LearningContract::hash($data)) {
                     return $session;
                 }
                 throw ValidationException::withMessages(['session_id' => 'This Session is already settled.']);

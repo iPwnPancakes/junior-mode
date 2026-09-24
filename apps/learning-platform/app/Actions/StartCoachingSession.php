@@ -19,7 +19,7 @@ class StartCoachingSession
     public function __construct(private BuildCoachingBrief $buildCoachingBrief) {}
 
     /**
-     * @param  array{title: string, description: string, external_url?: string|null, detected_technologies: array<int, string>, likely_catalog_branches: array<int, int>}  $context
+     * @param  array{title: string, description: string, external_url?: string|null, detected_technologies: array<int, string>, likely_catalog_branches: array<int, int>, idempotency_key?: string, desired_outcome?: string, acceptance_criteria?: array<int, string>, responsibility_split?: array{agent: string, learner: string}}  $context
      */
     public function handle(
         User $learner,
@@ -75,6 +75,10 @@ class StartCoachingSession
                 $existingSession->update(['last_active_at' => now()]);
 
                 return $existingSession->load(['workItem.enrolledRepository', 'primaryLearningObjective', 'clientConnection']);
+            }
+
+            if ($existingSession !== null) {
+                throw ValidationException::withMessages(['idempotency_key' => 'An active Session already exists for this Work Item and objective. Resume it using the session ID from get-coaching-brief.']);
             }
 
             $workItem = WorkItem::query()->create([

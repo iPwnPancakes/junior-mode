@@ -2,12 +2,15 @@
 
 use App\Actions\BuildLearningProgress;
 use App\Actions\RecordLearningEvidence;
+use App\BaselineAssessmentLevel;
+use App\Models\Assessment;
 use App\Models\ClientConnection;
 use App\Models\CoachingSession;
 use App\Models\Competency;
 use App\Models\EnrolledRepository;
 use App\Models\LearningEvidence;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 function evidenceCall(string $name, array $arguments): array
@@ -85,6 +88,7 @@ test('agent work tests alone solutions hints and automatic checks cannot establi
     'tests without understanding' => [['teach_back' => ['demonstrated' => false, 'summary' => 'No teach-back attempted']], 'introduced'],
     'unverified work' => [['verification' => ['passed' => false, 'reference' => 'Tests fail']], 'introduced'],
     'provided solution' => [['assistance' => 'solution_provided'], 'introduced'],
+    'explanation alone' => [['activity' => 'explanation'], 'introduced'],
     'demonstration' => [['activity' => 'demonstration'], 'introduced'],
     'automatic test result' => [['source' => 'automated_check'], 'introduced'],
     'hint used' => [['hints_used' => 1], 'guided'],
@@ -121,4 +125,52 @@ test('another learner cannot read write complete or correct the session', functi
     $this->postJson('/mcp', evidenceCall('complete-coaching-session', ['contract_version' => '1', 'session_id' => $this->session->id]))->assertJsonPath('result.isError', true);
     expect(fn () => app(RecordLearningEvidence::class)->handle($other, $this->session, evidencePayload($this->session->id, $this->competency->id)))->toThrow(HttpException::class);
     expect(LearningEvidence::query()->count())->toBe(0);
+});
+
+test('client source cannot impersonate a mentor and secrets are rejected', function () {
+    foreach ([['source' => 'mentor'], ['source' => 'learner'], ['learner_work' => 'api_key=secret-value'], ['teach_back' => ['demonstrated' => true, 'summary' => '```php source code```']]] as $invalid) {
+        $this->postJson('/mcp', evidenceCall('record-learning-evidence', evidencePayload($this->session->id, $this->competency->id, $invalid)))->assertJsonPath('result.isError', true);
+    }
+    expect(LearningEvidence::query()->count())->toBe(0);
+});
+
+test('nested object order does not change idempotency and fresh brief resumes the active task', function () {
+    $payload = evidencePayload($this->session->id, $this->competency->id);
+    $this->postJson('/mcp', evidenceCall('record-learning-evidence', $payload))->assertJsonPath('result.isError', false);
+    $this->postJson('/mcp', evidenceCall('record-learning-evidence', [...$payload, 'verification' => ['reference' => 'Profile validation tests passed', 'passed' => true]]))->assertJsonPath('result.isError', false);
+    $this->postJson('/mcp', evidenceCall('start-coaching-session', [...$this->startup, 'idempotency_key' => 'new-key']))->assertJsonPath('result.isError', true);
+    $this->postJson('/mcp', evidenceCall('get-coaching-brief', [...$this->startup, 'contract_version' => '1']))->assertJsonPath('result.structuredContent.active_sessions.0.id', $this->session->id)->assertJsonPath('result.structuredContent.coaching_brief.0.learning_progress.stage', 'guided');
+    expect(LearningEvidence::query()->count())->toBe(1)->and(CoachingSession::query()->count())->toBe(1);
+});
+
+test('Learners and their Mentor can append browser corrections with empty agent contributions', function () {
+    $payload = evidencePayload($this->session->id, $this->competency->id, ['agent_work' => '', 'assistance' => 'review_only', 'hints_used' => 0]);
+    $this->postJson('/mcp', evidenceCall('record-learning-evidence', $payload))->assertJsonPath('result.isError', false);
+    $original = LearningEvidence::query()->sole();
+    $this->actingAs($this->learner)->get(route('coaching-records.show', $this->learner))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->where('learningProgress.competencies.0.stage', 'independent'));
+    $correction = ['evidence' => [...$original->evidence, 'ownership' => 'agent', 'learner_work' => ''], 'correction_reason' => 'The agent supplied this implementation'];
+    $this->actingAs($this->learner)->post(route('learning-evidence-corrections.store', $original), $correction)->assertSessionHasNoErrors()->assertRedirect(route('coaching-records.show', $this->learner));
+    $this->post(route('learning-evidence-corrections.store', $original), $correction)->assertSessionHasNoErrors();
+    expect(LearningEvidence::query()->count())->toBe(2)->and(app(BuildLearningProgress::class)->handle($this->learner)['competencies'][0]['stage'])->toBe('introduced');
+    $latest = LearningEvidence::query()->latest('id')->first();
+    $this->actingAs($this->learner->mentor)->post(route('learning-evidence-corrections.store', $latest), ['evidence' => [...$latest->evidence, 'ownership' => 'learner', 'learner_work' => 'Learner implemented it'], 'correction_reason' => 'Reviewed authorship together'])->assertSessionHasNoErrors();
+    expect(LearningEvidence::query()->latest('id')->first()->evidence['source'])->toBe('mentor');
+    $this->actingAs(User::factory()->mentor()->create())->post(route('learning-evidence-corrections.store', $latest), $correction)->assertForbidden();
+});
+
+test('same context or task reference does not establish transferable progress', function () {
+    $first = evidencePayload($this->session->id, $this->competency->id, ['assistance' => 'review_only', 'hints_used' => 0]);
+    $this->postJson('/mcp', evidenceCall('record-learning-evidence', $first))->assertJsonPath('result.isError', false);
+    $original = LearningEvidence::query()->sole();
+    $this->postJson('/mcp', evidenceCall('start-coaching-session', [...$this->startup, 'idempotency_key' => 'other-start', 'title' => 'Different task']))->assertJsonPath('result.isError', false);
+    $session = CoachingSession::query()->latest('id')->first();
+    $second = [...$first, 'session_id' => $session->id, 'idempotency_key' => 'other-evidence', 'transfer_from_id' => (string) $original->id, 'material_difference' => 'Both tasks validate an HTTP profile endpoint'];
+    $this->postJson('/mcp', evidenceCall('record-learning-evidence', $second))->assertJsonPath('result.structuredContent.progress.competencies.0.stage', 'independent');
+    $this->postJson('/mcp', evidenceCall('record-learning-evidence', [...$second, 'idempotency_key' => 'no-explanation', 'material_difference' => '']))->assertJsonPath('result.isError', true);
+});
+
+test('MCP exposes evidence schemas without direct stage mutation and Mentor assessments remain separate', function () {
+    $this->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertOk()->assertJsonFragment(['name' => 'record-learning-evidence'])->assertJsonFragment(['name' => 'get-progress']);
+    Assessment::factory()->create(['learner_id' => $this->learner->id, 'competency_id' => $this->competency->id, 'assessed_by_id' => $this->learner->mentor_id, 'level' => BaselineAssessmentLevel::Independent]);
+    $this->postJson('/mcp', evidenceCall('get-progress', ['contract_version' => '1']))->assertJsonPath('result.structuredContent.competencies.0.stage', 'introduced')->assertJsonPath('result.structuredContent.competencies.0.has_evidence', false)->assertJsonPath('result.structuredContent.competencies.0.mentor_assessment.level', 'independent');
 });

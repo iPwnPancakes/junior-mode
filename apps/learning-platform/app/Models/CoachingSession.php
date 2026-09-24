@@ -17,6 +17,14 @@ use Illuminate\Support\Carbon;
  * @property int $primary_learning_objective_id
  * @property int $client_connection_id
  * @property CoachingSessionStatus $status
+ * @property array<string, mixed>|null $completion
+ * @property array<int, string>|null $acceptance_criteria
+ * @property array{agent: string, learner: string}|null $responsibility_split
+ * @property string|null $completion_key
+ * @property string|null $idempotency_key
+ * @property string|null $desired_outcome
+ * @property string|null $request_hash
+ * @property Carbon|null $completed_at
  * @property Carbon $last_active_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

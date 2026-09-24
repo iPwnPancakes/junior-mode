@@ -7,7 +7,7 @@ use App\Models\User;
 
 class BuildLearningProgress
 {
-    /** @return array<string, mixed> */
+    /** @return array{contract_version: string, projection_version: string, assessment_relationship: string, competencies: array<int, array<string, mixed>>} */
     public function handle(User $learner, ?int $competencyId = null): array
     {
         $competencies = $learner->competencies()->when($competencyId !== null, fn ($query) => $query->whereKey($competencyId))->get();
@@ -31,7 +31,7 @@ class BuildLearningProgress
                         && $data['verification']['passed'] === true
                         && $data['teach_back']['demonstrated'] === true
                         && $data['assistance'] !== 'solution_provided'
-                        && $data['activity'] !== 'demonstration'
+                        && in_array($data['activity'], ['implementation', 'debugging', 'modification'], true)
                         && $data['source'] !== 'automated_check';
                 });
                 $independent = $qualified->filter(fn (LearningEvidence $event) => $event->evidence['assistance'] === 'review_only' && $event->evidence['hints_used'] === 0);
@@ -49,7 +49,7 @@ class BuildLearningProgress
                     'stage' => $stage,
                     'has_evidence' => $evidence->isNotEmpty(),
                     'mentor_assessment' => $assessment === null ? null : ['level' => $assessment->level->value, 'assessed_at' => $assessment->assessed_at->toIso8601String()],
-                    'supporting_evidence' => $evidence->map(fn (LearningEvidence $event) => ['id' => $event->id, 'session_id' => $event->coaching_session_id, 'qualifies' => $qualified->contains('id', $event->id), 'recorded_at' => $event->created_at?->toIso8601String(), 'recorded_by_id' => $event->recorded_by_id, 'client_connection_id' => $event->client_connection_id, 'evidence' => $event->evidence])->all(),
+                    'supporting_evidence' => $evidence->map(fn (LearningEvidence $event) => ['id' => $event->id, 'session_id' => $event->coaching_session_id, 'qualifies' => $qualified->contains('id', $event->id), 'recorded_at' => $event->created_at->toIso8601String(), 'recorded_by_id' => $event->recorded_by_id, 'client_connection_id' => $event->client_connection_id, 'evidence' => $event->evidence])->all(),
                     'correction_history' => $events->where('competency_id', $competency->id)->whereNotNull('supersedes_id')->map(fn (LearningEvidence $event) => ['id' => $event->id, 'supersedes_id' => $event->supersedes_id, 'reason' => $event->evidence['correction_reason'], 'original_evidence' => $events->firstWhere('id', $event->supersedes_id)?->evidence])->values()->all(),
                     'assistance_trend' => $evidence->map(fn (LearningEvidence $event) => ['evidence_id' => $event->id, 'assistance' => $event->evidence['assistance'], 'hints_used' => $event->evidence['hints_used']])->all(),
                     'suggested_support' => match ($stage) {

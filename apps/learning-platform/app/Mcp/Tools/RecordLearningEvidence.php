@@ -24,7 +24,7 @@ class RecordLearningEvidence extends Tool
             return Response::error('The authenticated client connection could not be resolved.');
         }
         $data = $request->validate(['session_id' => ['required', 'integer'], ...\App\Actions\RecordLearningEvidence::rules()]);
-        $session = $learner->coachingSessions()->find($data['session_id']);
+        $session = $learner->coachingSessions()->whereKey($data['session_id'])->first();
         if ($session === null) {
             return Response::error('The Session could not be resolved.');
         }

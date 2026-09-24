@@ -15,7 +15,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Start or continue one Coaching Session after choosing exactly one primary Learning Objective from the current Coaching Brief. Contract versions: 1 (legacy), 2 (Help Me with explicit ownership and idempotency). Prefer version 2.')]
+#[Description('Start or continue one Coaching Session after choosing exactly one primary Learning Objective from the current Coaching Brief. Contract versions: 1 (legacy), 2 (Help Me with explicit ownership and idempotency). Prefer version 2. One active Session per repository, Work Item and objective; different Work Items may run concurrently.')]
 class StartCoachingSession extends Tool
 {
     public function __construct(
@@ -58,8 +58,13 @@ class StartCoachingSession extends Tool
             'external_url' => $validated['external_url'] ?? null,
             'detected_technologies' => $validated['detected_technologies'],
             'likely_catalog_branches' => $validated['likely_catalog_branches'],
-            ...array_intersect_key($validated, array_flip(['idempotency_key', 'desired_outcome', 'acceptance_criteria', 'responsibility_split'])),
         ];
+        if ($validated['contract_version'] === '2') {
+            $context['idempotency_key'] = $validated['idempotency_key'];
+            $context['desired_outcome'] = $validated['desired_outcome'];
+            $context['acceptance_criteria'] = $validated['acceptance_criteria'];
+            $context['responsibility_split'] = $validated['responsibility_split'];
+        }
         $session = $this->startCoachingSession->handle(
             $learner,
             $clientConnection,
