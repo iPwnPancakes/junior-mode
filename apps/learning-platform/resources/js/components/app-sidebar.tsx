@@ -21,6 +21,7 @@ import { dashboard } from '@/routes';
 import { index as clientConnections } from '@/routes/client-connections';
 import { index as coachingSessions } from '@/routes/coaching-sessions';
 import { index as enrolledRepositories } from '@/routes/enrolled-repositories';
+import { index as handoffs } from '@/routes/handoffs';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -48,6 +49,7 @@ export function AppSidebar() {
             href: coachingSessions(),
             icon: MessagesSquare,
         },
+        { title: 'Mentor handoffs', href: handoffs(), icon: MessagesSquare },
     ];
 
     return (
