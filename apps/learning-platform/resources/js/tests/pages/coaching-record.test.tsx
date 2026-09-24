@@ -159,3 +159,40 @@ describe('Coaching record', () => {
         ).not.toBeInTheDocument();
     });
 });
+
+it('shows recorded Solution Escapes and the evidence limit to the Learner', () => {
+    renderPage(
+        <CoachingRecord
+            learner={learner}
+            canManage={false}
+            defaultPriorityDurationDays={7}
+            competencies={competencies}
+            assessments={[]}
+            priorities={[]}
+            learningActivities={[
+                {
+                    id: 1,
+                    kind: 'solution_escape',
+                    session_title: 'Validate profiles',
+                    payload: {
+                        summary:
+                            'Requested the complete solution after four hints',
+                        reason: 'still_stuck',
+                    },
+                },
+            ]}
+        />,
+    );
+    expect(
+        screen.getByRole('heading', { name: 'Coaching activity' }),
+    ).toBeInTheDocument();
+    expect(
+        screen.getByText('Requested the complete solution after four hints'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Reason: still stuck')).toBeInTheDocument();
+    expect(
+        screen.getByText(
+            /Evidence from this Session can support Guided progress at most/,
+        ),
+    ).toBeInTheDocument();
+});
