@@ -110,13 +110,38 @@ test('Mentor deletion with attached Learners is actionable and never deletes the
     }
 });
 
-test('former Mentor attribution prevents cascading evidence deletion in other Learner records', function () {
+test('a single historical attribution prevents deleting another Learner record', function (string $recordKey, string $column) {
     $records = populatedLearningRecord();
-    $records['learner']->update(['mentor_id' => User::factory()->mentor()->create()->id]);
-    $this->actingAs($records['mentor'])->delete(route('profile.destroy'), ['password' => 'password'])->assertSessionHasErrors('account');
-    expect($records['correction']->fresh())->not->toBeNull();
-    $this->assertAuthenticatedAs($records['mentor']);
-});
+    $formerMentor = $records['mentor'];
+    $replacement = User::factory()->mentor()->create();
+    $records['learner']->update(['mentor_id' => $replacement->id]);
+    $attributions = [
+        'invitation' => 'mentor_id',
+        'correction' => 'recorded_by_id',
+        'assessment' => 'assessed_by_id',
+        'priority' => 'created_by_id',
+        'proposal' => 'reviewed_by_id',
+        'baseline' => 'reviewed_by_id',
+        'merge' => 'merged_by_id',
+    ];
+    foreach ($attributions as $key => $field) {
+        DB::table($records[$key]->getTable())->where('id', $records[$key]->id)->update([$field => $replacement->id]);
+    }
+    DB::table($records[$recordKey]->getTable())->where('id', $records[$recordKey]->id)->update([$column => $formerMentor->id]);
+    $this->actingAs($formerMentor)->delete(route('profile.destroy'), ['password' => 'password'])->assertSessionHasErrors('account');
+    foreach ($records as $model) {
+        expect($model->fresh())->not->toBeNull();
+    }
+    $this->assertAuthenticatedAs($formerMentor);
+})->with([
+    ['invitation', 'mentor_id'],
+    ['correction', 'recorded_by_id'],
+    ['assessment', 'assessed_by_id'],
+    ['priority', 'created_by_id'],
+    ['proposal', 'reviewed_by_id'],
+    ['baseline', 'reviewed_by_id'],
+    ['merge', 'merged_by_id'],
+]);
 
 test('failure at the final account deletion rolls back all learning record removal', function () {
     $records = populatedLearningRecord();

@@ -26,10 +26,9 @@ class ExportLearningRecord
     /** @return array<string, mixed> */
     public function handle(User $learner): array
     {
-        abort_unless($learner->isLearner(), 403);
-
         return DB::transaction(function () use ($learner): array {
             $owner = User::query()->whereKey($learner->id)->lockForUpdate()->firstOrFail();
+            abort_unless($owner->isLearner(), 403);
 
             return $this->snapshot($owner);
         });
