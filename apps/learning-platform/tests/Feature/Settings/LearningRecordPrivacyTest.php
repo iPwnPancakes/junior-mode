@@ -7,8 +7,8 @@ use App\Models\CatalogProposal;
 use App\Models\CatalogProposalNode;
 use App\Models\ClientAuthorization;
 use App\Models\ClientConnection;
-use App\Models\CoachingPriority;
 use App\Models\CoachingActivityEvent;
+use App\Models\CoachingPriority;
 use App\Models\CoachingSession;
 use App\Models\Competency;
 use App\Models\CompetencyMerge;
@@ -39,7 +39,7 @@ function populatedLearningRecord(): array
     $priority = CoachingPriority::factory()->create(['learner_id' => $learner->id, 'competency_id' => $competency->id, 'created_by_id' => $mentor->id]);
     $work = WorkItem::factory()->create(['learner_id' => $learner->id, 'enrolled_repository_id' => $repository->id]);
     $session = CoachingSession::factory()->create(['learner_id' => $learner->id, 'work_item_id' => $work->id, 'primary_learning_objective_id' => $competency->id, 'client_connection_id' => $client->id]);
-    $activity = CoachingActivityEvent::query()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'client_connection_id' => $client->id, 'kind' => 'hint', 'idempotency_key' => 'hint-1', 'request_hash' => hash('sha256', 'hint-1'), 'payload' => ['summary' => 'Check the JSON response header.']]);
+    $activity = CoachingActivityEvent::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'client_connection_id' => $client->id, 'kind' => 'hint', 'payload' => ['summary' => 'Check the JSON response header.']]);
     $evidence = LearningEvidence::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'competency_id' => $competency->id, 'recorded_by_id' => $learner->id, 'client_connection_id' => $client->id]);
     $correction = LearningEvidence::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'competency_id' => $competency->id, 'recorded_by_id' => $mentor->id, 'client_connection_id' => $client->id, 'supersedes_id' => $evidence->id]);
     $handoff = HandoffSnapshot::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'mentor_id' => $mentor->id, 'shared_at' => now()]);
