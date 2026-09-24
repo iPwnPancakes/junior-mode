@@ -1,0 +1,254 @@
+:root {
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    color: #25352f;
+    background: #f6f7f3;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+}
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+}
+button,
+input {
+    font: inherit;
+}
+button {
+    cursor: pointer;
+}
+button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+header {
+    height: 88px;
+    border-bottom: 1px solid #dde3da;
+    padding: 0 5vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    font-weight: 600;
+    font-size: 18px;
+}
+.mark {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    background: #294c3b;
+    color: #f5f7ef;
+    border-radius: 10px;
+    font-size: 15px;
+    letter-spacing: -1px;
+}
+.surface {
+    font-size: 12px;
+    color: #607165;
+    padding: 7px 12px;
+    border: 1px solid #d6ded4;
+    border-radius: 99px;
+}
+main {
+    max-width: 840px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 70px 28px 48px;
+    flex: 1;
+}
+.eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    color: #65776a;
+}
+h1 {
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 1.1;
+    margin: 18px 0;
+}
+p {
+    font-size: 14px;
+    line-height: 1.65;
+    color: #65716a;
+}
+.intro > p {
+    font-size: 16px;
+    margin: 0 0 38px;
+}
+.connection-card {
+    background: #fff;
+    border: 1px solid #dde3da;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px #25352f04;
+}
+.card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+h2 {
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    margin: 8px 0;
+}
+.status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: #647269;
+    white-space: nowrap;
+}
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #a3ada5;
+}
+.connected .dot {
+    background: #398553;
+    box-shadow: 0 0 0 3px #edf5ee;
+}
+.unavailable .dot {
+    background: #b97046;
+}
+form {
+    margin-top: 26px;
+}
+label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 9px;
+}
+.input-row {
+    display: flex;
+    gap: 10px;
+}
+input {
+    width: 100%;
+    min-width: 0;
+    background: #fafbf8;
+    border: 1px solid #dce3d9;
+    border-radius: 7px;
+    padding: 12px;
+    font-size: 14px;
+    color: inherit;
+}
+input:focus {
+    outline: 2px solid #8caa93;
+    outline-offset: 2px;
+}
+button {
+    border: 1px solid transparent;
+    border-radius: 7px;
+    padding: 12px 20px;
+    background: #294c3b;
+    color: white;
+    font-size: 13px;
+    white-space: nowrap;
+}
+button:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+button:focus-visible,
+a:focus-visible {
+    outline: 2px solid #73977e;
+    outline-offset: 3px;
+}
+.hint {
+    font-size: 11px;
+    margin-bottom: 0;
+}
+.error {
+    color: #a14132;
+    font-size: 13px;
+}
+.connection-detail {
+    border-top: 1px solid #e7ebe4;
+    margin-top: 25px;
+    padding-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+.connection-detail strong,
+.connection-detail span {
+    display: block;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+.connection-detail span {
+    color: #79867b;
+    margin-top: 5px;
+    font-size: 11px;
+}
+.actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.secondary {
+    background: #f2f5ef;
+    color: #3b5947;
+    padding: 8px 12px;
+}
+.text-button {
+    padding: 8px 0;
+    background: transparent;
+    color: #69776b;
+}
+.footnote {
+    font-size: 11px;
+    text-align: center;
+    margin-top: 20px;
+}
+footer {
+    padding: 22px 5vw;
+    border-top: 1px solid #e4e8df;
+    display: flex;
+    justify-content: space-between;
+    color: #879286;
+    font-size: 11px;
+}
+@media (max-width: 600px) {
+    header {
+        height: 72px;
+    }
+    main {
+        padding: 40px 20px;
+    }
+    .connection-card {
+        padding: 22px;
+    }
+    .card-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .input-row {
+        flex-direction: column;
+    }
+    footer {
+        gap: 16px;
+    }
+}
