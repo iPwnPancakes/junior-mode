@@ -6,8 +6,10 @@ use App\Mcp\Tools\BeginCatalogInterview;
 use App\Mcp\Tools\CompleteCoachingSession;
 use App\Mcp\Tools\GetCoachingBrief;
 use App\Mcp\Tools\GetProgress;
+use App\Mcp\Tools\GetHandoffContext;
 use App\Mcp\Tools\IdentifyClient;
 use App\Mcp\Tools\RecordLearningEvidence;
+use App\Mcp\Tools\PrepareHandoff;
 use App\Mcp\Tools\ResolveRepositoryEnrollment;
 use App\Mcp\Tools\StartCoachingSession;
 use App\Mcp\Tools\SubmitCatalogProposal;
@@ -25,6 +27,8 @@ class JuniorModeServer extends Server
         IdentifyClient::class,
         ResolveRepositoryEnrollment::class,
         GetCoachingBrief::class,
+        GetHandoffContext::class,
+        PrepareHandoff::class,
         StartCoachingSession::class,
         RecordLearningEvidence::class,
         CompleteCoachingSession::class,
