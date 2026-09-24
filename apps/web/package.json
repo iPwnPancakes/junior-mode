@@ -9,7 +9,7 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@junior-mode/backend": "0.1.0",
+        "@junior-mode/backend": "workspace:*",
         "react": "^19.2.0",
         "react-dom": "^19.2.0"
     },

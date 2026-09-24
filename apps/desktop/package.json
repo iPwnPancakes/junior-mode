@@ -13,7 +13,7 @@
         "build": "electron-builder"
     },
     "dependencies": {
-        "@junior-mode/backend": "0.1.0"
+        "@junior-mode/backend": "workspace:*"
     },
     "devDependencies": {
         "electron": "44.4.5",

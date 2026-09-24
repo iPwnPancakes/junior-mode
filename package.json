@@ -1,0 +1,41 @@
+{
+    "name": "junior-mode",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": ">=22.12.0"
+    },
+    "scripts": {
+        "dev": "node apps/scripts/dev.mjs",
+        "dev:client": "node apps/scripts/dev.mjs --client",
+        "dev:platform": "node apps/scripts/dev.mjs --platform",
+        "dev:web": "pnpm --filter @junior-mode/web dev",
+        "dev:backend": "pnpm --filter @junior-mode/backend dev",
+        "dev:desktop": "pnpm --filter junior-mode-desktop start",
+        "setup:platform": "composer --working-dir=apps/learning-platform setup",
+        "setup:desktop": "node apps/scripts/install-electron.mjs",
+        "build": "pnpm run build:client && pnpm run build:platform",
+        "build:client": "pnpm --filter @junior-mode/web build",
+        "build:platform": "pnpm --filter @junior-mode/learning-platform build",
+        "build:desktop": "pnpm run build:client && pnpm --filter junior-mode-desktop build",
+        "pack:desktop": "pnpm run build:client && pnpm --filter junior-mode-desktop run pack",
+        "check:platform": "composer --working-dir=apps/learning-platform ci:check",
+        "check:client": "pnpm run lint:client && pnpm run typecheck && pnpm run test:client",
+        "check": "pnpm run check:client && pnpm run check:platform",
+        "lint:client": "cd apps && eslint .",
+        "test:client": "pnpm --filter @junior-mode/backend test && pnpm --filter junior-mode-desktop test",
+        "test:electron": "cd apps && node --test tests/electron.test.mjs",
+        "typecheck": "pnpm --filter @junior-mode/web typecheck"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.19.0",
+        "concurrently": "^9.0.1",
+        "eslint": "^9.19.0",
+        "eslint-plugin-react-hooks": "^7.0.0",
+        "globals": "^15.14.0",
+        "playwright": "^1.63.0",
+        "typescript-eslint": "^8.23.0",
+        "vite": "^8.0.0"
+    },
+    "packageManager": "pnpm@11.25.0"
+}

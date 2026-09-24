@@ -50,7 +50,7 @@ async function createWindow() {
     } catch {
         dialog.showErrorBox(
             'Could not open Junior Mode',
-            'For development, start the web preview and check your --url address or SSH tunnel. For the bundled app, run npm run build from apps/ first.',
+            'For development, start the web preview and check your --url address or SSH tunnel. For the bundled app, run pnpm build:client from the repository root first.',
         );
         app.quit();
     }

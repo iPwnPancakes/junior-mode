@@ -1,0 +1,5 @@
+packages:
+  - 'apps/*'
+
+# Keep dependency lifecycle scripts disabled; install Electron explicitly.
+ignoreScripts: true

@@ -41,7 +41,7 @@ The renderer must not communicate directly with Laravel or receive unrestricted 
 
 ## Consequences
 
-The client can develop and build independently of PHP. Laravel retains its own Composer dependencies, npm dependencies, lockfiles, and checks. It is deliberately excluded from the Node workspaces declared in `apps/package.json`.
+The client can develop and build independently of PHP. A root pnpm workspace manages JavaScript dependencies for all four applications, with one `pnpm-lock.yaml` and per-application manifests. Internal Node dependencies use `workspace:*`. Laravel retains its own Composer dependencies, `composer.lock`, and checks inside `apps/learning-platform`. Root commands orchestrate development and validation without coupling the runtime applications.
 
 Packaged Electron applications load bundled frontend assets. During development, Electron may load a Vite URL, including one forwarded from a remote server. This changes where the frontend assets come from, but the Electron backend still runs on the user's computer. In browser preview, the Node backend runs on the machine hosting the preview. Consequently, `localhost` in the platform address refers to the backend's machine in each mode.
 
