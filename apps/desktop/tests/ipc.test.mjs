@@ -91,6 +91,21 @@ test('packaged desktop always uses bundled UI and ignores remote dev overrides',
     );
 });
 
+test('desktop development accepts direct server IPs while keeping the exact renderer boundary', () => {
+    const renderer = rendererLocation(
+        ['--url=http://192.168.0.54:5174'],
+        {},
+        false,
+    );
+    assert.equal(renderer, 'http://192.168.0.54:5174/');
+    assert.equal(
+        isRendererUrl('http://192.168.0.54:5174/#chat', renderer),
+        true,
+    );
+    assert.equal(isRendererUrl('http://192.168.0.55:5174/', renderer), false);
+    assert.equal(isRendererUrl('http://192.168.0.54:8000/', renderer), false);
+});
+
 test('only the configured renderer document may use IPC or navigate', () => {
     const renderer = 'http://localhost:5173/';
     assert.equal(isRendererUrl(`${renderer}#section`, renderer), true);

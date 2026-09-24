@@ -158,8 +158,8 @@ function App() {
                                 </button>
                             </div>
                             <p id="connection-help" className="hint">
-                                Use your platform’s HTTPS address, or localhost
-                                for a local installation.
+                                Use your platform’s HTTP or HTTPS address,
+                                including its port for a development server.
                             </p>
                         </form>
                         {error && (

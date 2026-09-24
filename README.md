@@ -104,6 +104,26 @@ The frontend build goes to `apps/desktop/renderer`. `pnpm pack:desktop` builds a
 
 ## Preview from another machine
 
+For direct LAN or VPN access without an SSH tunnel, start the stack on t3:
+
+```bash
+pnpm run dev --host 0.0.0.0
+```
+
+Open `http://T3_IP:5174` in your browser. Or, from your local checkout, launch Electron:
+
+```bash
+pnpm dev:desktop --url=http://T3_IP:5174
+```
+
+In the Learning platform tab, connect to `http://T3_IP:8000`. Use the server's reachable IP, not `0.0.0.0` (which is only the listening address). The client UI and Laravel listen on the chosen interface; the Node backend remains on `127.0.0.1:4318` behind Vite's proxy. Electron continues to run Codex locally.
+
+`--host=0.0.0.0` also works. Set `DEV_HOST` in `apps/.env` to make it your default; the command-line flag takes precedence. Without either, the stack still binds to loopback. To use the Laravel website's own hot-reloaded UI on port 8000, use `--host T3_IP` so its Vite asset URLs advertise a reachable address, and allow port 5173 too.
+
+Direct HTTP is intended for trusted networks. Restrict access with your network/firewall: the development preview exposes Codex capabilities without login. No firewall rules are changed by this command.
+
+Alternatively, keep loopback binding and use SSH forwarding:
+
 On the t3 server, run `pnpm run dev` from the repository root. On your own machine, forward the client web port:
 
 ```bash

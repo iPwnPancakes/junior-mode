@@ -4,12 +4,8 @@ export function serverUrl(value) {
     }
 
     const url = new URL(value);
-    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-
-    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback)) {
-        throw new Error(
-            'Use HTTPS, or HTTP on localhost through an SSH tunnel.',
-        );
+    if (!['https:', 'http:'].includes(url.protocol)) {
+        throw new Error('Use an HTTP or HTTPS server address.');
     }
 
     if (

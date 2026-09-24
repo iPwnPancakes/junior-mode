@@ -2,12 +2,19 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import concurrently from 'concurrently';
 import { loadEnv } from 'vite';
+import { devOptions } from './dev-options.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const apps = fileURLToPath(new URL('../', import.meta.url));
 const env = { ...loadEnv('development', apps, ''), ...process.env };
-const client = !process.argv.includes('--platform');
-const platform = !process.argv.includes('--client');
+const { host, client, platform } = devOptions(process.argv.slice(2), env);
+env.DEV_HOST = host;
+const displayHost =
+    host === '0.0.0.0' || host === '::'
+        ? 'T3_IP'
+        : host.includes(':')
+          ? `[${host}]`
+          : host;
 
 for (const [name, fallback] of [
     ['WEB_PORT', 5174],
@@ -29,8 +36,12 @@ if (env.WEB_PORT === env.BACKEND_PORT) {
 const commands = [];
 
 if (client) {
-    console.log(`Junior Mode browser preview: http://localhost:${env.WEB_PORT}`);
-    console.log(`Forward port ${env.WEB_PORT} from your machine.`);
+    console.log(
+        `Junior Mode browser preview: http://${displayHost}:${env.WEB_PORT}`,
+    );
+    console.log(
+        `Listening on ${host}. The Node backend stays on 127.0.0.1:${env.BACKEND_PORT}.`,
+    );
     commands.push(
         { name: 'backend', command: 'pnpm run dev:backend', env, cwd: root },
         { name: 'web', command: 'pnpm run dev:web', env, cwd: root },
@@ -38,17 +49,19 @@ if (client) {
 }
 
 if (platform) {
-    const cwd = fileURLToPath(new URL('../learning-platform/', import.meta.url));
-    console.log('Learning platform: http://localhost:8000');
+    const cwd = fileURLToPath(
+        new URL('../learning-platform/', import.meta.url),
+    );
+    console.log(`Learning platform: http://${displayHost}:8000`);
     commands.push(
         {
             name: 'laravel',
-            command: 'php artisan serve --host=127.0.0.1 --port=8000 --tries=1',
+            command: `php artisan serve --host=${host} --port=8000 --tries=1`,
             cwd,
         },
         {
             name: 'platform-vite',
-            command: 'pnpm run dev --host=127.0.0.1 --port=5173 --strictPort',
+            command: `pnpm run dev --host=${host} --port=5173 --strictPort`,
             cwd,
         },
         {

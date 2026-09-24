@@ -21,7 +21,7 @@ export default defineConfig(({ command }) => ({
         },
     ],
     server: {
-        host: '127.0.0.1',
+        host: process.env.DEV_HOST || '127.0.0.1',
         port: Number(process.env.WEB_PORT || 5174),
         strictPort: true,
         allowedHosts: process.env.PREVIEW_HOST

@@ -174,20 +174,26 @@ test('browser transport invokes the same backend and rejects cross-origin writes
     );
 });
 
-test('accepts HTTPS and loopback origins, but never credentials or executable URLs', () => {
+test('accepts direct HTTP/HTTPS origins, but never credentials or executable URLs', () => {
     assert.equal(
         serverUrl('https://junior.example/'),
         'https://junior.example',
     );
     assert.equal(serverUrl('http://localhost:8000'), 'http://localhost:8000');
     assert.equal(serverUrl('http://[::1]:8000'), 'http://[::1]:8000');
+    for (const origin of [
+        'http://192.168.0.54:8000',
+        'http://100.87.148.87:8000',
+        'http://[fd7a:115c:a1e0::1]:8000',
+        'http://t3.example:8000',
+    ]) {
+        assert.equal(serverUrl(origin), origin);
+    }
 
     for (const value of [
         null,
         {},
         'invalid',
-        'http://remote.example',
-        'http://localhost.evil.test',
         'file:///tmp/app',
         'javascript:alert(1)',
         'https://user:secret@example.com',
