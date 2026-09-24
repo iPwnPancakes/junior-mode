@@ -3,6 +3,8 @@ import { BookOpen, CalendarClock, ClipboardCheck, Target } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { FormField } from '@/components/form-field';
+import { LearningProgress } from '@/components/learning-progress';
+import type { Progress, LearningReceipt } from '@/components/learning-progress';
 import { PageHeader } from '@/components/page-header';
 import { SectionCard } from '@/components/section-card';
 import { StatusBadge } from '@/components/status-badge';
@@ -58,6 +60,8 @@ type Priority = {
 type ExpirationMode = 'default_duration' | 'custom_date' | 'until_removed';
 type Props = {
     learner: Learner;
+    learningProgress?: Progress;
+    learningReceipts?: LearningReceipt[];
     canManage: boolean;
     defaultPriorityDurationDays: number;
     competencies: Competency[];
@@ -236,6 +240,8 @@ export default function CoachingRecord({
     competencies,
     assessments,
     priorities,
+    learningProgress,
+    learningReceipts = [],
 }: Props) {
     return (
         <>
@@ -255,6 +261,13 @@ export default function CoachingRecord({
                         </Link>
                     }
                 />
+
+                {learningProgress && (
+                    <LearningProgress
+                        progress={learningProgress}
+                        receipts={learningReceipts}
+                    />
+                )}
 
                 {canManage && (
                     <div className="grid gap-6 lg:grid-cols-2">

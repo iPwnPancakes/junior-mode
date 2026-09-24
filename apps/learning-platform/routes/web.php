@@ -23,6 +23,7 @@ use App\Http\Controllers\CompetencyTemplateCopyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnrolledRepositoryController;
 use App\Http\Controllers\LearnerInvitationController;
+use App\Http\Controllers\LearningEvidenceCorrectionController;
 use App\Http\Controllers\MentorCoachingSettingsController;
 use App\Http\Controllers\RepositoryEnrollmentController;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('repository-enrollments.destroy');
     Route::get('learners/{learner}/competency-catalog', CompetencyCatalogController::class)
         ->name('competency-catalogs.show');
+    Route::post('learning-evidence/{learningEvidence}/corrections', LearningEvidenceCorrectionController::class)->name('learning-evidence-corrections.store');
     Route::get('learners/{learner}/coaching-record', CoachingRecordController::class)
         ->name('coaching-records.show');
     Route::post('learners/{learner}/assessments', [AssessmentController::class, 'store'])
