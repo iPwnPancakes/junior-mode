@@ -1,5 +1,7 @@
 # Junior Mode
 
+Repository structure and development commands: [README.md](README.md). Desktop/platform boundaries: [ADR 0003](docs/adr/0003-separate-desktop-client-from-learning-platform.md).
+
 ## Applications
 
 - `apps/learning-platform` — Laravel learning platform, including its React/Inertia UI. Read its `AGENTS.md` before working there. Run Composer, Artisan, and platform npm commands from that directory.
