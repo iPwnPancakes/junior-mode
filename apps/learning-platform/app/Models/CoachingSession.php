@@ -21,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['learner_id', 'work_item_id', 'primary_learning_objective_id', 'client_connection_id', 'status', 'last_active_at'])]
+#[Fillable(['learner_id', 'work_item_id', 'primary_learning_objective_id', 'client_connection_id', 'status', 'last_active_at', 'idempotency_key', 'request_hash', 'desired_outcome', 'acceptance_criteria', 'responsibility_split', 'completion', 'completion_key', 'completed_at'])]
 class CoachingSession extends Model
 {
     /** @use HasFactory<CoachingSessionFactory> */
@@ -56,6 +56,6 @@ class CoachingSession extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['status' => CoachingSessionStatus::class, 'last_active_at' => 'datetime'];
+        return ['status' => CoachingSessionStatus::class, 'last_active_at' => 'datetime', 'acceptance_criteria' => 'array', 'responsibility_split' => 'array', 'completion' => 'array', 'completed_at' => 'datetime'];
     }
 }

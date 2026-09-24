@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\BuildLearningProgress;
 use App\Models\Assessment;
 use App\Models\CoachingPriority;
 use App\Models\Competency;
@@ -27,6 +28,8 @@ class CoachingRecordController extends Controller
                 'name' => $learner->name,
                 'email' => $learner->email,
             ],
+            'learningProgress' => app(BuildLearningProgress::class)->handle($learner),
+            'learningReceipts' => $learner->coachingSessions()->whereNotNull('completed_at')->with('workItem')->get()->map(fn ($session): array => ['id' => $session->id, 'title' => $session->workItem->title, 'completion' => $session->completion]),
             'canManage' => $request->user()?->can('manageCoachingRecord', $learner) === true,
             'defaultPriorityDurationDays' => $request->user()?->isMentor() === true
                 ? $request->user()->default_priority_duration_days

@@ -15,7 +15,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Start or continue one Coaching Session after choosing exactly one primary Learning Objective from the current Coaching Brief. Contract version: 1.')]
+#[Description('Start or continue one Coaching Session after choosing exactly one primary Learning Objective from the current Coaching Brief. Contract versions: 1 (legacy), 2 (Help Me with explicit ownership and idempotency). Prefer version 2.')]
 class StartCoachingSession extends Tool
 {
     public function __construct(
@@ -58,6 +58,7 @@ class StartCoachingSession extends Tool
             'external_url' => $validated['external_url'] ?? null,
             'detected_technologies' => $validated['detected_technologies'],
             'likely_catalog_branches' => $validated['likely_catalog_branches'],
+            ...array_intersect_key($validated, array_flip(['idempotency_key', 'desired_outcome', 'acceptance_criteria', 'responsibility_split'])),
         ];
         $session = $this->startCoachingSession->handle(
             $learner,
@@ -74,7 +75,11 @@ class StartCoachingSession extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'contract_version' => $schema->string()->enum(['1'])->required(),
+            'contract_version' => $schema->string()->enum(['1', '2'])->required(),
+            'idempotency_key' => $schema->string()->description('Required in version 2; retry exactly the same request with the same key.'),
+            'desired_outcome' => $schema->string(),
+            'acceptance_criteria' => $schema->array()->items($schema->string()),
+            'responsibility_split' => $schema->object(['agent' => $schema->string()->required(), 'learner' => $schema->string()->required()]),
             'repository_identity' => $schema->string()->required(),
             'title' => $schema->string()->description('The unchanged sanitized Work Item title used for the Coaching Brief.')->required(),
             'description' => $schema->string()->description('The unchanged sanitized Work Item description used for the Coaching Brief.')->required(),
@@ -89,7 +94,15 @@ class StartCoachingSession extends Tool
     private function rules(): array
     {
         return [
-            'contract_version' => ['required', 'string', 'in:1'],
+            'contract_version' => ['required', 'string', 'in:1,2'],
+            'idempotency_key' => ['required_if:contract_version,2', 'string', 'max:100'],
+            'desired_outcome' => ['required_if:contract_version,2', 'string', 'max:1000'],
+            'acceptance_criteria' => ['required_if:contract_version,2', 'array', 'min:1', 'max:10'],
+            'acceptance_criteria.*' => ['required', 'string', 'max:500'],
+            'responsibility_split' => ['required_if:contract_version,2', 'array:agent,learner'],
+            'responsibility_split.agent' => ['required_with:responsibility_split', 'string', 'max:1000'],
+            'responsibility_split.learner' => ['required_with:responsibility_split', 'string', 'max:1000'],
+            'stage' => ['prohibited'], 'score' => ['prohibited'], 'learner_id' => ['prohibited'],
             'repository_identity' => ['required', 'uuid'],
             'title' => ['required', 'string', 'max:200'],
             'description' => ['required', 'string', 'max:2000'],
@@ -106,10 +119,13 @@ class StartCoachingSession extends Tool
     private function serializeSession(CoachingSession $session): array
     {
         return [
-            'contract_version' => '1',
+            'contract_version' => $session->idempotency_key === null ? '1' : '2',
             'session' => [
                 'id' => $session->id,
                 'status' => $session->status->value,
+                'desired_outcome' => $session->desired_outcome,
+                'acceptance_criteria' => $session->acceptance_criteria,
+                'responsibility_split' => $session->responsibility_split,
                 'work_item' => [
                     'title' => $session->workItem->title,
                     'description' => $session->workItem->description,

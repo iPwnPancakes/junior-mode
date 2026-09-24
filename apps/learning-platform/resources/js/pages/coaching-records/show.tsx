@@ -1,6 +1,7 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { BookOpen, CalendarClock, ClipboardCheck, Target } from 'lucide-react';
 import { useState } from 'react';
+import { LearningProgress, type Progress, type LearningReceipt } from '@/components/learning-progress';
 import { EmptyState } from '@/components/empty-state';
 import { FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
@@ -58,6 +59,8 @@ type Priority = {
 type ExpirationMode = 'default_duration' | 'custom_date' | 'until_removed';
 type Props = {
     learner: Learner;
+    learningProgress?: Progress;
+    learningReceipts?: LearningReceipt[];
     canManage: boolean;
     defaultPriorityDurationDays: number;
     competencies: Competency[];
@@ -236,6 +239,8 @@ export default function CoachingRecord({
     competencies,
     assessments,
     priorities,
+    learningProgress,
+    learningReceipts = [],
 }: Props) {
     return (
         <>
@@ -255,6 +260,8 @@ export default function CoachingRecord({
                         </Link>
                     }
                 />
+
+                {learningProgress && <LearningProgress progress={learningProgress} receipts={learningReceipts} />}
 
                 {canManage && (
                     <div className="grid gap-6 lg:grid-cols-2">

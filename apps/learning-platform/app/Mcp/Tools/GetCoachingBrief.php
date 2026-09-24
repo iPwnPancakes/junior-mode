@@ -3,6 +3,7 @@
 namespace App\Mcp\Tools;
 
 use App\Actions\BuildCoachingBrief;
+use App\Actions\BuildLearningProgress;
 use App\Models\EnrolledRepository;
 use App\Models\User;
 use App\Support\CurrentClientConnection;
@@ -48,6 +49,8 @@ class GetCoachingBrief extends Tool
             'likely_catalog_branches' => $validated['likely_catalog_branches'],
         ];
         $brief = $this->buildCoachingBrief->handle($learner, $context);
+        $progress = collect(app(BuildLearningProgress::class)->handle($learner)['competencies'])->keyBy('competency_id');
+        $brief = array_map(fn (array $entry): array => [...$entry, 'learning_progress' => collect($progress->get($entry['competency_id'], []))->only(['stage', 'has_evidence', 'suggested_support', 'next_stage_requirement'])->all()], $brief);
 
         return Response::structured([
             'contract_version' => '1',
