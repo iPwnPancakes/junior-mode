@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
+import { createCodexService } from './codex.mjs';
 import { serverUrl } from './server-url.mjs';
 
 const emptyState = () => ({
@@ -9,7 +10,15 @@ const emptyState = () => ({
     message: null,
 });
 
-export async function createBackend({ settingsPath, fetchImpl = fetch }) {
+export async function createBackend({
+    settingsPath,
+    fetchImpl = fetch,
+    codexProcessFactory,
+}) {
+    const codex = await createCodexService({
+        statePath: join(dirname(settingsPath), 'codex-chats.json'),
+        processFactory: codexProcessFactory,
+    });
     let state = emptyState();
     let pending = Promise.resolve();
 
@@ -81,6 +90,7 @@ export async function createBackend({ settingsPath, fetchImpl = fetch }) {
     }
 
     return {
+        ...codex,
         getConnection: () => serialize(() => ({ ...state })),
         connectPlatform: (value) =>
             serialize(async () => {

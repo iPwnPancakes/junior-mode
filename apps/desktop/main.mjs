@@ -72,6 +72,16 @@ app.whenReady()
         const backend = await createBackend({
             settingsPath: join(app.getPath('userData'), 'connection.json'),
         });
+        app.on('before-quit', () => backend.dispose());
+        backend.subscribeCodex((state) => {
+            if (
+                window &&
+                !window.isDestroyed() &&
+                isRendererUrl(window.webContents.getURL(), renderer)
+            ) {
+                window.webContents.send('junior-mode:codex-state', state);
+            }
+        });
         registerBackendIpc(ipcMain, backend, (event) =>
             Boolean(
                 window &&

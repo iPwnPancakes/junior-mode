@@ -39,6 +39,21 @@ test('IPC calls backend capabilities and rejects untrusted frames before side ef
             ),
         /Untrusted/,
     );
+    for (const method of [
+        'getCodexState',
+        'connectCodex',
+        'startChat',
+        'openChat',
+        'sendMessage',
+        'interruptChat',
+        'respondToCodex',
+    ]) {
+        assert.throws(
+            () => handlers.get(`junior-mode:${method}`)({}, {}),
+            /Untrusted/,
+        );
+    }
+    assert.equal((await backend.getCodexState()).status, 'disconnected');
     assert.deepEqual(requests, []);
     const connected = await handlers.get('junior-mode:connectPlatform')(
         trustedFrame,

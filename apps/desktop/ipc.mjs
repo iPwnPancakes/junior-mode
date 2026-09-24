@@ -1,5 +1,12 @@
 export function registerBackendIpc(ipcMain, backend, isTrustedSender) {
     const methods = [
+        'getCodexState',
+        'connectCodex',
+        'startChat',
+        'openChat',
+        'sendMessage',
+        'interruptChat',
+        'respondToCodex',
         'getConnection',
         'connectPlatform',
         'checkPlatform',

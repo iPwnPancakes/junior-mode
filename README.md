@@ -60,7 +60,7 @@ The root `packageManager` field pins pnpm 11.25.0. If your Node installation doe
 | `pnpm check` | Client checks and the platform's complete CI checks |
 | `pnpm build` | Both frontend production builds |
 
-Open `http://localhost:5174` for the new client or `http://localhost:8000` for the learning platform. In the client, enter `http://localhost:8000` as the platform address. This checks compatibility and availability; it does not sign you in.
+Open `http://localhost:5174` for the new client or `http://localhost:8000` for the learning platform. In the Learning platform tab, enter `http://localhost:8000` as the platform address. This checks compatibility and availability; it does not sign you in.
 
 | Process | Default address | Responsibility |
 | --- | --- | --- |
@@ -127,7 +127,25 @@ pnpm setup:desktop
 pnpm dev:desktop --url=http://localhost:5174
 ```
 
-Connect to `http://localhost:8000` inside Electron. Your machine only needs Node/pnpm and Electron's operating-system dependencies; PHP and the database stay on t3. In this mode, the frontend assets come from the server, but platform requests originate in Electron on your machine. The extra tunnel makes Laravel reachable there. If Laravel already runs locally, omit the second forwarding rule. Local Electron shell/backend changes require updating the local checkout and restarting Electron; frontend edits hot-reload from the remote Vite server.
+In Electron’s Learning platform tab, connect to `http://localhost:8000`. Your machine only needs Node/pnpm and Electron's operating-system dependencies; PHP and the database stay on t3. In this mode, the frontend assets come from the server, but platform requests originate in Electron on your machine. The extra tunnel makes Laravel reachable there. If Laravel already runs locally, omit the second forwarding rule. Local Electron shell/backend changes require updating the local checkout and restarting Electron; frontend edits hot-reload from the remote Vite server.
+
+## Codex chats
+
+The **Chat** tab runs Codex against repositories on the machine hosting the backend. In Electron this is your own computer, even when the UI loads from remote Vite. Browser preview runs Codex on the preview server and identifies that host above the repository field.
+
+Install [Codex CLI](https://learn.chatgpt.com/docs/cli) on that machine, then sign in:
+
+```bash
+codex login
+```
+
+Open Junior Mode, select **Connect Codex**, enter an absolute path to an existing repository, and select **New chat**. Messages stream into the chat, commands and file changes appear as expandable activity, and **Stop** interrupts an active turn. **Recent chats** resumes chats after restarting the application. One turn runs at a time in each Junior Mode backend.
+
+Junior Mode launches `codex app-server` as a child process and uses its JSON-RPC stdio protocol. It uses the existing Codex login and configured model/provider. The protocol was checked against Codex CLI 0.155.1. If the executable is not on PATH, set `JUNIOR_CODEX_PATH` to its absolute path in the environment launching Electron or the browser backend. GUI launches also search `~/.local/bin`, `/opt/homebrew/bin`, and `/usr/local/bin`.
+
+Threads use Codex's `workspace-write` sandbox and `on-request` approval policy, with approvals routed to the user. Command/file approval requests and questions appear in the chat. Unsupported request types return an explicit error; the app never silently grants them. Codex manages its own transcripts; Junior Mode stores an index of its own chat IDs and repository paths in `codex-chats.json` alongside its connection settings. It does not list unrelated Codex sessions.
+
+This is the chat foundation, with CLI-based sign-in and plain-text transcripts. It does not yet implement model selection, attachments, remote repository selection inside Electron, or enrollment/coaching-record synchronization. Opening a Codex chat does not enroll a repository or create a Coaching Session. See [ADR 0004](docs/adr/0004-run-codex-through-the-local-backend.md).
 
 ## State and verification
 
@@ -144,4 +162,4 @@ pnpm test:electron
 
 Use `pnpm check:client` or `pnpm check:platform` for focused checks. Platform checks include PHP tests, PHPStan, Pint, frontend lint/format/types, and component tests. `pnpm build:client` builds only the new frontend and needs no PHP; `pnpm build:platform` builds the Laravel website and requires its Composer dependencies.
 
-The Electron test requires the binary installed by `setup:desktop`, built frontend assets, and a display. On headless Linux, use `xvfb-run -a pnpm test:electron`. It starts a test platform fixture and verifies the IPC-to-HTTP path. CI also tests the packaged Linux application; see [.github/workflows/tests.yml](.github/workflows/tests.yml).
+The Electron test requires the binary installed by `setup:desktop`, built frontend assets, and a display. On headless Linux, use `xvfb-run -a pnpm test:electron`. It uses local platform and Codex protocol fixtures to verify the IPC-to-HTTP path, streamed chats, approval/input handling, interruption, and history restoration without making model requests. CI also tests the packaged Linux application; see [.github/workflows/tests.yml](.github/workflows/tests.yml).

@@ -47,7 +47,7 @@ Packaged Electron applications load bundled frontend assets. During development,
 
 Browser preview covers the shared UI and service behavior. Native desktop capabilities require Electron testing or an explicit browser alternative. Electron IPC handlers validate the sending frame and expose specific operations rather than arbitrary network or filesystem access.
 
-The initial implementation only checks platform compatibility through `GET /api/v1/health` and saves the chosen address. A successful connection check is not authentication. Account sign-in and desktop coaching workflows remain to be implemented; this decision does not select their authentication protocol.
+The initial implementation only checks platform compatibility through `GET /api/v1/health` and saves the chosen address. A successful connection check is not authentication. Learning-platform account sign-in and desktop coaching workflows remain to be implemented; this decision does not select their authentication protocol. Local Codex chat execution is specified separately in [ADR 0004](0004-run-codex-through-the-local-backend.md).
 
 This decision adds a client surface without replacing [ADR 0001](0001-separate-coaching-policy-from-learning-state.md): the existing Codex plugin still owns its coaching policy and the platform still owns durable learning state.
 

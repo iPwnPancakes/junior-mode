@@ -252,3 +252,220 @@ footer {
         gap: 16px;
     }
 }
+
+nav {
+    display: flex;
+    gap: 8px;
+}
+nav button {
+    padding: 8px 14px;
+}
+.chat-layout {
+    max-width: 1500px;
+    padding: 32px 28px;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 32px;
+}
+.chat-sidebar h1 {
+    font-size: 30px;
+    margin: 14px 0;
+}
+.runtime-note {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+.codex-connection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 24px 0 10px;
+}
+.chat-sidebar form button {
+    margin-top: 12px;
+    width: 100%;
+}
+.chat-list-title {
+    font-size: 14px;
+    margin: 32px 0 14px;
+}
+.chat-list {
+    display: grid;
+    gap: 8px;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+.chat-link {
+    text-align: left;
+    white-space: normal;
+    padding: 12px;
+    background: transparent;
+    color: inherit;
+    border: 1px solid #dde3da;
+}
+.chat-link.active {
+    background: #e8eee5;
+    border-color: #91aa96;
+}
+.chat-link strong,
+.chat-link span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+.chat-link span {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-top: 5px;
+}
+.chat-panel {
+    border: 1px solid #dde3da;
+    border-radius: 14px;
+    background: white;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 205px);
+    min-height: 580px;
+}
+.chat-heading {
+    border-bottom: 1px solid #e7ebe4;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.chat-heading h2 {
+    font-size: 17px;
+    overflow-wrap: anywhere;
+}
+.transcript {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    scroll-behavior: auto;
+}
+.chat-empty {
+    margin: 60px auto;
+    max-width: 360px;
+    text-align: center;
+}
+.chat-message {
+    margin-bottom: 24px;
+}
+.chat-message strong {
+    display: block;
+    font-size: 11px;
+    margin-bottom: 8px;
+    color: #65776a;
+}
+.chat-message > div {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.65;
+    font-size: 14px;
+}
+.chat-message.userMessage {
+    padding: 16px;
+    border-radius: 10px;
+    background: #f2f5ef;
+}
+.tool-item {
+    border: 1px solid #e3e8df;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+.tool-item summary {
+    cursor: pointer;
+    font-size: 12px;
+}
+pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow: auto;
+}
+.chat-controls {
+    border-top: 1px solid #e7ebe4;
+    padding: 16px 24px;
+    max-height: 55%;
+    overflow-y: auto;
+}
+.composer {
+    margin: 0;
+}
+textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 70px;
+    max-height: 220px;
+    font: inherit;
+    font-size: 14px;
+    color: inherit;
+    background: #fafbf8;
+    border: 1px solid #dce3d9;
+    border-radius: 8px;
+    padding: 12px;
+}
+textarea:focus {
+    outline: 2px solid #8caa93;
+    outline-offset: 2px;
+}
+.composer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    margin-top: 10px;
+}
+.codex-request {
+    padding: 16px;
+    background: #f7f3e7;
+    border: 1px solid #e3d8b3;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+.codex-request h3 {
+    font-size: 14px;
+    margin-top: 0;
+}
+.codex-request form {
+    margin-top: 12px;
+}
+.codex-request input {
+    margin: 8px 0 14px;
+}
+.answer-option {
+    margin: 4px;
+    white-space: normal;
+    text-align: left;
+}
+@media (max-width: 800px) {
+    header {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 88px;
+        gap: 12px;
+        padding: 16px 20px;
+    }
+    .chat-layout {
+        grid-template-columns: 1fr;
+        padding: 24px 16px;
+        gap: 24px;
+    }
+    .chat-panel {
+        height: 750px;
+    }
+    .chat-list {
+        max-height: 180px;
+    }
+    .chat-heading {
+        flex-wrap: wrap;
+    }
+    .composer-actions {
+        align-items: flex-end;
+    }
+}

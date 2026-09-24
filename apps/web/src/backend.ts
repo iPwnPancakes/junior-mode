@@ -1,4 +1,4 @@
-import type { BackendApi, ConnectionState } from '@junior-mode/backend';
+import type { BackendApi, CodexState } from '@junior-mode/backend';
 
 declare global {
     interface Window {
@@ -6,11 +6,11 @@ declare global {
     }
 }
 
-async function request(
+async function request<T>(
     method: string,
     path: string,
     body?: object,
-): Promise<ConnectionState> {
+): Promise<T> {
     const response = await fetch(path, {
         method,
         headers: {
@@ -31,6 +31,64 @@ async function request(
 }
 
 const browserBackend: BackendApi = {
+    getCodexState: () => request('GET', '/api/codex'),
+    connectCodex: () => request('POST', '/api/codex/connect', {}),
+    startChat: (input) => request('POST', '/api/codex/chats', input),
+    openChat: (id) => request('POST', '/api/codex/open', { id }),
+    sendMessage: (text) => request('POST', '/api/codex/message', { text }),
+    interruptChat: () => request('POST', '/api/codex/interrupt', {}),
+    respondToCodex: (answer) => request('POST', '/api/codex/respond', answer),
+    subscribeCodex: (listener, onError) => {
+        const controller = new AbortController();
+        async function stream() {
+            while (!controller.signal.aborted) {
+                try {
+                    const response = await fetch('/api/codex/events', {
+                        headers: { 'X-Junior-Mode-Client': 'web' },
+                        signal: controller.signal,
+                    });
+                    if (!response.ok || !response.body)
+                        throw new Error('Chat event stream is unavailable.');
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    try {
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done)
+                                throw new Error(
+                                    'Chat connection lost. Reconnecting…',
+                                );
+                            buffer += decoder.decode(value, { stream: true });
+                            let end;
+                            while ((end = buffer.indexOf('\n\n')) !== -1) {
+                                const event = buffer.slice(0, end);
+                                buffer = buffer.slice(end + 2);
+                                if (event.startsWith('data: '))
+                                    listener(
+                                        JSON.parse(
+                                            event.slice(6),
+                                        ) as CodexState,
+                                    );
+                            }
+                        }
+                    } finally {
+                        await reader.cancel().catch(() => {});
+                    }
+                } catch (error) {
+                    if (controller.signal.aborted) return;
+                    onError?.(
+                        error instanceof Error
+                            ? error.message
+                            : 'Chat connection lost.',
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, 1500));
+                }
+            }
+        }
+        void stream();
+        return () => controller.abort();
+    },
     getConnection: () => request('GET', '/api/connection'),
     connectPlatform: (url) => request('PUT', '/api/connection', { url }),
     checkPlatform: () => request('POST', '/api/connection/check'),

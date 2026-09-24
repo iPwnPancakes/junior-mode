@@ -5,7 +5,7 @@ Repository structure and development commands: [README.md](README.md). Desktop/p
 ## Applications
 
 - `apps/learning-platform` — Laravel learning platform, including its React/Inertia UI. Read its `AGENTS.md` before working there. Run Composer, Artisan, and platform pnpm commands from that directory.
-- `apps/backend` — shared local Node backend that communicates with the learning platform over HTTP.
+- `apps/backend` — shared local Node backend that communicates with the learning platform over HTTP and owns the Codex app-server child process. See [ADR 0004](docs/adr/0004-run-codex-through-the-local-backend.md).
 - `apps/web` — independent React frontend with browser and desktop transports.
 - `apps/desktop` — Electron shell and restricted IPC bridge to the local backend.
 
