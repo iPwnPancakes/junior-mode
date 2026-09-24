@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Actions\BuildHandoffContext;
 use App\CoachingSessionStatus;
 use App\Models\CoachingSession;
+use App\Models\HandoffSnapshot;
 use App\Models\User;
 use App\Support\CurrentClientConnection;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -28,7 +29,7 @@ class GetHandoffContext extends Tool
     }
 
     /** @return array{payload: array<string, mixed>, session: CoachingSession, request_hash: string}|Response */
-    protected function context(Request $request): array|Response
+    protected function context(Request $request, ?string $idempotencyKey = null): array|Response
     {
         $learner = $request->user();
         $client = $this->connection->get();
@@ -51,6 +52,14 @@ class GetHandoffContext extends Tool
             'mentor_questions' => ['required', 'array', 'min:1', 'max:2'],
             'mentor_questions.*' => ['required', 'string', 'max:800'],
         ]);
+        $requestHash = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
+        if ($idempotencyKey !== null) {
+            $existing = HandoffSnapshot::query()->where('learner_id', $learner->id)->where('idempotency_key', $idempotencyKey)->first();
+            if ($existing !== null) {
+                return ['payload' => $existing->payload, 'session' => $existing->coachingSession, 'request_hash' => $requestHash];
+            }
+        }
+
         $session = CoachingSession::query()->where('learner_id', $learner->id)
             ->whereKey($data['session_id'])
             ->where('status', CoachingSessionStatus::Active)
@@ -62,7 +71,7 @@ class GetHandoffContext extends Tool
 
         $payload = $this->build->handle($session, $data);
 
-        return ['payload' => $payload, 'session' => $session, 'request_hash' => hash('sha256', json_encode($data, JSON_THROW_ON_ERROR))];
+        return ['payload' => $payload, 'session' => $session, 'request_hash' => $requestHash];
     }
 
     /** @return array<string, Type> */

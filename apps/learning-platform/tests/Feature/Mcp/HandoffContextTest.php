@@ -137,4 +137,9 @@ test('after Mentor help the same session records changed understanding as ordina
     ]))->assertOk()->assertJsonPath('result.isError', false)
         ->assertJsonPath('result.structuredContent.receipt.reflection', 'I now understand that the Accept header determines JSON validation errors versus redirects.');
     expect($handoff->fresh()->payload)->toBe($snapshot)->and(LearningEvidence::count())->toBe(0);
+    $this->withToken($this->token)->postJson('/mcp', handoffTool('prepare-handoff', $args))
+        ->assertOk()->assertJsonPath('result.isError', false)->assertJsonPath('result.structuredContent.handoff_id', $handoff->id);
+    $this->withToken($this->token)->postJson('/mcp', handoffTool('prepare-handoff', [...$args, 'idempotency_key' => 'new-after-completion']))
+        ->assertOk()->assertJsonPath('result.isError', true);
+    expect(HandoffSnapshot::count())->toBe(1);
 });

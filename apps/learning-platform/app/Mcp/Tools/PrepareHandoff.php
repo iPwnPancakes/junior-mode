@@ -15,7 +15,7 @@ class PrepareHandoff extends GetHandoffContext
     public function handle(Request $request): Response|ResponseFactory
     {
         $data = $request->validate(['idempotency_key' => ['required', 'string', 'max:100']]);
-        $context = $this->context($request);
+        $context = $this->context($request, $data['idempotency_key']);
         if ($context instanceof Response) {
             return $context;
         }
