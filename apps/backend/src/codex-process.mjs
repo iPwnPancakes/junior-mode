@@ -12,23 +12,36 @@ export function createCodexProcess({
     onExit,
     executable = process.env.JUNIOR_CODEX_PATH || 'codex',
     args = ['app-server'],
+    env = {},
+    config = {},
 }) {
-    const child = spawn(executable, args, {
-        cwd: homedir(),
-        windowsHide: true,
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: {
-            ...process.env,
-            PATH: [
-                process.env.PATH,
-                join(homedir(), '.local', 'bin'),
-                '/opt/homebrew/bin',
-                '/usr/local/bin',
-            ]
-                .filter(Boolean)
-                .join(delimiter),
+    const child = spawn(
+        executable,
+        [
+            ...args,
+            ...Object.entries(config).flatMap(([key, value]) => [
+                '-c',
+                `${key}=${JSON.stringify(value)}`,
+            ]),
+        ],
+        {
+            cwd: homedir(),
+            windowsHide: true,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            env: {
+                ...process.env,
+                ...env,
+                PATH: [
+                    process.env.PATH,
+                    join(homedir(), '.local', 'bin'),
+                    '/opt/homebrew/bin',
+                    '/usr/local/bin',
+                ]
+                    .filter(Boolean)
+                    .join(delimiter),
+            },
         },
-    });
+    );
     const pending = new Map();
     let sequence = 0;
     let ended = false;

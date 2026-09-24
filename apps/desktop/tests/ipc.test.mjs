@@ -40,6 +40,11 @@ test('IPC calls backend capabilities and rejects untrusted frames before side ef
         /Untrusted/,
     );
     for (const method of [
+        'openPlatformAuthorization',
+        'getPlatformAuthorization',
+        'beginPlatformAuthorization',
+        'completePlatformAuthorization',
+        'checkPlatformAuthorization',
         'getCodexState',
         'connectCodex',
         'startChat',

@@ -1,6 +1,9 @@
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createCodexService } from './codex.mjs';
+import { createPlatformAuthorization } from './platform-auth.mjs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { serverUrl } from './server-url.mjs';
 
 const emptyState = () => ({
@@ -14,12 +17,61 @@ export async function createBackend({
     settingsPath,
     fetchImpl = fetch,
     codexProcessFactory,
+    credentialCodec,
+    openExternal,
 }) {
+    let state = emptyState();
+    const authorization = await createPlatformAuthorization({
+        path: join(dirname(settingsPath), 'platform-credentials.json'),
+        getUrl: () => state.platformUrl,
+        fetchImpl,
+        credentialCodec,
+    });
     const codex = await createCodexService({
         statePath: join(dirname(settingsPath), 'codex-chats.json'),
         processFactory: codexProcessFactory,
+        processOptions: () => authorization.processOptions(),
+        redact: (value) => authorization.redact(value),
+        authorizeCoaching: async (cwd) => {
+            try {
+                await authorization.check();
+            } catch (error) {
+                codex.invalidateConnection();
+                throw error;
+            }
+            let remote;
+            try {
+                remote = (
+                    await promisify(execFile)(
+                        'git',
+                        ['-C', cwd, 'remote', 'get-url', 'origin'],
+                        { timeout: 5000 },
+                    )
+                ).stdout.trim();
+            } catch {
+                throw new Error(
+                    'Coaching requires an enrolled repository with an origin remote.',
+                );
+            }
+            if (/^https?:\/\//i.test(remote)) {
+                const url = new URL(remote);
+                url.username = '';
+                url.password = '';
+                url.search = '';
+                url.hash = '';
+                remote = url.href;
+            }
+            const enrollment = await authorization.tool(
+                'resolve-repository-enrollment',
+                { contract_version: '1', remote_url: remote },
+            );
+            if (!enrollment.enrolled)
+                throw new Error(
+                    'This repository is not enrolled. Enroll it on the learning platform before coaching.',
+                );
+            return enrollment.repository.identity;
+        },
     });
-    let state = emptyState();
     let pending = Promise.resolve();
 
     try {
@@ -91,13 +143,46 @@ export async function createBackend({
 
     return {
         ...codex,
+        openPlatformAuthorization: () =>
+            serialize(async () => {
+                const url = authorization.snapshot().authorizationUrl;
+                if (!url || !openExternal)
+                    throw new Error(
+                        'Open the displayed approval address in your browser.',
+                    );
+                await openExternal(url);
+            }),
+        getPlatformAuthorization: () =>
+            serialize(() => authorization.snapshot()),
+        beginPlatformAuthorization: (name) =>
+            serialize(() => authorization.begin(name)),
+        completePlatformAuthorization: () =>
+            serialize(async () => {
+                await codex.resetConnection();
+                return authorization.complete();
+            }),
+        checkPlatformAuthorization: () =>
+            serialize(async () => {
+                try {
+                    return await authorization.check();
+                } catch (error) {
+                    codex.invalidateConnection();
+                    throw error;
+                }
+            }),
         getConnection: () => serialize(() => ({ ...state })),
         connectPlatform: (value) =>
             serialize(async () => {
                 const url = serverUrl(value);
                 const next = await probe(url);
+                if (next.status !== 'connected' && state.platformUrl)
+                    return { ...next, platformUrl: state.platformUrl };
 
                 if (next.status === 'connected') {
+                    if (state.platformUrl !== url) {
+                        await codex.resetConnection();
+                        await authorization.clear();
+                    }
                     await mkdir(dirname(settingsPath), { recursive: true });
                     await writeFile(
                         `${settingsPath}.tmp`,
@@ -123,6 +208,8 @@ export async function createBackend({
             }),
         disconnectPlatform: () =>
             serialize(async () => {
+                await codex.resetConnection();
+                await authorization.clear();
                 await rm(settingsPath, { force: true });
                 state = emptyState();
 

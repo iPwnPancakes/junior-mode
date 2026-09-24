@@ -20,6 +20,16 @@ contextBridge.exposeInMainWorld('juniorMode', {
         return () =>
             ipcRenderer.removeListener('junior-mode:codex-state', handler);
     },
+    openPlatformAuthorization: () =>
+        ipcRenderer.invoke('junior-mode:openPlatformAuthorization'),
+    getPlatformAuthorization: () =>
+        ipcRenderer.invoke('junior-mode:getPlatformAuthorization'),
+    beginPlatformAuthorization: (name) =>
+        ipcRenderer.invoke('junior-mode:beginPlatformAuthorization', name),
+    completePlatformAuthorization: () =>
+        ipcRenderer.invoke('junior-mode:completePlatformAuthorization'),
+    checkPlatformAuthorization: () =>
+        ipcRenderer.invoke('junior-mode:checkPlatformAuthorization'),
     getConnection: () => ipcRenderer.invoke('junior-mode:getConnection'),
     connectPlatform: (url) =>
         ipcRenderer.invoke('junior-mode:connectPlatform', url),

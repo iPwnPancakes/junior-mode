@@ -49,6 +49,11 @@ function displayItem(item) {
 export async function createCodexService({
     statePath,
     processFactory = createCodexProcess,
+    processOptions = () => ({}),
+    authorizeCoaching = async () => {
+        throw new Error('Authorize the learning platform first.');
+    },
+    redact = (value) => value,
 }) {
     const listeners = new Set();
     let transport;
@@ -80,7 +85,7 @@ export async function createCodexService({
                 'Saved chat list could not be read. Existing transcripts remain in Codex storage.';
     }
 
-    const snapshot = () => structuredClone(state);
+    const snapshot = () => JSON.parse(redact(JSON.stringify(state)));
     function publish() {
         state.revision++;
         for (const listener of listeners) listener(snapshot());
@@ -231,6 +236,7 @@ export async function createCodexService({
         publish();
         starting = (async () => {
             const current = processFactory({
+                ...processOptions(),
                 onNotification: notify,
                 onRequest: request,
                 onExit: exited,
@@ -271,12 +277,21 @@ export async function createCodexService({
         });
         return starting;
     }
+    async function sanitized(operation) {
+        try {
+            return await operation();
+        } catch (error) {
+            throw new Error(redact(error.message));
+        }
+    }
     async function exclusive(operation) {
         if (operating)
             throw new Error('Another chat operation is in progress.');
         operating = true;
         try {
             return await operation();
+        } catch (error) {
+            throw new Error(redact(error.message));
         } finally {
             operating = false;
         }
@@ -290,9 +305,13 @@ export async function createCodexService({
     async function resume(id) {
         const saved = state.threads.find((entry) => entry.id === id);
         if (!saved) throw new Error('Unknown Junior Mode chat.');
+        if (saved.coaching) await authorizeCoaching(saved.cwd);
         const { thread } = await transport.request('thread/resume', {
             threadId: id,
             cwd: saved.cwd,
+            config: {
+                'mcp_servers.junior-mode.enabled': Boolean(saved.coaching),
+            },
             ...policy,
         });
         state.thread = { ...saved, items: [], turnId: null, status: 'idle' };
@@ -307,6 +326,23 @@ export async function createCodexService({
     }
 
     return {
+        invalidateConnection() {
+            if (transport) transport.dispose();
+            transport = undefined;
+            state.thread = null;
+            state.requests = [];
+            state.status = 'disconnected';
+            publish();
+        },
+        resetConnection: () =>
+            exclusive(async () => {
+                idle();
+                if (transport) transport.dispose();
+                transport = undefined;
+                state.thread = null;
+                state.status = 'disconnected';
+                publish();
+            }),
         getCodexState: async () => snapshot(),
         subscribeCodex(listener) {
             listeners.add(listener);
@@ -334,16 +370,20 @@ export async function createCodexService({
                 const cwd = await realpath(input.cwd);
                 if (!(await stat(cwd)).isDirectory())
                     throw new Error('The repository path must be a directory.');
+                const coaching = input.coaching === true;
+                if (coaching) await authorizeCoaching(cwd);
                 await connect();
                 idle();
                 if (!state.account) throw new Error(state.error);
                 const { thread } = await transport.request('thread/start', {
                     cwd,
+                    config: { 'mcp_servers.junior-mode.enabled': coaching },
                     ...policy,
                 });
                 const saved = {
                     id: thread.id,
                     cwd,
+                    coaching,
                     title: 'New chat',
                     updatedAt: new Date().toISOString(),
                 };
@@ -385,6 +425,8 @@ export async function createCodexService({
                 idle();
                 if (!state.account)
                     throw new Error('Sign in with codex login first.');
+                if (state.thread.coaching)
+                    await authorizeCoaching(state.thread.cwd);
                 const thread = state.thread;
                 thread.status = 'running';
                 state.error = null;
@@ -415,43 +457,45 @@ export async function createCodexService({
                 publish();
                 return snapshot();
             }),
-        interruptChat: async () => {
-            if (!transport || !state.thread?.turnId)
-                throw new Error('There is no running turn to stop yet.');
-            await transport.request('turn/interrupt', {
-                threadId: state.thread.id,
-                turnId: state.thread.turnId,
-            });
-            return snapshot();
-        },
-        respondToCodex: async ({ id, decision, answers } = {}) => {
-            const pending = state.requests.find((entry) => entry.id === id);
-            if (!pending || !transport)
-                throw new Error('This request is no longer pending.');
-            let result;
-            if (pending.kind === 'approval') {
-                if (!pending.decisions.includes(decision))
-                    throw new Error('Invalid approval decision.');
-                result = { decision };
-            } else {
-                const validated = {};
-                for (const question of pending.questions) {
-                    const value = answers?.[question.id];
-                    if (typeof value !== 'string' || value.length > 4000)
-                        throw new Error(
-                            'Answer each question (up to 4,000 characters).',
-                        );
-                    validated[question.id] = { answers: [value] };
+        interruptChat: () =>
+            sanitized(async () => {
+                if (!transport || !state.thread?.turnId)
+                    throw new Error('There is no running turn to stop yet.');
+                await transport.request('turn/interrupt', {
+                    threadId: state.thread.id,
+                    turnId: state.thread.turnId,
+                });
+                return snapshot();
+            }),
+        respondToCodex: ({ id, decision, answers } = {}) =>
+            sanitized(async () => {
+                const pending = state.requests.find((entry) => entry.id === id);
+                if (!pending || !transport)
+                    throw new Error('This request is no longer pending.');
+                let result;
+                if (pending.kind === 'approval') {
+                    if (!pending.decisions.includes(decision))
+                        throw new Error('Invalid approval decision.');
+                    result = { decision };
+                } else {
+                    const validated = {};
+                    for (const question of pending.questions) {
+                        const value = answers?.[question.id];
+                        if (typeof value !== 'string' || value.length > 4000)
+                            throw new Error(
+                                'Answer each question (up to 4,000 characters).',
+                            );
+                        validated[question.id] = { answers: [value] };
+                    }
+                    result = { answers: validated };
                 }
-                result = { answers: validated };
-            }
-            transport.respond(pending.rpcId, result);
-            state.requests = state.requests.filter(
-                (entry) => entry !== pending,
-            );
-            publish();
-            return snapshot();
-        },
+                transport.respond(pending.rpcId, result);
+                state.requests = state.requests.filter(
+                    (entry) => entry !== pending,
+                );
+                publish();
+                return snapshot();
+            }),
         dispose() {
             disposed = true;
             transport?.dispose();
