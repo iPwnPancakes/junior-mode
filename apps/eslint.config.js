@@ -10,6 +10,7 @@ export default [
             '**/dist/**',
             '**/renderer/**',
             '.local/**',
+            'learning-platform/**',
         ],
     },
     js.configs.recommended,
