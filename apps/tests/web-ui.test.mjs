@@ -276,6 +276,7 @@ test('folder command picker supports keyboard, stable hover, hidden folders, dis
 
 test('platform tabs, forms and authorization actions remain usable with shadcn controls', async (t) => {
     const { page, calls, errors } = await fixture(t);
+    await page.getByRole('tab', { name: 'Settings', exact: true }).click();
     await page.getByRole('tab', { name: 'Learning platform' }).click();
     await page.getByLabel('Platform address').fill('https://platform.example');
     await page.getByRole('button', { name: 'Connect', exact: true }).click();
@@ -332,6 +333,55 @@ test('chat search, history selection and composer submit work with shadcn button
     assert.deepEqual(
         calls.find((call) => call.path === '/api/codex/message').body,
         { text: 'Help me understand this code.' },
+    );
+    assert.deepEqual(errors, []);
+});
+
+test('provider controls live in settings and switching tabs preserves chat drafts', async (t) => {
+    const { page, calls, errors } = await fixture(t, true);
+    assert.equal(
+        await page.getByRole('button', { name: /Connect Codex/i }).count(),
+        0,
+    );
+    await page.locator('.chat-link').first().click();
+    await page.getByLabel('Message Codex').fill('Keep this draft');
+    await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+    await page
+        .getByRole('heading', { name: 'Providers', exact: true })
+        .waitFor();
+    await page.getByText('Preview server · fixture', { exact: true }).waitFor();
+    await page.getByText('Learner', { exact: true }).waitFor();
+    await page
+        .getByRole('button', { name: 'Reconnect Codex', exact: true })
+        .click();
+    assert.equal(
+        calls.filter((call) => call.path === '/api/codex/connect').length,
+        1,
+    );
+    await page.getByRole('tab', { name: 'Chat', exact: true }).click();
+    assert.equal(
+        await page.getByLabel('Message Codex').inputValue(),
+        'Keep this draft',
+    );
+    await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+    await page.route('**/api/codex/connect', (route) =>
+        route.fulfill({
+            status: 500,
+            json: { error: 'Codex executable was not found.' },
+        }),
+    );
+    await page
+        .getByRole('button', { name: 'Reconnect Codex', exact: true })
+        .click();
+    await page
+        .getByRole('alert')
+        .filter({ hasText: 'Codex executable was not found.' })
+        .waitFor();
+    assert.equal(
+        await page
+            .getByRole('button', { name: 'Reconnect Codex', exact: true })
+            .isEnabled(),
+        true,
     );
     assert.deepEqual(errors, []);
 });

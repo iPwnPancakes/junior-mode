@@ -129,6 +129,9 @@ app.whenReady()
             ]),
         );
 
+        // Start once per app launch, independently of renderer loads and HMR.
+        // The backend publishes startup failures so Providers can offer a retry.
+        void backend.connectCodex().catch(() => {});
         await createWindow();
     })
     .catch((error) => {

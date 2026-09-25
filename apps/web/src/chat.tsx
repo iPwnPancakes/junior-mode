@@ -296,41 +296,6 @@ export function Chat() {
                                 : 'Runs on the preview server'}
                             {state ? ` · ${state.host}` : ''}
                         </p>
-                        <div className="codex-connection">
-                            <span
-                                className={`status ${state?.status === 'ready' && state.account ? 'connected' : ''}`}
-                            >
-                                <span className="dot" />
-                                {state?.account ||
-                                    (state?.status === 'connecting'
-                                        ? 'Starting Codex…'
-                                        : 'Codex not connected')}
-                            </span>
-                            <Button
-                                variant="secondary"
-                                disabled={
-                                    busy ||
-                                    running ||
-                                    state?.status === 'connecting'
-                                }
-                                onClick={() => void run(backend.connectCodex)}
-                            >
-                                {state?.status === 'ready'
-                                    ? 'Reconnect Codex'
-                                    : 'Connect Codex'}
-                            </Button>
-                        </div>
-                        {!state?.account && (
-                            <p className="hint">
-                                Install Codex CLI and run{' '}
-                                <code>codex login</code> on{' '}
-                                {isDesktop
-                                    ? 'your computer'
-                                    : 'the preview server'}
-                                , then connect. Your existing Codex account and
-                                configuration are used.
-                            </p>
-                        )}
                         <form
                             onSubmit={async (event) => {
                                 event.preventDefault();

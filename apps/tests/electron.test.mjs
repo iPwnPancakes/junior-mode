@@ -49,7 +49,11 @@ test(
                 ...(packaged ? [] : [resolve('desktop')]),
                 `--user-data-dir=${directory}`,
             ],
-            env: { ...process.env, JUNIOR_RENDERER_URL: '' },
+            env: {
+                ...process.env,
+                JUNIOR_RENDERER_URL: '',
+                JUNIOR_CODEX_PATH: join(directory, 'missing-codex'),
+            },
             timeout: 15000,
         });
         const page = await application.firstWindow();
@@ -57,6 +61,7 @@ test(
         const rendererRequests = [];
         page.on('pageerror', (error) => errors.push(error.message));
         page.on('request', (request) => rendererRequests.push(request.url()));
+        await page.getByRole('tab', { name: 'Settings', exact: true }).click();
         await page
             .getByRole('tab', { name: 'Learning platform', exact: true })
             .click();
@@ -86,6 +91,7 @@ test(
         );
 
         await page.reload();
+        await page.getByRole('tab', { name: 'Settings', exact: true }).click();
         await page
             .getByRole('tab', { name: 'Learning platform', exact: true })
             .click();
@@ -149,6 +155,12 @@ test(
             return application.firstWindow();
         }
         let page = await launch();
+        // Startup connects without a renderer button or a chat request.
+        await page.waitForFunction(async () => {
+            const state = await globalThis.window.juniorMode.getCodexState();
+            return state.status === 'ready' && Boolean(state.account);
+        });
+
         const errors = [];
         page.on('pageerror', (error) => errors.push(error.message));
         const repository = join(directory, 'Project Alpha');
