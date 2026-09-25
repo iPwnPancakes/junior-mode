@@ -61,7 +61,9 @@ test(
         const rendererRequests = [];
         page.on('pageerror', (error) => errors.push(error.message));
         page.on('request', (request) => rendererRequests.push(request.url()));
-        await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+        await page
+            .getByRole('button', { name: 'Settings', exact: true })
+            .click();
         await page
             .getByRole('tab', { name: 'Learning platform', exact: true })
             .click();
@@ -91,7 +93,9 @@ test(
         );
 
         await page.reload();
-        await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+        await page
+            .getByRole('button', { name: 'Settings', exact: true })
+            .click();
         await page
             .getByRole('tab', { name: 'Learning platform', exact: true })
             .click();

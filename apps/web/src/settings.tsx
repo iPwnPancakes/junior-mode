@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Cable, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Cable, GraduationCap } from 'lucide-react';
 import type { CodexState } from '@junior-mode/backend';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -129,14 +129,24 @@ function Providers() {
     );
 }
 
-export function Settings() {
+export function Settings({ onBack }: { onBack: () => void }) {
+    useEffect(() => {
+        function handleKey(event: KeyboardEvent) {
+            if (event.key === 'Escape' && !event.defaultPrevented) {
+                event.preventDefault();
+                onBack();
+            }
+        }
+        document.addEventListener('keydown', handleKey);
+        return () => document.removeEventListener('keydown', handleKey);
+    }, [onBack]);
     return (
         <Tabs
             defaultValue="providers"
             orientation="vertical"
             className="min-h-0 flex-1 flex-col gap-0 sm:flex-row"
         >
-            <aside className="border-b bg-sidebar p-4 sm:w-60 sm:shrink-0 sm:border-r sm:border-b-0">
+            <aside className="flex flex-col border-b bg-sidebar p-4 sm:w-[260px] sm:shrink-0 sm:border-r sm:border-b-0">
                 <h2 className="mb-4 px-2 font-semibold">Settings</h2>
                 <TabsList
                     aria-label="Settings sections"
@@ -157,6 +167,13 @@ export function Settings() {
                         Learning platform
                     </TabsTrigger>
                 </TabsList>
+                <Button
+                    variant="ghost"
+                    className="mt-4 justify-start sm:mt-auto"
+                    onClick={onBack}
+                >
+                    <ArrowLeft /> Back to chats
+                </Button>
             </aside>
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6 sm:p-10">
                 <TabsContent value="providers" className="mx-auto max-w-3xl">

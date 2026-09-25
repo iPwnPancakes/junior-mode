@@ -1,3 +1,4 @@
+import { Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -101,7 +102,7 @@ function RequestCard({
     );
 }
 
-export function Chat() {
+export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     const [state, setState] = useState<CodexState | null>(null);
     const [cwd, setCwd] = useState('');
     const [newChat, setNewChat] = useState(false);
@@ -256,6 +257,13 @@ export function Chat() {
                         )}
                 </div>
                 <div className="sidebar-footer">
+                    <Button
+                        variant="ghost"
+                        className="mb-3 w-full justify-start"
+                        onClick={onOpenSettings}
+                    >
+                        <SettingsIcon /> Settings
+                    </Button>
                     <span
                         className={`status ${state?.status === 'ready' ? 'connected' : ''}`}
                     >

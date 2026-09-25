@@ -276,7 +276,7 @@ test('folder command picker supports keyboard, stable hover, hidden folders, dis
 
 test('platform tabs, forms and authorization actions remain usable with shadcn controls', async (t) => {
     const { page, calls, errors } = await fixture(t);
-    await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByRole('tab', { name: 'Learning platform' }).click();
     await page.getByLabel('Platform address').fill('https://platform.example');
     await page.getByRole('button', { name: 'Connect', exact: true }).click();
@@ -302,7 +302,9 @@ test('platform tabs, forms and authorization actions remain usable with shadcn c
         calls.find((call) => call.path === '/api/authorization/begin').body,
         { name: 'My desktop' },
     );
-    await page.getByRole('tab', { name: 'Chat', exact: true }).click();
+    await page
+        .getByRole('button', { name: 'Back to chats', exact: true })
+        .click();
     await page
         .getByRole('combobox', { name: 'Repository', exact: true })
         .waitFor();
@@ -337,7 +339,7 @@ test('chat search, history selection and composer submit work with shadcn button
     assert.deepEqual(errors, []);
 });
 
-test('provider controls live in settings and switching tabs preserves chat drafts', async (t) => {
+test('sidebar settings preserves chat drafts and supports back and Escape', async (t) => {
     const { page, calls, errors } = await fixture(t, true);
     assert.equal(
         await page.getByRole('button', { name: /Connect Codex/i }).count(),
@@ -345,7 +347,21 @@ test('provider controls live in settings and switching tabs preserves chat draft
     );
     await page.locator('.chat-link').first().click();
     await page.getByLabel('Message Codex').fill('Keep this draft');
-    await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+    assert.equal(
+        await page.getByRole('tab', { name: 'Settings', exact: true }).count(),
+        0,
+    );
+    const settingsButton = page
+        .locator('.sidebar-footer')
+        .getByRole('button', { name: 'Settings', exact: true });
+    const sidebar = await page.locator('.chat-sidebar').boundingBox();
+    const settingsBounds = await settingsButton.boundingBox();
+    assert.ok(
+        settingsBounds.y > sidebar.y + sidebar.height - 140,
+        'Settings stays at the bottom of the sidebar',
+    );
+
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page
         .getByRole('heading', { name: 'Providers', exact: true })
         .waitFor();
@@ -358,12 +374,14 @@ test('provider controls live in settings and switching tabs preserves chat draft
         calls.filter((call) => call.path === '/api/codex/connect').length,
         1,
     );
-    await page.getByRole('tab', { name: 'Chat', exact: true }).click();
+    await page
+        .getByRole('button', { name: 'Back to chats', exact: true })
+        .click();
     assert.equal(
         await page.getByLabel('Message Codex').inputValue(),
         'Keep this draft',
     );
-    await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.route('**/api/codex/connect', (route) =>
         route.fulfill({
             status: 500,
@@ -382,6 +400,12 @@ test('provider controls live in settings and switching tabs preserves chat draft
             .getByRole('button', { name: 'Reconnect Codex', exact: true })
             .isEnabled(),
         true,
+    );
+    await page.keyboard.press('Escape');
+    await page.getByLabel('Message Codex').waitFor();
+    assert.equal(
+        await page.getByLabel('Message Codex').inputValue(),
+        'Keep this draft',
     );
     assert.deepEqual(errors, []);
 });
