@@ -8,7 +8,7 @@ import {
 } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { hostname } from 'node:os';
-import { dirname, isAbsolute } from 'node:path';
+import { basename, dirname, isAbsolute } from 'node:path';
 import { createCodexProcess } from './codex-process.mjs';
 
 const limit = (value) => String(value ?? '').slice(-100000);
@@ -70,6 +70,7 @@ export async function createCodexService({
         status: 'disconnected',
         account: null,
         error: null,
+        projects: [],
         threads: [],
         thread: null,
         requests: [],
@@ -77,28 +78,84 @@ export async function createCodexService({
     };
     try {
         const stored = JSON.parse(await readFile(statePath, 'utf8'));
+        const legacy = Array.isArray(stored);
+        const threads = legacy ? stored : stored.threads;
+        const projects = legacy ? [] : stored.projects;
         if (
-            !Array.isArray(stored) ||
-            stored.some((entry) => !entry.id || !isAbsolute(entry.cwd))
+            (!legacy && stored.version !== 2) ||
+            !Array.isArray(threads) ||
+            threads.some(
+                (entry) =>
+                    !entry?.id ||
+                    typeof entry.cwd !== 'string' ||
+                    !isAbsolute(entry.cwd),
+            ) ||
+            !Array.isArray(projects) ||
+            projects.some(
+                (project) =>
+                    !project?.id ||
+                    typeof project.name !== 'string' ||
+                    typeof project.cwd !== 'string' ||
+                    !isAbsolute(project.cwd),
+            )
         )
-            throw new Error('Invalid chat index');
-        state.threads = stored;
+            throw new Error('Invalid project/chat index');
+        // Older releases stored a flat chat list. Preserve IDs and transcripts
+        // while grouping paths (including aliases) into persistent projects.
+        if (legacy) {
+            for (const thread of threads) {
+                const cwd = await realpath(thread.cwd).catch(() => thread.cwd);
+                let project = projects.find((entry) => entry.cwd === cwd);
+                if (!project) {
+                    project = {
+                        id: randomUUID(),
+                        name: basename(cwd) || cwd,
+                        cwd,
+                    };
+                    projects.push(project);
+                }
+                thread.projectId = project.id;
+            }
+        } else if (
+            threads.some(
+                (thread) =>
+                    !projects.some(
+                        (project) => project.id === thread.projectId,
+                    ),
+            )
+        ) {
+            throw new Error('Invalid project reference in chat index');
+        }
+        state.projects = projects;
+        state.threads = threads;
+        if (legacy) await save();
     } catch (error) {
         if (error.code !== 'ENOENT')
             state.error =
-                'Saved chat list could not be read. Existing transcripts remain in Codex storage.';
+                'Saved projects and chats could not be read. Existing transcripts remain in Codex storage.';
     }
 
     const snapshot = () => JSON.parse(redact(JSON.stringify(state)));
+    function projectResult(project) {
+        const current = snapshot();
+        return {
+            state: current,
+            project: current.projects.find((entry) => entry.id === project.id),
+        };
+    }
     function publish() {
         state.revision++;
         for (const listener of listeners) listener(snapshot());
     }
-    async function save() {
+    async function save(projects = state.projects) {
         await mkdir(dirname(statePath), { recursive: true });
-        await writeFile(`${statePath}.tmp`, JSON.stringify(state.threads), {
-            mode: 0o600,
-        });
+        await writeFile(
+            `${statePath}.tmp`,
+            JSON.stringify({ version: 2, projects, threads: state.threads }),
+            {
+                mode: 0o600,
+            },
+        );
         await rename(`${statePath}.tmp`, statePath);
     }
     function upsert(item) {
@@ -281,6 +338,16 @@ export async function createCodexService({
         });
         return starting;
     }
+    async function repositoryPath(value) {
+        if (typeof value !== 'string' || !isAbsolute(value))
+            throw new Error(
+                'Enter an absolute repository path on the Codex machine.',
+            );
+        const cwd = await realpath(value);
+        if (!(await stat(cwd)).isDirectory())
+            throw new Error('The repository path must be a directory.');
+        return cwd;
+    }
     async function sanitized(operation) {
         try {
             return await operation();
@@ -357,6 +424,24 @@ export async function createCodexService({
             listener(snapshot());
             return () => listeners.delete(listener);
         },
+        addProject: (input) =>
+            exclusive(async () => {
+                const cwd = await repositoryPath(input?.cwd);
+                const existing = state.projects.find(
+                    (project) => project.cwd === cwd,
+                );
+                if (existing) return projectResult(existing);
+                const project = {
+                    id: randomUUID(),
+                    name: basename(cwd) || cwd,
+                    cwd,
+                };
+                const projects = [...state.projects, project];
+                await save(projects);
+                state.projects = projects;
+                publish();
+                return projectResult(project);
+            }),
         connectCodex: () =>
             exclusive(async () => {
                 idle();
@@ -371,13 +456,26 @@ export async function createCodexService({
         startChat: (input) =>
             exclusive(async () => {
                 idle();
-                if (typeof input?.cwd !== 'string' || !isAbsolute(input.cwd))
-                    throw new Error(
-                        'Enter an absolute repository path on the Codex machine.',
+                let project;
+                if (input?.projectId !== undefined) {
+                    project = state.projects.find(
+                        (entry) => entry.id === input.projectId,
                     );
-                const cwd = await realpath(input.cwd);
-                if (!(await stat(cwd)).isDirectory())
-                    throw new Error('The repository path must be a directory.');
+                    if (!project)
+                        throw new Error('Choose an existing project.');
+                    if (
+                        input.cwd !== undefined &&
+                        (await repositoryPath(input.cwd)) !== project.cwd
+                    )
+                        throw new Error(
+                            'The repository path does not match the selected project.',
+                        );
+                }
+                const cwd = await repositoryPath(project?.cwd ?? input?.cwd);
+                if (project && cwd !== project.cwd)
+                    throw new Error(
+                        'The project folder has moved. Add its new location as a project.',
+                    );
                 const coaching = input.coaching === true;
                 if (coaching) {
                     await coachingSkill();
@@ -394,7 +492,17 @@ export async function createCodexService({
                     },
                     ...policy,
                 });
+                project ??= state.projects.find((entry) => entry.cwd === cwd);
+                if (!project) {
+                    project = {
+                        id: randomUUID(),
+                        name: basename(cwd) || cwd,
+                        cwd,
+                    };
+                    state.projects.push(project);
+                }
                 const saved = {
+                    projectId: project.id,
                     id: thread.id,
                     cwd,
                     coaching,

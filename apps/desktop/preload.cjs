@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('juniorMode', {
         ipcRenderer.invoke('junior-mode:installCoachingPlugin'),
     getCodexState: () => ipcRenderer.invoke('junior-mode:getCodexState'),
     connectCodex: () => ipcRenderer.invoke('junior-mode:connectCodex'),
+    addProject: (input) => ipcRenderer.invoke('junior-mode:addProject', input),
     startChat: (input) => ipcRenderer.invoke('junior-mode:startChat', input),
     openChat: (id) => ipcRenderer.invoke('junior-mode:openChat', id),
     sendMessage: (text) => ipcRenderer.invoke('junior-mode:sendMessage', text),

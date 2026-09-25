@@ -186,6 +186,14 @@ test(
         assert.equal(await repositoryTrigger.innerText(), repository);
         await page
             .locator('.chat-setup')
+            .getByRole('button', { name: 'Add project', exact: true })
+            .click();
+        await page
+            .getByRole('region', { name: 'Project Project Alpha', exact: true })
+            .waitFor();
+
+        await page
+            .locator('.chat-setup')
             .getByRole('button', { name: 'New chat', exact: true })
             .click();
         // App-created chats always request coaching, even without an opt-in.

@@ -13,7 +13,14 @@ export interface PlatformAuthorization {
     userCode: string | null;
 }
 
+export interface Project {
+    id: string;
+    name: string;
+    cwd: string;
+}
+
 export interface ChatSummary {
+    projectId: string;
     coaching?: boolean;
     id: string;
     cwd: string;
@@ -49,6 +56,7 @@ export interface CodexState {
     account: string | null;
     error: string | null;
     revision: number;
+    projects: Project[];
     threads: ChatSummary[];
     thread:
         | (ChatSummary & {
@@ -90,7 +98,14 @@ export interface BackendApi {
     installCoachingPlugin(): Promise<CoachingPluginState>;
     getCodexState(): Promise<CodexState>;
     connectCodex(): Promise<CodexState>;
-    startChat(input: { cwd: string; coaching?: boolean }): Promise<CodexState>;
+    addProject(input: {
+        cwd: string;
+    }): Promise<{ state: CodexState; project: Project }>;
+    startChat(
+        input:
+            | { projectId: string; coaching?: boolean }
+            | { cwd: string; coaching?: boolean },
+    ): Promise<CodexState>;
     openChat(id: string): Promise<CodexState>;
     sendMessage(text: string): Promise<CodexState>;
     interruptChat(): Promise<CodexState>;

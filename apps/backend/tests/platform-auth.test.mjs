@@ -162,10 +162,12 @@ test('enrollment is checked before coaching threads and rechecked before message
     await f.backend.beginPlatformAuthorization('Desktop');
     f.approve();
     await f.backend.completePlatformAuthorization();
+    const { project } = await f.backend.addProject({ cwd: f.directory });
     const state = await f.backend.startChat({
-        cwd: f.directory,
+        projectId: project.id,
         coaching: true,
     });
+    assert.equal(state.thread.projectId, project.id);
     assert.equal(state.thread.coaching, true);
     assert.equal(
         f.calls.find(

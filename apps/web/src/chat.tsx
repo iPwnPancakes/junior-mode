@@ -1,4 +1,5 @@
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Folder } from 'lucide-react';
+import { ProjectSidebar } from './project-sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -106,7 +107,8 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     const [state, setState] = useState<CodexState | null>(null);
     const [cwd, setCwd] = useState('');
     const [newChat, setNewChat] = useState(false);
-    const [search, setSearch] = useState('');
+    const [projectId, setProjectId] = useState('');
+    const [addingProject, setAddingProject] = useState(false);
     const [message, setMessage] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -114,6 +116,12 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     const transcript = useRef<HTMLDivElement>(null);
     const follow = useRef(true);
     const running = state?.thread?.status === 'running';
+    const project =
+        state?.projects?.find(
+            (entry) => entry.id === (projectId || state.thread?.projectId),
+        ) ?? state?.projects?.[0];
+    const showProjectForm = addingProject || !state?.projects?.length;
+    const draft = newChat || !state?.thread;
 
     useEffect(
         () =>
@@ -166,122 +174,53 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
 
     return (
         <main className="chat-layout">
-            <aside className="chat-sidebar">
-                <div className="sidebar-heading">
-                    <h1>Chats</h1>
-                    <span className="chat-count">
-                        {state?.threads.length || 0}
-                    </span>
-                </div>
-                <Button
-                    variant="outline"
-                    className="new-chat-button justify-start"
-                    disabled={busy || running}
-                    onClick={() => {
-                        setCwd(state?.thread?.cwd || cwd);
-                        setNewChat(true);
-                    }}
-                >
-                    <span aria-hidden="true">＋</span> New chat
-                </Button>
-                <Input
-                    className="chat-search"
-                    type="search"
-                    aria-label="Search chats"
-                    placeholder="Search chats…"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                />
-                <h2 className="chat-list-title">Recent chats</h2>
-                <div className="chat-list">
-                    {!state?.threads.length && (
-                        <p className="hint">Your chats will appear here.</p>
-                    )}
-                    {state?.threads
-                        .filter((chat) =>
-                            `${chat.title} ${chat.cwd}`
-                                .toLowerCase()
-                                .includes(search.toLowerCase()),
-                        )
-                        .map((chat) => (
-                            <Button
-                                variant="ghost"
-                                className={
-                                    !newChat && state.thread?.id === chat.id
-                                        ? 'chat-link active h-auto w-full flex-col items-start gap-0 whitespace-normal text-left'
-                                        : 'chat-link h-auto w-full flex-col items-start gap-0 whitespace-normal text-left'
-                                }
-                                aria-current={
-                                    !newChat && state.thread?.id === chat.id
-                                        ? 'page'
-                                        : undefined
-                                }
-                                title={chat.cwd}
-                                key={chat.id}
-                                disabled={busy || running}
-                                onClick={() => {
-                                    follow.current = true;
-                                    void run(() =>
-                                        backend.openChat(chat.id),
-                                    ).then((opened) => {
-                                        if (opened) {
-                                            setNewChat(false);
-                                            setMessage('');
-                                        }
-                                    });
-                                }}
-                            >
-                                <strong>{chat.title}</strong>
-                                <span>
-                                    {chat.cwd
-                                        .split(/[\\/]/)
-                                        .filter(Boolean)
-                                        .pop()}{' '}
-                                    ·{' '}
-                                    {new Date(
-                                        chat.updatedAt,
-                                    ).toLocaleDateString(undefined, {
-                                        month: 'short',
-                                        day: 'numeric',
-                                    })}
-                                </span>
-                            </Button>
-                        ))}
-                    {Boolean(state?.threads.length) &&
-                        !state?.threads.some((chat) =>
-                            `${chat.title} ${chat.cwd}`
-                                .toLowerCase()
-                                .includes(search.toLowerCase()),
-                        ) && (
-                            <p className="hint">No chats match your search.</p>
-                        )}
-                </div>
-                <div className="sidebar-footer">
-                    <Button
-                        variant="ghost"
-                        className="mb-3 w-full justify-start"
-                        onClick={onOpenSettings}
-                    >
-                        <SettingsIcon /> Settings
-                    </Button>
-                    <span
-                        className={`status ${state?.status === 'ready' ? 'connected' : ''}`}
-                    >
-                        <span className="dot" />
-                        {state?.status === 'ready'
-                            ? 'Codex connected'
-                            : 'Codex offline'}
-                    </span>
-                </div>
-            </aside>
+            <ProjectSidebar
+                state={state}
+                disabled={busy || Boolean(running)}
+                draftProjectId={
+                    draft && !showProjectForm ? project?.id : undefined
+                }
+                onNewChat={(selected = project) => {
+                    if (!selected) {
+                        setAddingProject(true);
+                        return;
+                    }
+                    setProjectId(selected.id);
+                    setAddingProject(false);
+                    setNewChat(true);
+                    setError('');
+                }}
+                onAddProject={() => {
+                    setCwd('');
+                    setAddingProject(true);
+                    setError('');
+                }}
+                onOpenChat={(id) => {
+                    follow.current = true;
+                    void run(() => backend.openChat(id)).then((opened) => {
+                        if (opened) {
+                            setProjectId(
+                                state?.threads.find((chat) => chat.id === id)
+                                    ?.projectId || '',
+                            );
+                            setNewChat(false);
+                            setAddingProject(false);
+                            setMessage('');
+                        }
+                    });
+                }}
+                onOpenSettings={onOpenSettings}
+            />
             <section className="chat-panel" aria-label="Codex chat">
                 <div className="chat-heading">
                     <div>
                         <span className="eyebrow">CODEX CHAT</span>
                         <h2>
-                            {newChat || !state?.thread
-                                ? 'New chat'
-                                : state.thread.title}
+                            {showProjectForm
+                                ? 'Add project'
+                                : draft
+                                  ? 'New chat'
+                                  : state?.thread?.title}
                         </h2>
                     </div>
                     <span className="status" role="status">
@@ -290,43 +229,46 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                             : state?.thread?.status || 'Ready when you are'}
                     </span>
                 </div>
-                {newChat || !state?.thread ? (
+                {showProjectForm ? (
                     <div className="chat-setup">
-                        {' '}
-                        <h2>Start a new chat</h2>
+                        <h2>Add a project</h2>
                         <p>
-                            Choose an enrolled repository to start a coaching
-                            chat.
+                            Choose a repository once. Every chat in this project
+                            will use that folder.
                         </p>
                         <p className="runtime-note">
                             {isDesktop
-                                ? 'Runs on your computer'
-                                : 'Runs on the preview server'}
+                                ? 'Folders on your computer'
+                                : 'Folders on the preview server'}
                             {state ? ` · ${state.host}` : ''}
                         </p>
                         <form
                             onSubmit={async (event) => {
                                 event.preventDefault();
-                                follow.current = true;
                                 if (
                                     await run(async () => {
-                                        const folder = backend.browseDirectories
-                                            ? await backend.browseDirectories({
-                                                  path: cwd,
-                                              })
-                                            : null;
-                                        if (folder && !folder.currentPath)
+                                        if (!backend.addProject)
+                                            throw new Error(
+                                                'Pull the latest desktop version and restart Electron to enable projects.',
+                                            );
+                                        const folder =
+                                            await backend.browseDirectories({
+                                                path: cwd,
+                                            });
+                                        if (!folder.currentPath)
                                             throw new Error(
                                                 'Choose an existing folder first.',
                                             );
-                                        return backend.startChat({
-                                            cwd: folder?.currentPath || cwd,
-                                            coaching: true,
-                                        });
+                                        const { state: next, project: added } =
+                                            await backend.addProject({
+                                                cwd: folder.currentPath,
+                                            });
+                                        setProjectId(added.id);
+                                        return next;
                                     })
                                 ) {
-                                    setNewChat(false);
-                                    setMessage('');
+                                    setAddingProject(false);
+                                    setNewChat(true);
                                 }
                             }}
                         >
@@ -336,7 +278,53 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                                 disabled={busy || Boolean(running)}
                                 host={state?.host}
                             />
-                            <Button disabled={!cwd.trim() || busy || running}>
+                            <div className="flex gap-2">
+                                <Button
+                                    disabled={!cwd.trim() || busy || running}
+                                >
+                                    Add project
+                                </Button>
+                                {Boolean(state?.projects?.length) && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        disabled={busy}
+                                        onClick={() => setAddingProject(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                )}
+                            </div>
+                        </form>
+                    </div>
+                ) : draft ? (
+                    <div className="chat-setup">
+                        <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Folder />
+                            <span>{project?.name}</span>
+                        </div>
+                        <h2>Start a new chat</h2>
+                        <p>A new coaching chat in {project?.name}.</p>
+                        <p className="runtime-note break-all">{project?.cwd}</p>
+                        <form
+                            onSubmit={async (event) => {
+                                event.preventDefault();
+                                if (!project) return;
+                                follow.current = true;
+                                if (
+                                    await run(() =>
+                                        backend.startChat({
+                                            projectId: project.id,
+                                            coaching: true,
+                                        }),
+                                    )
+                                ) {
+                                    setNewChat(false);
+                                    setMessage('');
+                                }
+                            }}
+                        >
+                            <Button disabled={!project || busy || running}>
                                 New chat
                             </Button>
                         </form>
@@ -414,7 +402,7 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                             }
                         />
                     ))}
-                    {!newChat && state?.thread && (
+                    {!showProjectForm && !newChat && state?.thread && (
                         <form
                             className="composer"
                             onSubmit={(event) => void send(event)}

@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import {
+    mkdir,
+    mkdtemp,
+    readFile,
+    rm,
+    symlink,
+    writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -224,12 +231,156 @@ test('browser chat transport streams state and blocks cross-origin Codex executi
         new TextDecoder().decode(initial.value),
         /"status":"disconnected"/,
     );
-    const started = await fetch(`${url}/api/codex/chats`, {
+    const projectResponse = await fetch(`${url}/api/codex/projects`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ cwd: directory }),
     });
+    assert.equal(projectResponse.status, 200);
+    const projectId = (await projectResponse.json()).project.id;
+    assert.equal(
+        (
+            await fetch(`${url}/api/codex/projects`, {
+                method: 'POST',
+                headers: { ...headers, Origin: 'https://other.example' },
+                body: JSON.stringify({ cwd: directory }),
+            })
+        ).status,
+        403,
+    );
+    const started = await fetch(`${url}/api/codex/chats`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ projectId }),
+    });
     assert.equal(started.status, 200);
     assert.equal((await started.json()).thread.cwd, directory);
     controller.abort();
+});
+
+test('projects persist independently, deduplicate canonical folders, and scope every new chat', async (t) => {
+    const { service, directory, create } = await fixture(t);
+    const alpha = join(directory, 'Alpha');
+    const beta = join(directory, 'Beta');
+    await mkdir(alpha);
+    await mkdir(beta);
+    await symlink(alpha, join(directory, 'alias'), 'dir');
+    await assert.rejects(service.addProject({ cwd: 'relative' }), /absolute/);
+    await assert.rejects(
+        service.addProject({ cwd: join(directory, 'missing') }),
+    );
+    await writeFile(join(directory, 'file'), 'not a directory');
+    await assert.rejects(
+        service.addProject({ cwd: join(directory, 'file') }),
+        /directory/,
+    );
+    let { state } = await service.addProject({ cwd: alpha });
+    const alphaId = state.projects[0].id;
+    ({ state } = await service.addProject({ cwd: join(directory, 'alias') }));
+    assert.equal(state.projects.length, 1);
+    assert.equal(state.projects[0].id, alphaId);
+    ({ state } = await service.addProject({ cwd: beta }));
+    const betaId = state.projects[1].id;
+    assert.equal(
+        state.status,
+        'disconnected',
+        'Adding a project does not require Codex',
+    );
+    assert.equal(state.threads.length, 0);
+    service.dispose();
+
+    const restored = await create();
+    assert.deepEqual((await restored.getCodexState()).projects, state.projects);
+    await assert.rejects(
+        restored.startChat({ projectId: 'missing' }),
+        /existing project/,
+    );
+    await assert.rejects(
+        restored.startChat({ projectId: alphaId, cwd: beta }),
+        /does not match/,
+    );
+    await restored.startChat({ projectId: alphaId });
+    await restored.startChat({ projectId: betaId });
+    state = await restored.startChat({ projectId: alphaId });
+    assert.deepEqual(
+        state.threads.map((thread) => [thread.projectId, thread.cwd]),
+        [
+            [alphaId, alpha],
+            [betaId, beta],
+            [alphaId, alpha],
+        ],
+    );
+    const betaChat = state.threads.find(
+        (thread) => thread.projectId === betaId,
+    );
+    state = await restored.openChat(betaChat.id);
+    assert.equal(state.thread.projectId, betaId);
+    assert.equal(state.thread.cwd, beta);
+    const requests = (
+        await readFile(join(directory, 'codex.json.requests'), 'utf8')
+    )
+        .trim()
+        .split('\n')
+        .map(JSON.parse);
+    assert.deepEqual(
+        requests
+            .filter((request) => request.method === 'thread/start')
+            .map((request) => request.params.cwd),
+        [alpha, beta, alpha],
+    );
+    await rm(beta, { recursive: true });
+    await assert.rejects(restored.startChat({ projectId: betaId }));
+    restored.dispose();
+    const final = await create();
+    assert.deepEqual(
+        (await final.getCodexState()).projects.map((project) => project.id),
+        [alphaId, betaId],
+    );
+    assert.equal((await final.getCodexState()).threads.length, 3);
+});
+
+test('legacy chat indexes migrate into stable projects without losing history or missing folders', async (t) => {
+    const { service, directory, create } = await fixture(t);
+    const initial = await service.startChat({ cwd: directory });
+    const chatId = initial.thread.id;
+    service.dispose();
+    const legacy = initial.threads.map((thread) => {
+        const saved = { ...thread };
+        delete saved.projectId;
+        return saved;
+    });
+    const alias = join(directory, 'repository-alias');
+    await symlink(directory, alias, 'dir');
+    legacy.push({ ...legacy[0], id: 'same-project-chat', cwd: alias });
+    legacy.push({
+        ...legacy[0],
+        id: 'missing-folder-chat',
+        cwd: join(directory, 'no-longer-present'),
+    });
+    await writeFile(join(directory, 'chats.json'), JSON.stringify(legacy));
+    const migrated = await create();
+    const state = await migrated.getCodexState();
+    assert.equal(state.projects.length, 2);
+    assert.deepEqual(
+        state.threads.map((thread) => thread.id),
+        [chatId, 'same-project-chat', 'missing-folder-chat'],
+    );
+    assert.equal(state.threads[0].projectId, state.threads[1].projectId);
+    assert.equal((await migrated.openChat(chatId)).thread.id, chatId);
+    assert.equal(
+        JSON.parse(await readFile(join(directory, 'chats.json'), 'utf8'))
+            .version,
+        2,
+    );
+    migrated.dispose();
+    const reopened = await create();
+    assert.deepEqual((await reopened.getCodexState()).projects, state.projects);
+    assert.deepEqual((await reopened.getCodexState()).threads, state.threads);
+});
+
+test('a failed project save leaves no phantom project in memory', async (t) => {
+    const { service, directory } = await fixture(t);
+    await mkdir(join(directory, 'chats.json.tmp'));
+    await assert.rejects(service.addProject({ cwd: directory }));
+    assert.deepEqual((await service.getCodexState()).projects, []);
 });

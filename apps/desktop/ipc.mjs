@@ -5,6 +5,7 @@ export function registerBackendIpc(ipcMain, backend, isTrustedSender) {
         'installCoachingPlugin',
         'getCodexState',
         'connectCodex',
+        'addProject',
         'startChat',
         'openChat',
         'sendMessage',

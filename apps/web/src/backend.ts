@@ -37,6 +37,7 @@ const browserBackend: BackendApi = {
         request('POST', '/api/coaching-plugin/install', {}),
     getCodexState: () => request('GET', '/api/codex'),
     connectCodex: () => request('POST', '/api/codex/connect', {}),
+    addProject: (input) => request('POST', '/api/codex/projects', input),
     startChat: (input) => request('POST', '/api/codex/chats', input),
     openChat: (id) => request('POST', '/api/codex/open', { id }),
     sendMessage: (text) => request('POST', '/api/codex/message', { text }),

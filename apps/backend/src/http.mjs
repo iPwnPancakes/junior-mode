@@ -137,6 +137,9 @@ export function createBackendServer(backend) {
                 case 'POST /api/codex/connect':
                     result = await backend.connectCodex();
                     break;
+                case 'POST /api/codex/projects':
+                    result = await backend.addProject(body);
+                    break;
                 case 'POST /api/codex/chats':
                     result = await backend.startChat(body);
                     break;

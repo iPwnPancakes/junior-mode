@@ -40,6 +40,7 @@ async function fixture(t, history = false) {
         status: 'ready',
         account: 'Learner',
         thread: null,
+        projects: [],
         threads: [],
         requests: [],
         error: null,
@@ -47,17 +48,24 @@ async function fixture(t, history = false) {
     if (history)
         state.threads = [
             {
+                projectId: 'project-1',
                 id: 'chat-1',
                 title: 'Explain the repo',
                 cwd: '/projects/one',
                 updatedAt: '2026-09-25T10:00:00Z',
             },
             {
+                projectId: 'project-2',
                 id: 'chat-2',
                 title: 'Build a feature',
                 cwd: '/projects/two',
                 updatedAt: '2026-09-25T11:00:00Z',
             },
+        ];
+    if (history)
+        state.projects = [
+            { id: 'project-1', name: 'one', cwd: '/projects/one' },
+            { id: 'project-2', name: 'two', cwd: '/projects/two' },
         ];
     // Keep the event stream open like the real backend; a fulfilled finite
     // response would simulate a disconnect and correctly disable the composer.
@@ -123,6 +131,24 @@ async function fixture(t, history = false) {
                     separator: '/',
                     entries,
                     truncated: false,
+                },
+            });
+        }
+        if (path === '/api/codex/projects') {
+            if (!state.projects.some((project) => project.cwd === body.cwd)) {
+                state.projects.push({
+                    id: 'project-added',
+                    name: body.cwd.split('/').pop(),
+                    cwd: body.cwd,
+                });
+                state.revision++;
+            }
+            return route.fulfill({
+                json: {
+                    state,
+                    project: state.projects.find(
+                        (project) => project.cwd === body.cwd,
+                    ),
                 },
             });
         }
@@ -259,6 +285,17 @@ test('folder command picker supports keyboard, stable hover, hidden folders, dis
     );
     await page
         .locator('.chat-setup')
+        .getByRole('button', { name: 'Add project', exact: true })
+        .click();
+    await page
+        .getByRole('region', { name: 'Project projects', exact: true })
+        .waitFor();
+    assert.equal(
+        calls.find((call) => call.path === '/api/codex/projects').body.cwd,
+        '/projects',
+    );
+    await page
+        .locator('.chat-setup')
         .getByRole('button', { name: 'New chat', exact: true })
         .click();
     await page
@@ -269,7 +306,7 @@ test('folder command picker supports keyboard, stable hover, hidden folders, dis
         calls
             .filter((call) => call.path === '/api/codex/chats')
             .map((call) => call.body),
-        [{ cwd: '/projects', coaching: true }],
+        [{ projectId: 'project-added', coaching: true }],
     );
     assert.deepEqual(errors, []);
 });
@@ -406,6 +443,79 @@ test('sidebar settings preserves chat drafts and supports back and Escape', asyn
     assert.equal(
         await page.getByLabel('Message Codex').inputValue(),
         'Keep this draft',
+    );
+    assert.deepEqual(errors, []);
+});
+
+test('project sidebar groups chats and starts new chats in the chosen project', async (t) => {
+    const { page, calls, errors } = await fixture(t, true);
+    const one = page.getByRole('region', { name: 'Project one', exact: true });
+    const two = page.getByRole('region', { name: 'Project two', exact: true });
+    await one
+        .getByRole('button', { name: 'Explain the repo', exact: false })
+        .waitFor();
+    assert.equal(await one.locator('.chat-link').count(), 1);
+    assert.equal(await two.locator('.chat-link').count(), 1);
+    await one.getByRole('button', { name: 'one', exact: true }).click();
+    assert.equal(await one.locator('.chat-link').count(), 0);
+    await page.getByLabel('Search chats').fill('Explain');
+    await one.locator('.chat-link').waitFor();
+    assert.equal(await two.count(), 0);
+    await page.getByLabel('Search chats').fill('');
+    await two
+        .getByRole('button', { name: 'New chat in two', exact: true })
+        .click();
+    await page
+        .locator('.chat-setup')
+        .getByText('/projects/two', { exact: true })
+        .waitFor();
+    assert.equal(
+        await page
+            .getByRole('combobox', { name: 'Repository', exact: true })
+            .count(),
+        0,
+    );
+    await page
+        .locator('.chat-setup')
+        .getByRole('button', { name: 'New chat', exact: true })
+        .click();
+    await page
+        .getByRole('alert')
+        .filter({ hasText: 'Coaching setup required.' })
+        .waitFor();
+    assert.deepEqual(
+        calls.filter((call) => call.path === '/api/codex/chats').at(-1).body,
+        { projectId: 'project-2', coaching: true },
+    );
+    // The global new-chat button keeps the currently selected project.
+    await page
+        .locator('.chat-sidebar')
+        .getByRole('button', { name: 'New chat', exact: true })
+        .first()
+        .click();
+    await page
+        .locator('.chat-setup')
+        .getByText('/projects/two', { exact: true })
+        .waitFor();
+    await one
+        .getByRole('button', { name: 'New chat in one', exact: true })
+        .click();
+    await one.locator('.chat-link').waitFor();
+    await page
+        .locator('.chat-setup')
+        .getByText('/projects/one', { exact: true })
+        .waitFor();
+    await page
+        .locator('.chat-setup')
+        .getByRole('button', { name: 'New chat', exact: true })
+        .click();
+    await page
+        .getByRole('alert')
+        .filter({ hasText: 'Coaching setup required.' })
+        .waitFor();
+    assert.deepEqual(
+        calls.filter((call) => call.path === '/api/codex/chats').at(-1).body,
+        { projectId: 'project-1', coaching: true },
     );
     assert.deepEqual(errors, []);
 });

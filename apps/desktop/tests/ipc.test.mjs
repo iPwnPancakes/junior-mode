@@ -50,6 +50,7 @@ test('IPC calls backend capabilities and rejects untrusted frames before side ef
         'installCoachingPlugin',
         'getCodexState',
         'connectCodex',
+        'addProject',
         'startChat',
         'openChat',
         'sendMessage',
@@ -69,6 +70,11 @@ test('IPC calls backend capabilities and rejects untrusted frames before side ef
         ).currentPath,
         directory,
     );
+    const added = await handlers.get('junior-mode:addProject')(trustedFrame, {
+        cwd: directory,
+    });
+    assert.equal(added.project.cwd, directory);
+    assert.equal(added.state.projects.length, 1);
     assert.equal((await backend.getCodexState()).status, 'disconnected');
     assert.deepEqual(requests, []);
     const connected = await handlers.get('junior-mode:connectPlatform')(

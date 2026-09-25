@@ -419,8 +419,8 @@
         flex-direction: column;
         min-height: 0;
         padding: 18px 12px 12px;
-        background: #f1f2ef;
-        border-right: 1px solid #dde3da;
+        background: var(--sidebar);
+        border-right: 1px solid var(--border);
     }
     .sidebar-heading {
         display: flex;
@@ -486,11 +486,13 @@
         border-radius: 6px;
     }
     .chat-link:hover:not(:disabled) {
-        background: #e7eae4;
+        background: var(--sidebar-accent);
         filter: none;
     }
-    .chat-link.active {
-        background: #dfe6dc;
+    .chat-link[aria-current='page'],
+    .chat-link[aria-current='page']:hover:not(:disabled) {
+        background: var(--sidebar-primary);
+        color: var(--sidebar-primary-foreground);
     }
     .chat-link strong {
         font-size: 12px;
