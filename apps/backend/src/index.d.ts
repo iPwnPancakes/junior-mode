@@ -71,7 +71,21 @@ export interface CoachingPluginState {
     version: string;
 }
 
+export interface DirectoryListing {
+    directory: string;
+    currentPath: string | null;
+    parentPath: string;
+    home: string;
+    separator: string;
+    entries: Array<{ name: string; path: string }>;
+    truncated: boolean;
+}
+
 export interface BackendApi {
+    browseDirectories(input: {
+        path: string;
+        showHidden?: boolean;
+    }): Promise<DirectoryListing>;
     getCoachingPlugin(): Promise<CoachingPluginState>;
     installCoachingPlugin(): Promise<CoachingPluginState>;
     getCodexState(): Promise<CodexState>;

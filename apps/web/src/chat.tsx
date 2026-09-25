@@ -1,3 +1,4 @@
+import { RepositoryPicker } from "./repository-picker";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type {
@@ -323,39 +324,33 @@ export function Chat() {
                                 event.preventDefault();
                                 follow.current = true;
                                 if (
-                                    await run(() =>
-                                        backend.startChat({
-                                            cwd: cwd.trim(),
+                                    await run(async () => {
+                                        const folder = backend.browseDirectories
+                                            ? await backend.browseDirectories({
+                                                  path: cwd,
+                                              })
+                                            : null;
+                                        if (folder && !folder.currentPath)
+                                            throw new Error(
+                                                "Choose an existing folder first.",
+                                            );
+                                        return backend.startChat({
+                                            cwd: folder?.currentPath || cwd,
                                             coaching,
-                                        }),
-                                    )
+                                        });
+                                    })
                                 ) {
                                     setNewChat(false);
                                     setMessage("");
                                 }
                             }}
                         >
-                            <label htmlFor="repository-path">
-                                Repository path
-                            </label>
-                            <input
-                                id="repository-path"
-                                placeholder={
-                                    isDesktop
-                                        ? "/absolute/path/to/your/repository"
-                                        : "/absolute/path/on/the/server"
-                                }
+                            <RepositoryPicker
                                 value={cwd}
-                                onChange={(event) => setCwd(event.target.value)}
-                                required
-                                spellCheck={false}
-                                disabled={busy || running}
+                                onChange={setCwd}
+                                disabled={busy || Boolean(running)}
+                                host={state?.host}
                             />
-                            <p className="hint">
-                                An existing folder on{" "}
-                                {state?.host || "the Codex machine"}. Codex can
-                                edit files and run commands in it.
-                            </p>
                             <label>
                                 <input
                                     type="checkbox"

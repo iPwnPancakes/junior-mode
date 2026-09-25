@@ -188,7 +188,7 @@ pnpm setup:desktop
 pnpm dev:desktop --url=http://localhost:5174
 ```
 
-In Electron’s Learning platform tab, connect to `http://localhost:8000`. Your machine only needs Node/pnpm and Electron's operating-system dependencies; PHP and the database stay on t3. In this mode, the frontend assets come from the server, but platform requests originate in Electron on your machine. The extra tunnel makes Laravel reachable there. If Laravel already runs locally, omit the second forwarding rule. Local Electron shell/backend changes require updating the local checkout and restarting Electron; frontend edits hot-reload from the remote Vite server.
+In Electron’s Learning platform tab, connect to `http://localhost:8000`. Your machine only needs Node/pnpm and Electron's operating-system dependencies; PHP and the database stay on t3. In this mode, the frontend assets come from the server, but platform requests originate in Electron on your machine. The extra tunnel makes Laravel reachable there. If Laravel already runs locally, omit the second forwarding rule. Local Electron shell/backend changes (including new folder-picker capabilities) require updating the local checkout and restarting Electron; frontend edits hot-reload from the remote Vite server.
 
 ## Codex chats
 
@@ -200,7 +200,7 @@ Install [Codex CLI](https://learn.chatgpt.com/docs/cli) on that machine, then si
 codex login
 ```
 
-Open Junior Mode, select **Connect Codex**, enter an absolute path to an existing repository, and select **New chat**. Messages stream into the chat, commands and file changes appear as expandable activity, and **Stop** interrupts an active turn. **Recent chats** resumes chats after restarting the application. One turn runs at a time in each Junior Mode backend.
+Open Junior Mode, select **Connect Codex**, choose an existing repository with the live folder picker, and select **New chat**. Type a path (including `~/`) to filter folders, use the arrow keys and Enter/Tab to browse, then select **Use this folder**. Home, parent-folder navigation, and hidden folders are available in the picker. It lists folders on the backend host: your computer in Electron, or the preview server in a browser. Messages stream into the chat, commands and file changes appear as expandable activity, and **Stop** interrupts an active turn. **Recent chats** resumes chats after restarting the application. One turn runs at a time in each Junior Mode backend.
 
 Junior Mode launches `codex app-server` as a child process and uses its JSON-RPC stdio protocol. It uses the existing Codex login and configured model/provider. The protocol was checked against Codex CLI 0.155.1. If the executable is not on PATH, set `JUNIOR_CODEX_PATH` to its absolute path in the environment launching Electron or the browser backend. GUI launches also search `~/.local/bin`, `/opt/homebrew/bin`, and `/usr/local/bin`.
 

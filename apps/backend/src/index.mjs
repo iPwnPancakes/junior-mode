@@ -6,6 +6,7 @@ import { createCoachingPlugin, coachingPluginKey } from './coaching-plugin.mjs';
 import { createPlatformAuthorization } from './platform-auth.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { browseDirectories } from './directories.mjs';
 import { serverUrl } from './server-url.mjs';
 
 const emptyState = () => ({
@@ -162,6 +163,7 @@ export async function createBackend({
 
     return {
         ...codex,
+        browseDirectories,
         getCoachingPlugin: () => serialize(() => plugin.state()),
         installCoachingPlugin: () =>
             serialize(async () => {

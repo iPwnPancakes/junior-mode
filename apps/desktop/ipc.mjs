@@ -1,5 +1,6 @@
 export function registerBackendIpc(ipcMain, backend, isTrustedSender) {
     const methods = [
+        'browseDirectories',
         'getCoachingPlugin',
         'installCoachingPlugin',
         'getCodexState',

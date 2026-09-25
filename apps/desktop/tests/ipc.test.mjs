@@ -40,6 +40,7 @@ test('IPC calls backend capabilities and rejects untrusted frames before side ef
         /Untrusted/,
     );
     for (const method of [
+        'browseDirectories',
         'openPlatformAuthorization',
         'getPlatformAuthorization',
         'beginPlatformAuthorization',
@@ -60,6 +61,14 @@ test('IPC calls backend capabilities and rejects untrusted frames before side ef
             /Untrusted/,
         );
     }
+    assert.equal(
+        (
+            await handlers.get('junior-mode:browseDirectories')(trustedFrame, {
+                path: directory,
+            })
+        ).currentPath,
+        directory,
+    );
     assert.equal((await backend.getCodexState()).status, 'disconnected');
     assert.deepEqual(requests, []);
     const connected = await handlers.get('junior-mode:connectPlatform')(

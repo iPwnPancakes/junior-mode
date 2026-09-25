@@ -31,6 +31,7 @@ async function request<T>(
 }
 
 const browserBackend: BackendApi = {
+    browseDirectories: (input) => request('POST', '/api/directories', input),
     getCoachingPlugin: () => request('GET', '/api/coaching-plugin'),
     installCoachingPlugin: () =>
         request('POST', '/api/coaching-plugin/install', {}),

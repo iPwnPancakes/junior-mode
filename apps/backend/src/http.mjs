@@ -96,6 +96,9 @@ export function createBackendServer(backend) {
             }
             let result;
             switch (route) {
+                case 'POST /api/directories':
+                    result = await backend.browseDirectories(body);
+                    break;
                 case 'GET /api/coaching-plugin':
                     result = await backend.getCoachingPlugin();
                     break;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -151,8 +151,20 @@ test(
         let page = await launch();
         const errors = [];
         page.on('pageerror', (error) => errors.push(error.message));
-        await page.getByLabel('Repository path').fill(directory);
+        const repository = join(directory, 'Project Alpha');
+        await mkdir(repository);
+        const picker = page.getByRole('combobox', {
+            name: 'Repository',
+            exact: true,
+        });
+        await picker.fill(join(directory, 'Pro'));
+        await page.getByRole('option', { name: 'Project Alpha' }).waitFor();
+        await picker.press('Enter');
+        await page.getByText('No matching folders.', { exact: true }).waitFor();
+        await page.getByRole('button', { name: 'Use this folder' }).click();
+        assert.equal(await picker.inputValue(), repository);
         await page
+            .locator('.chat-setup')
             .getByRole('button', { name: 'New chat', exact: true })
             .click();
         await page.getByLabel('Message Codex').fill('approve');
@@ -170,9 +182,7 @@ test(
         await page.getByText('Stopped', { exact: true }).waitFor();
         await application.close();
         page = await launch();
-        await page
-            .getByRole('button', { name: `approve ${directory}`, exact: true })
-            .click();
+        await page.locator('.chat-link').filter({ hasText: 'approve' }).click();
         await page.getByText('Decision: accept', { exact: true }).waitFor();
         await page.getByText('Stopped', { exact: true }).waitFor();
         assert.deepEqual(errors, []);
