@@ -775,6 +775,10 @@ textarea:focus {
     flex-shrink: 0;
     color: #798178;
 }
+/* The global hover brightness washes this pale selection nearly white. */
+.repository-folder:hover:not(:disabled) {
+    filter: none;
+}
 .repository-folder[aria-selected='true'] {
     background: #e8eee5;
 }
