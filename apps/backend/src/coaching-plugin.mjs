@@ -1,5 +1,6 @@
+import { openStorage } from './storage.mjs';
 import { execFile } from 'node:child_process';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
@@ -11,8 +12,15 @@ export const coachingPluginKey = `plugins.${coachingPluginId}`;
 export async function createCoachingPlugin({
     marketplaceRoot,
     statePath,
+    storage: providedStorage,
     runCommand = promisify(execFile),
 }) {
+    const storage =
+        providedStorage ??
+        (await openStorage({
+            databasePath: join(dirname(statePath), 'junior-mode.sqlite'),
+            legacyPluginPath: statePath,
+        }));
     let installed;
     const manifestPath = join(
         marketplaceRoot,
@@ -24,7 +32,7 @@ export async function createCoachingPlugin({
             'The bundled coaching plugin is invalid. Reinstall Junior Mode.',
         );
     try {
-        installed = JSON.parse(await readFile(statePath, 'utf8'));
+        installed = storage.getSetting('coaching-plugin');
     } catch {
         /* Installation is explicit. */
     }
@@ -72,6 +80,9 @@ export async function createCoachingPlugin({
         [`${coachingPluginKey}.mcp_servers.junior-mode.enabled`]: false,
     };
     return {
+        dispose() {
+            if (!providedStorage) storage.close();
+        },
         config,
         async state() {
             return { installed: await check(), version: manifest.version };
@@ -135,11 +146,7 @@ export async function createCoachingPlugin({
                     'The installed coaching plugin does not match the bundled version.',
                 );
             }
-            await mkdir(dirname(statePath), { recursive: true });
-            await writeFile(`${statePath}.tmp`, JSON.stringify(installed), {
-                mode: 0o600,
-            });
-            await rename(`${statePath}.tmp`, statePath);
+            storage.setSetting('coaching-plugin', installed);
             return this.state();
         },
     };

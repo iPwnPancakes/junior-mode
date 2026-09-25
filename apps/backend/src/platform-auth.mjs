@@ -1,9 +1,8 @@
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { Buffer } from 'node:buffer';
 import { serverUrl } from './server-url.mjs';
 
 export async function createPlatformAuthorization({
-    path,
+    storage,
     getUrl,
     fetchImpl,
     credentialCodec,
@@ -24,7 +23,8 @@ export async function createPlatformAuthorization({
         userCode: null,
     };
     try {
-        const data = await readFile(path);
+        const data = storage.getCredentials();
+        if (!data) throw new Error('No saved credentials');
         credentials = JSON.parse(
             credentialCodec ? credentialCodec.decrypt(data) : data.toString(),
         );
@@ -67,7 +67,7 @@ export async function createPlatformAuthorization({
         if (response.status === 401 || response.status === 403) {
             state.status = 'revoked';
             credentials = undefined;
-            await rm(path, { force: true });
+            storage.clearCredentials();
             throw new Error(
                 'Platform authorization was revoked or expired. Authorize again.',
             );
@@ -145,7 +145,7 @@ export async function createPlatformAuthorization({
                 authorizationUrl: null,
                 userCode: null,
             };
-            await rm(path, { force: true });
+            storage.clearCredentials();
         },
         async begin(name) {
             if (typeof name !== 'string' || !name.trim() || name.length > 100)
@@ -203,14 +203,12 @@ export async function createPlatformAuthorization({
                 throw new Error('The platform returned invalid credentials.');
             const nextCredentials = { url: getUrl(), token: data.access_token };
             secrets.add(data.access_token);
-            await mkdir(dirname(path), { recursive: true });
             const value = JSON.stringify(nextCredentials);
-            await writeFile(
-                `${path}.tmp`,
-                credentialCodec ? credentialCodec.encrypt(value) : value,
-                { mode: 0o600 },
+            storage.setCredentials(
+                credentialCodec
+                    ? credentialCodec.encrypt(value)
+                    : Buffer.from(value),
             );
-            await rename(`${path}.tmp`, path);
             credentials = nextCredentials;
             pending = undefined;
             return this.check();

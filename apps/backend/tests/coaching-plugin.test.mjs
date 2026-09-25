@@ -31,6 +31,7 @@ async function fixture(t, command) {
                 };
             }),
     });
+    t.after(() => plugin.dispose());
     return { plugin, cache, calls };
 }
 

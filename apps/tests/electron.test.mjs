@@ -169,23 +169,20 @@ test(
         page.on('pageerror', (error) => errors.push(error.message));
         const repository = join(directory, 'Project Alpha');
         await mkdir(repository);
-        const repositoryTrigger = page.getByRole('combobox', {
-            name: 'Repository',
-            exact: true,
-        });
-        await repositoryTrigger.click();
+        await page
+            .locator('.chat-sidebar')
+            .getByRole('button', { name: 'Add project', exact: true })
+            .click();
         const picker = page.getByRole('combobox', {
-            name: 'Folder path',
+            name: 'Project folder path',
             exact: true,
         });
         await picker.fill(join(directory, 'Pro'));
         await page.getByRole('option', { name: 'Project Alpha' }).waitFor();
         await picker.press('Enter');
         await page.getByText('No matching folders.', { exact: true }).waitFor();
-        await page.getByRole('button', { name: 'Use this folder' }).click();
-        assert.equal(await repositoryTrigger.innerText(), repository);
         await page
-            .locator('.chat-setup')
+            .getByRole('dialog')
             .getByRole('button', { name: 'Add project', exact: true })
             .click();
         await page

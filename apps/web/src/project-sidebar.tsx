@@ -90,14 +90,15 @@ export function ProjectSidebar({
                 </span>
                 <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
+                    className="size-7 text-muted-foreground hover:text-foreground"
                     disabled={disabled}
+                    data-project-create
                     aria-label="Add project"
                     title="Add project"
                     onClick={onAddProject}
                 >
-                    <FolderPlus />{' '}
-                    <span className="hidden sm:inline">Add project</span>
+                    <FolderPlus className="size-4" />
                 </Button>
             </div>
             <div className="chat-list gap-3 overflow-y-auto">

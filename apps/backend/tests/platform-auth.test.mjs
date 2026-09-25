@@ -1,5 +1,6 @@
+import { openStorage } from '../src/storage.mjs';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -8,7 +9,7 @@ import { createBackend } from '../src/index.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
-async function fixture(t) {
+async function fixture(t, credentialCodec) {
     const directory = await mkdtemp(join(tmpdir(), 'junior-platform-'));
     const calls = [];
     const token = `jm_${'a'.repeat(64)}`;
@@ -17,6 +18,7 @@ async function fixture(t) {
         enrolled = true,
         approved = false;
     const options = {
+        credentialCodec,
         pluginCommand: async () => ({
             stdout: JSON.stringify({
                 pluginId: 'junior-mode@junior-mode-desktop',
@@ -85,14 +87,19 @@ async function fixture(t) {
         },
     };
     const backend = await createBackend(options);
+    const storage = await openStorage({
+        databasePath: join(directory, 'junior-mode.sqlite'),
+    });
     t.after(async () => {
         backend.dispose();
+        storage.close();
         await rm(directory, { recursive: true, force: true });
     });
     await backend.connectPlatform('http://platform.test');
     await backend.installCoachingPlugin();
     return {
         directory,
+        storage,
         backend,
         options,
         calls,
@@ -126,11 +133,10 @@ test('named authorization keeps credentials out of renderer state and settings a
     assert.ok(!JSON.stringify(auth).includes(f.token));
     assert.ok(!JSON.stringify(auth).includes('private-device-code'));
     assert.ok(
-        !(await readFile(f.options.settingsPath, 'utf8')).includes(f.token),
+        !JSON.stringify(f.storage.getSetting('connection')).includes(f.token),
     );
     assert.equal(
-        (await stat(join(f.directory, 'platform-credentials.json'))).mode &
-            0o777,
+        (await stat(join(f.directory, 'junior-mode.sqlite'))).mode & 0o777,
         0o600,
     );
     await f.backend.connectCodex();
@@ -142,10 +148,7 @@ test('named authorization keeps credentials out of renderer state and settings a
     t.after(() => restored.dispose());
     assert.equal((await restored.checkPlatformAuthorization()).learner, 'Lee');
     await f.backend.disconnectPlatform();
-    await assert.rejects(
-        readFile(join(f.directory, 'platform-credentials.json')),
-        { code: 'ENOENT' },
-    );
+    assert.equal(f.storage.getCredentials(), undefined);
 });
 
 test('enrollment is checked before coaching threads and rechecked before messages; unavailable and revoked access fail closed', async (t) => {
@@ -188,10 +191,7 @@ test('enrollment is checked before coaching threads and rechecked before message
         (await f.backend.getPlatformAuthorization()).status,
         'revoked',
     );
-    await assert.rejects(
-        readFile(join(f.directory, 'platform-credentials.json')),
-        { code: 'ENOENT' },
-    );
+    assert.equal(f.storage.getCredentials(), undefined);
     f.offline();
     await assert.rejects(
         f.backend.beginPlatformAuthorization('Desktop'),
@@ -261,10 +261,7 @@ test('failed secure storage does not activate in-memory credentials', async (t) 
         /Secure storage/,
     );
     await assert.rejects(backend.checkPlatformAuthorization(), /Authorize/);
-    await assert.rejects(
-        readFile(join(f.directory, 'platform-credentials.json')),
-        { code: 'ENOENT' },
-    );
+    assert.equal(f.storage.getCredentials(), undefined);
 });
 
 test('renderer-facing Codex errors redact previous credentials after disconnect', async (t) => {
@@ -279,4 +276,24 @@ test('renderer-facing Codex errors redact previous credentials after disconnect'
         f.backend.interruptChat(),
         (error) => error.message === '[redacted]',
     );
+});
+
+test('desktop credential payloads remain encrypted in SQLite and decrypt on restart', async (t) => {
+    const codec = {
+        encrypt: (value) => Buffer.from(value).map((byte) => byte ^ 0xa5),
+        decrypt: (value) =>
+            Buffer.from(value)
+                .map((byte) => byte ^ 0xa5)
+                .toString(),
+    };
+    const f = await fixture(t, codec);
+    await f.backend.beginPlatformAuthorization('Desktop');
+    f.approve();
+    await f.backend.completePlatformAuthorization();
+    const encrypted = f.storage.getCredentials();
+    assert.ok(!encrypted.toString().includes(f.token));
+    assert.equal(JSON.parse(codec.decrypt(encrypted)).token, f.token);
+    const restarted = await createBackend(f.options);
+    t.after(() => restarted.dispose());
+    assert.equal((await restarted.checkPlatformAuthorization()).learner, 'Lee');
 });

@@ -127,5 +127,7 @@ export interface BackendApi {
 }
 
 export function createBackend(options: {
-    settingsPath: string;
+    settingsPath?: string;
+    dataDirectory?: string;
+    legacyDirectory?: string;
 }): Promise<BackendApi>;

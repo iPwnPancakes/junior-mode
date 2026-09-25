@@ -78,7 +78,7 @@ app.on('window-all-closed', () => {
 app.whenReady()
     .then(async () => {
         const backend = await createBackend({
-            settingsPath: join(app.getPath('userData'), 'connection.json'),
+            dataDirectory: app.getPath('userData'),
             marketplaceRoot: app.isPackaged
                 ? join(process.resourcesPath, 'coaching-marketplace')
                 : fileURLToPath(new URL('../../', import.meta.url)),

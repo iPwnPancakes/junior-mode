@@ -1,3 +1,4 @@
+import { DatabaseSync } from 'node:sqlite';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import {
@@ -357,6 +358,7 @@ test('legacy chat indexes migrate into stable projects without losing history or
         id: 'missing-folder-chat',
         cwd: join(directory, 'no-longer-present'),
     });
+    await rm(join(directory, 'junior-mode.sqlite'));
     await writeFile(join(directory, 'chats.json'), JSON.stringify(legacy));
     const migrated = await create();
     const state = await migrated.getCodexState();
@@ -367,10 +369,9 @@ test('legacy chat indexes migrate into stable projects without losing history or
     );
     assert.equal(state.threads[0].projectId, state.threads[1].projectId);
     assert.equal((await migrated.openChat(chatId)).thread.id, chatId);
-    assert.equal(
-        JSON.parse(await readFile(join(directory, 'chats.json'), 'utf8'))
-            .version,
-        2,
+    assert.deepEqual(
+        JSON.parse(await readFile(join(directory, 'chats.json'), 'utf8')),
+        legacy,
     );
     migrated.dispose();
     const reopened = await create();
@@ -380,7 +381,24 @@ test('legacy chat indexes migrate into stable projects without losing history or
 
 test('a failed project save leaves no phantom project in memory', async (t) => {
     const { service, directory } = await fixture(t);
-    await mkdir(join(directory, 'chats.json.tmp'));
+    const db = new DatabaseSync(join(directory, 'junior-mode.sqlite'));
+    t.after(() => db.close());
+    db.exec(
+        "CREATE TRIGGER reject_project BEFORE INSERT ON projects BEGIN SELECT RAISE(ABORT, 'Disk failure fixture'); END",
+    );
     await assert.rejects(service.addProject({ cwd: directory }));
     assert.deepEqual((await service.getCodexState()).projects, []);
+});
+
+test('project creation only creates folders when explicitly requested', async (t) => {
+    const { service, directory } = await fixture(t);
+    const cwd = join(directory, 'New project');
+    await assert.rejects(service.addProject({ cwd }));
+    const added = await service.addProject({ cwd, create: true });
+    assert.equal(added.project.cwd, cwd);
+    assert.equal(added.state.projects.length, 1);
+    assert.equal(
+        (await service.addProject({ cwd, create: true })).project.id,
+        added.project.id,
+    );
 });

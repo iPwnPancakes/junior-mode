@@ -1,3 +1,5 @@
+import { openStorage } from '../src/storage.mjs';
+import { dirname } from 'node:path';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -52,9 +54,12 @@ test('the backend checks Laravel over HTTP and persists only its platform origin
     assert.equal(connection.status, 'connected');
     assert.ok(connection.checkedAt);
     assert.deepEqual(requests, ['/api/v1/health']);
-    assert.deepEqual(JSON.parse(await readFile(settingsPath, 'utf8')), {
-        platformUrl,
+    const storage = await openStorage({
+        databasePath: join(dirname(settingsPath), 'junior-mode.sqlite'),
     });
+    t.after(() => storage.close());
+    assert.deepEqual(storage.getSetting('connection'), { platformUrl });
+    await assert.rejects(readFile(settingsPath), { code: 'ENOENT' });
 
     const restarted = await createBackend({ settingsPath });
     assert.equal((await restarted.getConnection()).status, 'unchecked');

@@ -60,7 +60,7 @@ The root `packageManager` field pins pnpm 11.25.0. If your Node installation doe
 | `pnpm check` | Client checks and the platform's complete CI checks |
 | `pnpm build` | Both frontend production builds |
 
-Open `http://localhost:5174` for the new client or `http://localhost:8000` for the learning platform. In the Learning platform tab, enter `http://localhost:8000` as the platform address. This checks compatibility and availability. In Coaching authorization, name this client, open the approval page in your browser, sign in as a Learner, approve the displayed code, and select **I approved this client**. Codex login remains separate.
+Open `http://localhost:5174` for the new client or `http://localhost:8000` for the learning platform. In Settings → Learning platform, enter `http://localhost:8000` as the platform address. This checks compatibility and availability. In Coaching authorization, name this client, open the approval page in your browser, sign in as a Learner, approve the displayed code, and select **I approved this client**. Codex login remains separate.
 
 | Process | Default address | Responsibility |
 | --- | --- | --- |
@@ -92,7 +92,7 @@ configures the registry and `@/` import alias. Theme tokens live in `src/ui.css`
 
 Prefer the existing shadcn components for controls and interactions. Add more
 from the repository root with `pnpm dlx shadcn@latest add <component> -c apps/web`.
-The repository picker composes Popover, Command, Checkbox, and Button; folder
+The project picker composes Dialog, Command, Checkbox, and Button; folder
 enumeration still comes from the active backend host.
 
 Run `pnpm exec playwright install chromium` once, then `pnpm test:web` for
@@ -174,7 +174,7 @@ Open `http://T3_IP:5174` in your browser. Or, from your local checkout, launch E
 pnpm dev:desktop --url=http://T3_IP:5174
 ```
 
-In the Learning platform tab, connect to `http://T3_IP:8000`. Use the server's reachable IP, not `0.0.0.0` (which is only the listening address). The client UI and Laravel listen on the chosen interface; the Node backend remains on `127.0.0.1:4318` behind Vite's proxy. Electron continues to run Codex locally.
+In Settings → Learning platform, connect to `http://T3_IP:8000`. Use the server's reachable IP, not `0.0.0.0` (which is only the listening address). The client UI and Laravel listen on the chosen interface; the Node backend remains on `127.0.0.1:4318` behind Vite's proxy. Electron continues to run Codex locally.
 
 `--host=0.0.0.0` also works. Set `DEV_HOST` in `apps/.env` to make it your default; the command-line flag takes precedence. Without either, the stack still binds to loopback. To use the Laravel website's own hot-reloaded UI on port 8000, use `--host T3_IP` so its Vite asset URLs advertise a reachable address, and allow port 5173 too.
 
@@ -219,7 +219,7 @@ codex login
 
 Electron starts Codex automatically on boot. Use **Settings → Providers** in the bottom sidebar to inspect its account/status or reconnect after CLI sign-in. In browser preview, connect there manually.
 
-Choose **Add project** and select an existing repository with the live folder picker. Type a path (including `~/`) to filter folders, use the arrow keys and Enter/Tab to browse, then select **Use this folder**. Home, parent-folder navigation, and hidden folders are available. The picker browses the backend host: your computer in Electron, or the preview server in a browser.
+Use the **folder-plus icon** beside **Your projects** to open the project picker without leaving your chat. Type a path (including `~/`) to see live folder suggestions; use the arrow keys and Enter/Tab to open folders. Select **Add project** or press **Ctrl/Cmd+Enter** to use the current folder. A missing folder changes the action to **Create & add project**, explicitly creating it before adding the project. Escape closes the picker and returns focus to the sidebar. Home, parent-folder navigation, and hidden folders are available. It browses the backend host: your computer in Electron, or the preview server in a browser.
 
 Projects stay in the sidebar even before their first chat. Use the **+** beside a project to open a new chat scoped to that folder; the global **New chat** action keeps the current project. Chats appear beneath their project, with collapsible groups and search across project names, paths, and chat titles. Adding the same folder (including a symbolic link to it) reuses its project. Adding a project does not enroll the repository or start Codex.
 
@@ -227,7 +227,7 @@ Messages stream into the chat, commands and file changes appear as expandable ac
 
 Junior Mode launches `codex app-server` as a child process and uses its JSON-RPC stdio protocol. It uses the existing Codex login and configured model/provider. The protocol was checked against Codex CLI 0.155.1. If the executable is not on PATH, set `JUNIOR_CODEX_PATH` to its absolute path in the environment launching Electron or the browser backend. GUI launches also search `~/.local/bin`, `/opt/homebrew/bin`, and `/usr/local/bin`.
 
-Threads use Codex's `workspace-write` sandbox and `on-request` approval policy, with approvals routed to the user. Command/file approval requests and questions appear in the chat. Unsupported request types return an explicit error; the app never silently grants them. Codex manages its own transcripts; Junior Mode stores a versioned index of projects, chat IDs, and project associations in `codex-chats.json` alongside its connection settings. Flat indexes from older releases migrate automatically by repository path, preserving chat IDs and missing-folder history. Projects and transcripts remain on the backend machine; renderer storage is not used. It does not list unrelated Codex sessions.
+Threads use Codex's `workspace-write` sandbox and `on-request` approval policy, with approvals routed to the user. Command/file approval requests and questions appear in the chat. Unsupported request types return an explicit error; the app never silently grants them. Codex manages its own transcripts; Junior Mode stores a versioned index of projects, chat IDs, and project associations in the local SQLite database alongside its connection settings. Flat indexes from older releases migrate automatically by repository path, preserving chat IDs and missing-folder history. Projects and transcripts remain on the backend machine; renderer storage is not used. It does not list unrelated Codex sessions.
 
 New chats in the app always enable coaching and connect their managed Codex thread to the platform MCP; there is no per-chat opt-in. The backend resolves the origin Git remote against the authenticated Learner’s enrollments before starting and before each turn. Unknown repositories, revoked authorization, or an unavailable platform block chat startup rather than falling back to a plain chat. Previously saved plain chats retain their original behavior when resumed. In **Settings → Learning platform**, choose **Install coaching plugin** once before starting your first coaching chat. This uses the installed Codex CLI to install the bundled version into its plugin cache and register only `junior-mode@junior-mode-desktop`; unrelated Codex settings are preserved. Reinstall after a Junior Mode update. Managed plain chats disable this plugin and MCP server; coaching chats load its installed Junior Mode skill explicitly on each turn, including after resume. The backend supplies authenticated MCP transport separately to avoid a duplicate plugin server. Starting a chat still does not create a Coaching Session until the skill finds a relevant objective and the platform accepts its startup call.
 
@@ -235,7 +235,20 @@ This is the chat foundation, with CLI-based sign-in and plain-text transcripts. 
 
 ## State and verification
 
-Laravel owns the learning records and account data. The browser-preview backend saves its platform address in `apps/.local/connection.json` (overridable with `JUNIOR_SETTINGS_PATH`). Electron saves its address in `connection.json` under Electron's per-user application data directory. These are separate local settings, not copies of the learning database. Platform credentials live separately in `platform-credentials.json`: Electron uses operating-system encryption and refuses to save when secure storage is unavailable; browser preview uses a private mode-0600 file on the preview host. Disconnect removes the local credential and stops its Codex connection; revoke the named client on the platform to invalidate it server-side. The renderer receives only authorization status, names, and the short-lived browser approval link. Process-scoped Codex overrides and environment variables configure `/mcp`; no global Codex configuration is written.
+Laravel owns the learning records and account data. The local backend stores application settings, plugin metadata, projects, chat metadata, and platform credentials in **`junior-mode.sqlite`** using Node’s built-in SQLite driver (Node 22.13+; Node 24 recommended). Tables use a versioned schema, foreign keys, WAL journaling, and transactions for project/chat updates.
+
+- **Electron:** `junior-mode.sqlite` under `app.getPath('userData')`, the OS-standard per-user app directory. Development and packaged app names can have different directories; existing Electron data stays in its current directory.
+- **Browser backend on Linux:** `$XDG_DATA_HOME/junior-mode/browser/junior-mode.sqlite`, defaulting to `~/.local/share/junior-mode/browser/junior-mode.sqlite`.
+- **Browser backend on macOS:** `~/Library/Application Support/Junior Mode/browser/junior-mode.sqlite`.
+- **Browser backend on Windows:** `%LOCALAPPDATA%\Junior Mode\browser\junior-mode.sqlite`.
+
+Set `JUNIOR_DATA_DIR` to an absolute directory to override browser-backend storage. The old `JUNIOR_SETTINGS_PATH` override remains supported: its parent directory receives the database and supplies legacy files. Browser and desktop storage are separate because they own different local repositories. Browser storage is now independent of the active checkout.
+
+On first launch, the backend transactionally imports `connection.json`, `coaching-plugin.json`, `codex-chats.json` (flat or versioned), and `platform-credentials.json`. Electron imports from its app directory; browser preview imports from the current checkout’s `apps/.local` directory, or the legacy override. Original files remain untouched as backups. A migration marker prevents old files from restoring deleted settings or disconnected credentials. Malformed imports fail without committing partial data and can be retried after repairing the original file.
+
+The database has owner-only file permissions. Electron credentials remain encrypted with OS-backed `safeStorage` inside a BLOB; secure storage must be available before new credentials can be saved. Browser credentials are stored unencrypted in the private database on the preview host. SQLite does not replace OS credential encryption. Back up the database with a SQLite-aware tool while running, or copy it after stopping the app so WAL writes have been checkpointed.
+
+Disconnect removes the credential from the active database and stops its Codex connection; revoke the named client on the platform to invalidate it server-side. Legacy backup files remain unchanged. The renderer receives only authorization status, names, and the short-lived browser approval link. Process-scoped Codex overrides and environment variables configure `/mcp`; no global Codex configuration is written.
 
 Run checks from the repository root:
 

@@ -108,8 +108,11 @@ async function fixture(t, history = false) {
             });
         }
         if (path === '/api/directories') {
-            const directory = body.path.replace(/\/$/, '') || '/projects';
+            const directory = body.path.startsWith('~')
+                ? '/projects'
+                : body.path.replace(/\/$/, '') || '/projects';
             const partial = directory === '/projects/Pro';
+            const missing = directory === '/projects/New repository';
             const home = directory === '/projects' || partial;
             const entries = home
                 ? Array.from({ length: 24 }, (_, index) => {
@@ -124,8 +127,8 @@ async function fixture(t, history = false) {
                 });
             return route.fulfill({
                 json: {
-                    directory: partial ? '/projects' : directory,
-                    currentPath: partial ? null : directory,
+                    directory: partial || missing ? '/projects' : directory,
+                    currentPath: partial || missing ? null : directory,
                     parentPath: '/',
                     home: '/projects',
                     separator: '/',
@@ -216,13 +219,12 @@ async function fixture(t, history = false) {
 
 test('folder command picker supports keyboard, stable hover, hidden folders, dismissal and coaching startup', async (t) => {
     const { page, calls, errors } = await fixture(t);
-    const trigger = page.getByRole('combobox', {
-        name: 'Repository',
-        exact: true,
-    });
+    const trigger = page
+        .locator('.chat-sidebar')
+        .getByRole('button', { name: 'Add project', exact: true });
     await trigger.click();
     const input = page.getByRole('combobox', {
-        name: 'Folder path',
+        name: 'Project folder path',
         exact: true,
     });
     await input.fill('/projects/Pro');
@@ -230,11 +232,11 @@ test('folder command picker supports keyboard, stable hover, hidden folders, dis
     await page.waitForFunction(
         () =>
             globalThis.document
-                .querySelector('[data-slot=popover-content]')
+                .querySelector('[data-slot=dialog-content]')
                 ?.getBoundingClientRect().height > 100,
     );
     const popup = await page
-        .locator('[data-slot=popover-content]')
+        .locator('[data-slot=dialog-content]')
         .boundingBox();
     assert.ok(
         popup.y >= 0 && popup.y + popup.height <= 701,
@@ -268,23 +270,16 @@ test('folder command picker supports keyboard, stable hover, hidden folders, dis
     );
     await input.press('Tab');
     await page.getByText('No matching folders.', { exact: true }).waitFor();
-    await page.getByRole('button', { name: 'Use this folder' }).click();
-    assert.equal(await trigger.innerText(), '/projects/Project 13');
-    await page
-        .locator('[data-slot=popover-content]')
-        .waitFor({ state: 'hidden' });
-    await trigger.click();
     await page.getByRole('button', { name: 'Home', exact: true }).click();
     await page.getByRole('option', { name: 'Project 00' }).waitFor();
     await page.getByRole('checkbox', { name: 'Show hidden' }).check();
     await page.getByRole('option', { name: '.private' }).waitFor();
     await page.keyboard.press('Escape');
-    assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
-    await page.waitForFunction(
-        () => globalThis.document.activeElement?.id === 'repository-path',
-    );
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    await trigger.click();
+    await page.getByRole('option', { name: 'Project 00' }).waitFor();
     await page
-        .locator('.chat-setup')
+        .getByRole('dialog')
         .getByRole('button', { name: 'Add project', exact: true })
         .click();
     await page
@@ -343,7 +338,7 @@ test('platform tabs, forms and authorization actions remain usable with shadcn c
         .getByRole('button', { name: 'Back to chats', exact: true })
         .click();
     await page
-        .getByRole('combobox', { name: 'Repository', exact: true })
+        .getByRole('heading', { name: 'Start with a project', exact: true })
         .waitFor();
     assert.deepEqual(errors, []);
 });
@@ -516,6 +511,68 @@ test('project sidebar groups chats and starts new chats in the chosen project', 
     assert.deepEqual(
         calls.filter((call) => call.path === '/api/codex/chats').at(-1).body,
         { projectId: 'project-1', coaching: true },
+    );
+    assert.deepEqual(errors, []);
+});
+
+test('project picker preserves the chat, restores focus, and retries explicit folder creation', async (t) => {
+    const { page, calls, errors } = await fixture(t, true);
+    await page.locator('.chat-link').first().click();
+    await page.getByLabel('Message Codex').fill('Keep this draft');
+    const trigger = page
+        .locator('.chat-sidebar')
+        .getByRole('button', { name: 'Add project', exact: true });
+    await trigger.click();
+    const input = page.getByRole('combobox', {
+        name: 'Project folder path',
+        exact: true,
+    });
+    await input.waitFor();
+    assert.equal(
+        await input.evaluate((el) => el === globalThis.document.activeElement),
+        true,
+    );
+    await page.keyboard.press('Escape');
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    await page.waitForFunction(() =>
+        globalThis.document.activeElement?.hasAttribute('data-project-create'),
+    );
+    assert.equal(
+        await page.getByLabel('Message Codex').inputValue(),
+        'Keep this draft',
+    );
+    await trigger.click();
+    await input.fill('/projects/New repository');
+    const submit = page.getByRole('button', {
+        name: 'Create & add project',
+        exact: true,
+    });
+    await submit.waitFor();
+    let fail = true;
+    await page.route('**/api/codex/projects', (route) => {
+        if (fail) {
+            fail = false;
+            return route.fulfill({
+                status: 400,
+                json: { error: 'Permission denied.' },
+            });
+        }
+        return route.fallback();
+    });
+    await submit.click();
+    await page
+        .getByRole('dialog')
+        .getByRole('alert')
+        .filter({ hasText: 'Permission denied.' })
+        .waitFor();
+    await input.press('Control+Enter');
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    await page
+        .getByRole('region', { name: 'Project New repository', exact: true })
+        .waitFor();
+    assert.deepEqual(
+        calls.filter((call) => call.path === '/api/codex/projects').at(-1).body,
+        { cwd: '/projects/New repository', create: true },
     );
     assert.deepEqual(errors, []);
 });

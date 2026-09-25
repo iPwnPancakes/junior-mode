@@ -1,14 +1,8 @@
-import {
-    mkdir,
-    readFile,
-    realpath,
-    rename,
-    stat,
-    writeFile,
-} from 'node:fs/promises';
+import { mkdir, realpath, stat } from 'node:fs/promises';
+import { openStorage } from './storage.mjs';
 import { randomUUID } from 'node:crypto';
 import { hostname } from 'node:os';
-import { basename, dirname, isAbsolute } from 'node:path';
+import { basename, dirname, isAbsolute, join } from 'node:path';
 import { createCodexProcess } from './codex-process.mjs';
 
 const limit = (value) => String(value ?? '').slice(-100000);
@@ -48,6 +42,7 @@ function displayItem(item) {
 
 export async function createCodexService({
     statePath,
+    storage: providedStorage,
     processFactory = createCodexProcess,
     processOptions = () => ({}),
     coachingSkill = async () => {
@@ -59,6 +54,12 @@ export async function createCodexService({
     },
     redact = (value) => value,
 }) {
+    const storage =
+        providedStorage ??
+        (await openStorage({
+            databasePath: join(dirname(statePath), 'junior-mode.sqlite'),
+            legacyChatPath: statePath,
+        }));
     const listeners = new Set();
     let transport;
     let starting;
@@ -76,64 +77,7 @@ export async function createCodexService({
         requests: [],
         revision: 0,
     };
-    try {
-        const stored = JSON.parse(await readFile(statePath, 'utf8'));
-        const legacy = Array.isArray(stored);
-        const threads = legacy ? stored : stored.threads;
-        const projects = legacy ? [] : stored.projects;
-        if (
-            (!legacy && stored.version !== 2) ||
-            !Array.isArray(threads) ||
-            threads.some(
-                (entry) =>
-                    !entry?.id ||
-                    typeof entry.cwd !== 'string' ||
-                    !isAbsolute(entry.cwd),
-            ) ||
-            !Array.isArray(projects) ||
-            projects.some(
-                (project) =>
-                    !project?.id ||
-                    typeof project.name !== 'string' ||
-                    typeof project.cwd !== 'string' ||
-                    !isAbsolute(project.cwd),
-            )
-        )
-            throw new Error('Invalid project/chat index');
-        // Older releases stored a flat chat list. Preserve IDs and transcripts
-        // while grouping paths (including aliases) into persistent projects.
-        if (legacy) {
-            for (const thread of threads) {
-                const cwd = await realpath(thread.cwd).catch(() => thread.cwd);
-                let project = projects.find((entry) => entry.cwd === cwd);
-                if (!project) {
-                    project = {
-                        id: randomUUID(),
-                        name: basename(cwd) || cwd,
-                        cwd,
-                    };
-                    projects.push(project);
-                }
-                thread.projectId = project.id;
-            }
-        } else if (
-            threads.some(
-                (thread) =>
-                    !projects.some(
-                        (project) => project.id === thread.projectId,
-                    ),
-            )
-        ) {
-            throw new Error('Invalid project reference in chat index');
-        }
-        state.projects = projects;
-        state.threads = threads;
-        if (legacy) await save();
-    } catch (error) {
-        if (error.code !== 'ENOENT')
-            state.error =
-                'Saved projects and chats could not be read. Existing transcripts remain in Codex storage.';
-    }
+    Object.assign(state, storage.loadChats());
 
     const snapshot = () => JSON.parse(redact(JSON.stringify(state)));
     function projectResult(project) {
@@ -148,15 +92,7 @@ export async function createCodexService({
         for (const listener of listeners) listener(snapshot());
     }
     async function save(projects = state.projects) {
-        await mkdir(dirname(statePath), { recursive: true });
-        await writeFile(
-            `${statePath}.tmp`,
-            JSON.stringify({ version: 2, projects, threads: state.threads }),
-            {
-                mode: 0o600,
-            },
-        );
-        await rename(`${statePath}.tmp`, statePath);
+        storage.saveChats({ projects, threads: state.threads });
     }
     function upsert(item) {
         const normalized = displayItem(item);
@@ -426,6 +362,16 @@ export async function createCodexService({
         },
         addProject: (input) =>
             exclusive(async () => {
+                if (
+                    input?.create !== undefined &&
+                    typeof input.create !== 'boolean'
+                )
+                    throw new Error('Invalid create-folder option.');
+                if (input?.create) {
+                    if (typeof input.cwd !== 'string' || !isAbsolute(input.cwd))
+                        throw new Error('Enter an absolute repository path.');
+                    await mkdir(input.cwd, { recursive: true });
+                }
                 const cwd = await repositoryPath(input?.cwd);
                 const existing = state.projects.find(
                     (project) => project.cwd === cwd,
@@ -626,6 +572,7 @@ export async function createCodexService({
             transport?.dispose();
             transport = undefined;
             listeners.clear();
+            if (!providedStorage) storage.close();
         },
     };
 }

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { RepositoryPicker } from './repository-picker';
+import { ProjectDialog } from './project-dialog';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type {
@@ -12,7 +12,7 @@ import type {
     CodexRequest,
     CodexState,
 } from '@junior-mode/backend';
-import { backend, isDesktop } from './backend';
+import { backend } from './backend';
 
 function RequestCard({
     request,
@@ -105,7 +105,6 @@ function RequestCard({
 
 export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     const [state, setState] = useState<CodexState | null>(null);
-    const [cwd, setCwd] = useState('');
     const [newChat, setNewChat] = useState(false);
     const [projectId, setProjectId] = useState('');
     const [addingProject, setAddingProject] = useState(false);
@@ -120,7 +119,7 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
         state?.projects?.find(
             (entry) => entry.id === (projectId || state.thread?.projectId),
         ) ?? state?.projects?.[0];
-    const showProjectForm = addingProject || !state?.projects?.length;
+    const noProjects = !state?.projects?.length;
     const draft = newChat || !state?.thread;
 
     useEffect(
@@ -174,12 +173,26 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
 
     return (
         <main className="chat-layout">
+            <ProjectDialog
+                open={addingProject}
+                onOpenChange={setAddingProject}
+                host={state?.host}
+                onAdded={(next, added) => {
+                    setState((current) =>
+                        current?.instanceId === next.instanceId &&
+                        current.revision > next.revision
+                            ? current
+                            : next,
+                    );
+                    setProjectId(added.id);
+                    setNewChat(true);
+                    setError('');
+                }}
+            />
             <ProjectSidebar
                 state={state}
                 disabled={busy || Boolean(running)}
-                draftProjectId={
-                    draft && !showProjectForm ? project?.id : undefined
-                }
+                draftProjectId={draft && !noProjects ? project?.id : undefined}
                 onNewChat={(selected = project) => {
                     if (!selected) {
                         setAddingProject(true);
@@ -191,7 +204,6 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                     setError('');
                 }}
                 onAddProject={() => {
-                    setCwd('');
                     setAddingProject(true);
                     setError('');
                 }}
@@ -216,8 +228,8 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                     <div>
                         <span className="eyebrow">CODEX CHAT</span>
                         <h2>
-                            {showProjectForm
-                                ? 'Add project'
+                            {noProjects
+                                ? 'Welcome'
                                 : draft
                                   ? 'New chat'
                                   : state?.thread?.title}
@@ -229,73 +241,19 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                             : state?.thread?.status || 'Ready when you are'}
                     </span>
                 </div>
-                {showProjectForm ? (
+                {noProjects ? (
                     <div className="chat-setup">
-                        <h2>Add a project</h2>
+                        <h2>Start with a project</h2>
                         <p>
-                            Choose a repository once. Every chat in this project
-                            will use that folder.
+                            Add a local folder to start your first coaching
+                            chat.
                         </p>
-                        <p className="runtime-note">
-                            {isDesktop
-                                ? 'Folders on your computer'
-                                : 'Folders on the preview server'}
-                            {state ? ` · ${state.host}` : ''}
-                        </p>
-                        <form
-                            onSubmit={async (event) => {
-                                event.preventDefault();
-                                if (
-                                    await run(async () => {
-                                        if (!backend.addProject)
-                                            throw new Error(
-                                                'Pull the latest desktop version and restart Electron to enable projects.',
-                                            );
-                                        const folder =
-                                            await backend.browseDirectories({
-                                                path: cwd,
-                                            });
-                                        if (!folder.currentPath)
-                                            throw new Error(
-                                                'Choose an existing folder first.',
-                                            );
-                                        const { state: next, project: added } =
-                                            await backend.addProject({
-                                                cwd: folder.currentPath,
-                                            });
-                                        setProjectId(added.id);
-                                        return next;
-                                    })
-                                ) {
-                                    setAddingProject(false);
-                                    setNewChat(true);
-                                }
-                            }}
+                        <Button
+                            className="mt-6"
+                            onClick={() => setAddingProject(true)}
                         >
-                            <RepositoryPicker
-                                value={cwd}
-                                onChange={setCwd}
-                                disabled={busy || Boolean(running)}
-                                host={state?.host}
-                            />
-                            <div className="flex gap-2">
-                                <Button
-                                    disabled={!cwd.trim() || busy || running}
-                                >
-                                    Add project
-                                </Button>
-                                {Boolean(state?.projects?.length) && (
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        disabled={busy}
-                                        onClick={() => setAddingProject(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                )}
-                            </div>
-                        </form>
+                            Add project
+                        </Button>
                     </div>
                 ) : draft ? (
                     <div className="chat-setup">
@@ -402,7 +360,7 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                             }
                         />
                     ))}
-                    {!showProjectForm && !newChat && state?.thread && (
+                    {!noProjects && !newChat && state?.thread && (
                         <form
                             className="composer"
                             onSubmit={(event) => void send(event)}

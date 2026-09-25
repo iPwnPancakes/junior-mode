@@ -1,3 +1,5 @@
+import { dirname } from 'node:path';
+import { applicationDataDirectory } from './storage.mjs';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { createBackendServer } from './http.mjs';
@@ -10,9 +12,13 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 }
 
 const backend = await createBackend({
-    settingsPath:
-        process.env.JUNIOR_SETTINGS_PATH ||
-        fileURLToPath(new URL('../../.local/connection.json', import.meta.url)),
+    dataDirectory: process.env.JUNIOR_SETTINGS_PATH
+        ? dirname(process.env.JUNIOR_SETTINGS_PATH)
+        : applicationDataDirectory(),
+    legacyDirectory: process.env.JUNIOR_SETTINGS_PATH
+        ? dirname(process.env.JUNIOR_SETTINGS_PATH)
+        : fileURLToPath(new URL('../../.local/', import.meta.url)),
+    settingsPath: process.env.JUNIOR_SETTINGS_PATH,
 });
 const server = createBackendServer(backend);
 server.listen(port, '127.0.0.1', () => {
