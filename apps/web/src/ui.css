@@ -17,8 +17,11 @@
     --secondary-foreground: #3b5947;
     --muted: #f1f2ef;
     --muted-foreground: #65716a;
-    --accent: #e8eee5;
-    --accent-foreground: #25352f;
+    --highlighted: #315b43;
+    --highlighted-foreground: #ffffff;
+    /* shadcn registry components use accent for interactive highlights. */
+    --accent: var(--highlighted);
+    --accent-foreground: var(--highlighted-foreground);
     --destructive: #a14132;
     --border: #dde3da;
     --input: #dce3d9;
@@ -27,10 +30,35 @@
     --warning: #b97046;
     --sidebar: var(--muted);
     --sidebar-foreground: var(--foreground);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-primary: var(--highlighted);
+    --sidebar-primary-foreground: var(--highlighted-foreground);
     --sidebar-accent: var(--accent);
     --sidebar-accent-foreground: var(--accent-foreground);
+}
+
+/* Apply .dark to the document root so portaled menus share the same theme. */
+:root.dark {
+    color-scheme: dark;
+    --background: #17211c;
+    --foreground: #edf3ee;
+    --card: #1d2a22;
+    --card-foreground: #edf3ee;
+    --popover: #223128;
+    --popover-foreground: #edf3ee;
+    --primary: #a1c7ac;
+    --primary-foreground: #14251b;
+    --secondary: #2a3c30;
+    --secondary-foreground: #deebe1;
+    --muted: #223027;
+    --muted-foreground: #a9bbad;
+    --highlighted: #a1c7ac;
+    --highlighted-foreground: #14251b;
+    --destructive: #f09e92;
+    --border: #415849;
+    --input: #4a6453;
+    --ring: #a1c7ac;
+    --success: #91cda2;
+    --warning: #dfbb80;
 }
 
 @theme inline {
@@ -46,6 +74,8 @@
     --color-secondary-foreground: var(--secondary-foreground);
     --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
+    --color-highlighted: var(--highlighted);
+    --color-highlighted-foreground: var(--highlighted-foreground);
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
     --color-destructive: var(--destructive);

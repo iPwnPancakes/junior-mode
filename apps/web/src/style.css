@@ -235,7 +235,8 @@
         border: 1px solid var(--border);
     }
     .chat-link.active {
-        background: var(--accent);
+        background: var(--highlighted);
+        color: var(--highlighted-foreground);
         border-color: var(--border);
     }
     .chat-link strong,
@@ -486,13 +487,14 @@
         border-radius: 6px;
     }
     .chat-link:hover:not(:disabled) {
-        background: var(--sidebar-accent);
+        background: var(--highlighted);
+        color: var(--highlighted-foreground);
         filter: none;
     }
     .chat-link[aria-current='page'],
     .chat-link[aria-current='page']:hover:not(:disabled) {
-        background: var(--sidebar-primary);
-        color: var(--sidebar-primary-foreground);
+        background: var(--highlighted);
+        color: var(--highlighted-foreground);
     }
     .chat-link strong {
         font-size: 12px;
@@ -688,12 +690,13 @@
         white-space: normal;
     }
     .sidebar-chat-card:hover {
-        background: var(--sidebar-accent);
+        background: var(--highlighted);
+        color: var(--highlighted-foreground);
     }
     .sidebar-chat-card[aria-current='page'],
     .sidebar-chat-card[aria-current='page']:hover {
-        background: var(--sidebar-primary);
-        color: var(--sidebar-primary-foreground);
+        background: var(--highlighted);
+        color: var(--highlighted-foreground);
     }
     .sidebar-chat-card strong {
         display: block;
@@ -721,9 +724,11 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    .sidebar-chat-card:hover:not(:disabled) .chat-card-project,
+    .sidebar-chat-card:hover:not(:disabled) .chat-card-detail,
     .sidebar-chat-card[aria-current='page'] .chat-card-project,
     .sidebar-chat-card[aria-current='page'] .chat-card-detail {
-        color: var(--sidebar-primary-foreground);
+        color: var(--highlighted-foreground);
         opacity: 0.8;
     }
     .sidebar-chat-card .project-monogram,
@@ -734,8 +739,8 @@
         width: 14px;
         height: 14px;
         border-radius: 3px;
-        background: var(--accent);
-        color: var(--primary);
+        background: var(--secondary);
+        color: var(--secondary-foreground);
         font-size: 8px;
         font-weight: 700;
         text-transform: uppercase;

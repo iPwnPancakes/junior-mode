@@ -155,7 +155,7 @@ export function ProjectSidebar({
                                             <div className="truncate">
                                                 {project.name}
                                             </div>
-                                            <div className="truncate text-xs text-muted-foreground">
+                                            <div className="truncate text-xs text-muted-foreground group-data-[selected=true]:text-highlighted-foreground">
                                                 {project.cwd}
                                             </div>
                                         </div>

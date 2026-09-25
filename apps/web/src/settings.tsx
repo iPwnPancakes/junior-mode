@@ -154,14 +154,14 @@ export function Settings({ onBack }: { onBack: () => void }) {
                 >
                     <TabsTrigger
                         value="providers"
-                        className="h-11 flex-none justify-start gap-3 px-3 text-sidebar-foreground data-[state=inactive]:hover:bg-sidebar-accent data-[state=inactive]:hover:text-sidebar-accent-foreground data-[state=active]:bg-sidebar-primary data-[state=active]:text-sidebar-primary-foreground dark:data-[state=active]:bg-sidebar-primary dark:data-[state=active]:text-sidebar-primary-foreground sm:w-full"
+                        className="h-11 flex-none justify-start gap-3 px-3 sm:w-full"
                     >
                         <Cable />
                         Providers
                     </TabsTrigger>
                     <TabsTrigger
                         value="platform"
-                        className="h-11 flex-none justify-start gap-3 px-3 text-sidebar-foreground data-[state=inactive]:hover:bg-sidebar-accent data-[state=inactive]:hover:text-sidebar-accent-foreground data-[state=active]:bg-sidebar-primary data-[state=active]:text-sidebar-primary-foreground dark:data-[state=active]:bg-sidebar-primary dark:data-[state=active]:text-sidebar-primary-foreground sm:w-full"
+                        className="h-11 flex-none justify-start gap-3 px-3 sm:w-full"
                     >
                         <GraduationCap />
                         Learning platform

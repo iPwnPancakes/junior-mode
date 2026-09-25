@@ -18,7 +18,14 @@ The Electron/browser frontend in `apps/web` uses shadcn/ui. Reuse components fro
 with `pnpm dlx shadcn@latest add <component> -c apps/web` from the repository root.
 Use theme tokens in `src/ui.css`; keep application layout in `src/style.css`.
 Avoid global control styles that override component hover, focus, or disabled
-states. Run `pnpm test:web` for browser interaction changes (install Chromium with
+states. Interactive hover, selected, and active fills must use
+`bg-highlighted` with `text-highlighted-foreground` (or the corresponding CSS
+variables). Define colors only in `src/ui.css`, with light defaults and
+`:root.dark` overrides. Apply dark mode to the document root so portals inherit
+it. The shadcn `accent` tokens alias these highlights for new registry components.
+Do not add pale accent fills, opacity-reduced highlight backgrounds, or local
+color overrides. Keep shared Button, Tabs, and Command defaults authoritative.
+Run `pnpm test:web` for browser interaction changes (install Chromium with
 `pnpm exec playwright install chromium` if needed).
 
 ## Shared client preview

@@ -560,3 +560,115 @@ test('project picker preserves the chat, restores focus, and retries explicit fo
     );
     assert.deepEqual(errors, []);
 });
+
+test('interactive highlights stay consistent and readable in light and dark themes', async (t) => {
+    const { page, errors } = await fixture(t, true);
+    page.setDefaultTimeout(10000);
+    async function assertHighlight(locator) {
+        await locator.evaluate(async (element) => {
+            const probe = globalThis.document.createElement('span');
+            probe.style.backgroundColor = 'var(--highlighted)';
+            probe.style.color = 'var(--highlighted-foreground)';
+            globalThis.document.body.append(probe);
+            const expected = globalThis.getComputedStyle(probe);
+            const background = expected.backgroundColor;
+            const foreground = expected.color;
+            probe.remove();
+            for (let attempt = 0; attempt < 50; attempt++) {
+                const actual = globalThis.getComputedStyle(element);
+                if (
+                    actual.backgroundColor === background &&
+                    actual.color === foreground
+                )
+                    return;
+                await new Promise((resolve) => setTimeout(resolve, 20));
+            }
+            throw new Error(
+                `Highlight mismatch: ${globalThis.getComputedStyle(element).backgroundColor} / ${globalThis.getComputedStyle(element).color}; expected ${background} / ${foreground}`,
+            );
+        });
+        const contrast = await locator.evaluate((element) => {
+            function luminance(color) {
+                const channels = color
+                    .match(/[\d.]+/g)
+                    .slice(0, 3)
+                    .map(Number)
+                    .map((n) => {
+                        const value = n / 255;
+                        return value <= 0.04045
+                            ? value / 12.92
+                            : ((value + 0.055) / 1.055) ** 2.4;
+                    });
+                return (
+                    channels[0] * 0.2126 +
+                    channels[1] * 0.7152 +
+                    channels[2] * 0.0722
+                );
+            }
+            function ratio(a, b) {
+                return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+            }
+            const style = globalThis.getComputedStyle(element);
+            const background = luminance(style.backgroundColor);
+            return {
+                text: ratio(background, luminance(style.color)),
+                surface: ratio(
+                    background,
+                    luminance(
+                        globalThis.getComputedStyle(globalThis.document.body)
+                            .backgroundColor,
+                    ),
+                ),
+            };
+        });
+        assert.ok(contrast.text >= 4.5, `Text contrast: ${contrast.text}`);
+        assert.ok(
+            contrast.surface >= 3,
+            `Highlight visibility: ${contrast.surface}`,
+        );
+    }
+    for (const dark of [false, true]) {
+        await page.evaluate(
+            (value) =>
+                globalThis.document.documentElement.classList.toggle(
+                    'dark',
+                    value,
+                ),
+            dark,
+        );
+        const add = page
+            .locator('.chat-sidebar')
+            .getByRole('button', { name: 'Add project', exact: true });
+        await add.hover();
+        await assertHighlight(add);
+        await page
+            .getByRole('button', { name: 'Projects', exact: true })
+            .click();
+        const option = page.getByRole('option', {
+            name: 'New chat in two',
+            exact: true,
+        });
+        await option.hover();
+        await assertHighlight(option);
+        await page.keyboard.press('Escape');
+        await page.locator('.chat-link').first().click();
+        await page.mouse.move(600, 20);
+        await assertHighlight(page.locator('.chat-link[aria-current="page"]'));
+        await page
+            .getByRole('button', { name: 'Settings', exact: true })
+            .click();
+        await assertHighlight(
+            page.getByRole('tab', { name: 'Providers', exact: true }),
+        );
+        const platform = page.getByRole('tab', {
+            name: 'Learning platform',
+            exact: true,
+        });
+        await platform.hover();
+        await assertHighlight(platform);
+        await page
+            .getByRole('button', { name: 'Back to chats', exact: true })
+            .click();
+    }
+    assert.deepEqual(errors, []);
+});
