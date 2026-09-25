@@ -1,15 +1,38 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    ChevronDown,
-    ChevronRight,
+    Cpu,
     Folder,
     FolderPlus,
-    Plus,
+    PanelLeft,
+    Search,
     Settings,
+    SquarePen,
 } from 'lucide-react';
 import type { CodexState, Project } from '@junior-mode/backend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Command,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+
+function age(updatedAt: string, now: number) {
+    const minutes = Math.max(
+        0,
+        Math.floor((now - new Date(updatedAt).getTime()) / 60000),
+    );
+    if (minutes < 1) return 'now';
+    if (minutes < 60) return minutes + 'm';
+    if (minutes < 1440) return Math.floor(minutes / 60) + 'h';
+    return Math.floor(minutes / 1440) + 'd';
+}
 
 export function ProjectSidebar({
     state,
@@ -19,6 +42,8 @@ export function ProjectSidebar({
     onAddProject,
     onOpenChat,
     onOpenSettings,
+    collapsed,
+    onToggle,
 }: {
     state: CodexState | null;
     disabled: boolean;
@@ -27,209 +52,238 @@ export function ProjectSidebar({
     onAddProject: () => void;
     onOpenChat: (id: string) => void;
     onOpenSettings: () => void;
+    collapsed: boolean;
+    onToggle: () => void;
 }) {
     const [search, setSearch] = useState('');
-    const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+    const [projectsOpen, setProjectsOpen] = useState(false);
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = setInterval(() => setNow(Date.now()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+    const projects = state?.projects ?? [];
     const query = search.trim().toLowerCase();
-    const projects = (state?.projects ?? [])
-        .map((project) => ({
-            ...project,
-            chats: (state?.threads ?? []).filter(
-                (chat) =>
-                    chat.projectId === project.id &&
-                    (!query ||
-                        `${project.name} ${project.cwd} ${chat.title}`
-                            .toLowerCase()
-                            .includes(query)),
-            ),
-        }))
-        .filter(
-            (project) =>
+    const chats = [...(state?.threads ?? [])]
+        .filter((chat) => {
+            const project = projects.find(
+                (entry) => entry.id === chat.projectId,
+            );
+            return (
                 !query ||
-                project.chats.length ||
-                `${project.name} ${project.cwd}`.toLowerCase().includes(query),
-        );
-
-    function start(project?: Project) {
-        if (project)
-            setCollapsed((current) => {
-                const next = new Set(current);
-                next.delete(project.id);
-                return next;
-            });
-        onNewChat(project);
-    }
-
+                `${project?.name} ${chat.cwd} ${chat.title}`
+                    .toLowerCase()
+                    .includes(query)
+            );
+        })
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const draftProject = projects.find(
+        (project) => project.id === draftProjectId,
+    );
     return (
         <aside className="chat-sidebar">
-            <div className="sidebar-heading">
-                <h1>Projects</h1>
-                <span className="chat-count">
-                    {state?.projects?.length ?? 0}
-                </span>
-            </div>
-            <Button
-                variant="outline"
-                className="w-full justify-start gap-2"
-                disabled={disabled}
-                onClick={() => start()}
-            >
-                <Plus /> New chat
-            </Button>
-            <Input
-                className="chat-search"
-                type="search"
-                aria-label="Search chats"
-                placeholder="Search projects and chats…"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-            />
-            <div className="mt-4 mb-2 flex items-center justify-between px-1">
-                <span className="truncate text-muted-foreground text-xs">
-                    Your projects
-                </span>
+            <div className="sidebar-brand-row">
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="size-7 text-muted-foreground hover:text-foreground"
+                    className="sidebar-icon"
+                    onClick={onToggle}
+                    aria-label={
+                        collapsed ? 'Expand sidebar' : 'Collapse sidebar'
+                    }
+                    title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                >
+                    <PanelLeft />
+                </Button>
+                {!collapsed && (
+                    <span className="sidebar-brand">
+                        <strong>Junior</strong> Mode
+                    </span>
+                )}
+            </div>
+            <div
+                className={
+                    collapsed
+                        ? 'flex flex-col items-center gap-1'
+                        : 'sidebar-toolbar'
+                }
+            >
+                {!collapsed && (
+                    <div className="sidebar-search">
+                        <Search />
+                        <Input
+                            className="h-8 border-0 bg-transparent px-0 shadow-none"
+                            aria-label="Search chats"
+                            placeholder="Search"
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                        />
+                    </div>
+                )}
+                <Popover open={projectsOpen} onOpenChange={setProjectsOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="sidebar-icon"
+                            aria-label="Projects"
+                            title="Projects"
+                        >
+                            <Folder />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-72 p-0">
+                        <Command>
+                            <CommandInput
+                                placeholder="Find a project…"
+                                aria-label="Find a project"
+                            />
+                            <CommandList>
+                                {projects.map((project) => (
+                                    <CommandItem
+                                        key={project.id}
+                                        value={project.name + ' ' + project.cwd}
+                                        disabled={disabled}
+                                        onSelect={() => {
+                                            onNewChat(project);
+                                            setProjectsOpen(false);
+                                        }}
+                                        aria-label={`New chat in ${project.name}`}
+                                    >
+                                        <Folder />
+                                        <div className="min-w-0">
+                                            <div className="truncate">
+                                                {project.name}
+                                            </div>
+                                            <div className="truncate text-xs text-muted-foreground">
+                                                {project.cwd}
+                                            </div>
+                                        </div>
+                                    </CommandItem>
+                                ))}
+                                {!projects.length && (
+                                    <p className="p-3 text-xs text-muted-foreground">
+                                        No projects yet.
+                                    </p>
+                                )}
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="sidebar-icon"
                     disabled={disabled}
                     data-project-create
                     aria-label="Add project"
                     title="Add project"
                     onClick={onAddProject}
                 >
-                    <FolderPlus className="size-4" />
+                    <FolderPlus />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="sidebar-icon"
+                    disabled={disabled}
+                    aria-label="New chat"
+                    title="New chat"
+                    onClick={() => onNewChat()}
+                >
+                    <SquarePen />
                 </Button>
             </div>
-            <div className="chat-list gap-3 overflow-y-auto">
-                {!state?.projects?.length && (
-                    <p className="hint">Add a project to start chatting.</p>
-                )}
-                {query && !projects.length && (
-                    <p className="hint">
-                        No projects or chats match your search.
-                    </p>
-                )}
-                {projects.map((project) => {
-                    const expanded =
-                        Boolean(query) || !collapsed.has(project.id);
-                    return (
-                        <section
-                            key={project.id}
-                            aria-label={`Project ${project.name}`}
-                            className="space-y-1"
+            {!collapsed && (
+                <div
+                    className="chat-list sidebar-chat-cards"
+                    aria-label="Chats"
+                >
+                    {draftProject && !query && (
+                        <Button
+                            variant="ghost"
+                            className="sidebar-chat-card h-auto flex-col items-stretch justify-start gap-1 px-2.5 py-2 text-left"
+                            aria-current="page"
+                            disabled={disabled}
+                            onClick={() => onNewChat(draftProject)}
                         >
-                            <div className="flex items-center gap-1">
-                                <Button
-                                    variant="ghost"
-                                    className="min-w-0 flex-1 justify-start gap-2 px-2 font-semibold"
-                                    title={project.cwd}
-                                    aria-expanded={expanded}
-                                    onClick={() =>
-                                        setCollapsed((current) => {
-                                            const next = new Set(current);
-                                            if (next.has(project.id))
-                                                next.delete(project.id);
-                                            else next.add(project.id);
-                                            return next;
-                                        })
-                                    }
-                                >
-                                    {expanded ? (
-                                        <ChevronDown />
-                                    ) : (
-                                        <ChevronRight />
-                                    )}
-                                    <Folder className="hidden sm:block" />
-                                    <span className="truncate">
-                                        {project.name}
+                            <span className="chat-card-project">
+                                <span className="project-monogram">
+                                    {draftProject.name.slice(0, 2)}
+                                </span>
+                                <span>{draftProject.name}</span>
+                            </span>
+                            <strong>New chat</strong>
+                            <span className="chat-card-detail">
+                                <Folder />
+                                <span>{draftProject.cwd}</span>
+                                <Cpu />
+                            </span>
+                        </Button>
+                    )}
+                    {chats.map((chat) => {
+                        const project = projects.find(
+                            (entry) => entry.id === chat.projectId,
+                        );
+                        return (
+                            <Button
+                                key={chat.id}
+                                variant="ghost"
+                                className="chat-link sidebar-chat-card h-auto flex-col items-stretch justify-start gap-1 px-2.5 py-2 text-left"
+                                aria-current={
+                                    !draftProjectId &&
+                                    state?.thread?.id === chat.id
+                                        ? 'page'
+                                        : undefined
+                                }
+                                disabled={disabled}
+                                onClick={() => onOpenChat(chat.id)}
+                                title={chat.cwd}
+                            >
+                                <span className="chat-card-project">
+                                    <span className="project-monogram">
+                                        {(project?.name || 'JM').slice(0, 2)}
                                     </span>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 shrink-0"
-                                    disabled={disabled}
-                                    aria-label={`New chat in ${project.name}`}
-                                    title={`New chat in ${project.name}`}
-                                    onClick={() => start(project)}
-                                >
-                                    <Plus />
-                                </Button>
-                            </div>
-                            {expanded && (
-                                <div className="ml-4 space-y-1 border-l border-border pl-2">
-                                    {draftProjectId === project.id && (
-                                        <Button
-                                            variant="ghost"
-                                            className="w-full justify-start bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
-                                            disabled={disabled}
-                                            aria-current="page"
-                                            onClick={() => start(project)}
-                                        >
-                                            New chat
-                                        </Button>
-                                    )}
-                                    {project.chats.map((chat) => (
-                                        <Button
-                                            key={chat.id}
-                                            variant="ghost"
-                                            className="chat-link h-auto w-full flex-col items-start gap-0 whitespace-normal text-left"
-                                            aria-current={
-                                                !draftProjectId &&
-                                                state?.thread?.id === chat.id
-                                                    ? 'page'
-                                                    : undefined
-                                            }
-                                            disabled={disabled}
-                                            onClick={() => onOpenChat(chat.id)}
-                                        >
-                                            <strong className="max-w-full">
-                                                {chat.title}
-                                            </strong>
-                                            <span>
-                                                {new Date(
-                                                    chat.updatedAt,
-                                                ).toLocaleDateString(
-                                                    undefined,
-                                                    {
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                    },
-                                                )}
-                                            </span>
-                                        </Button>
-                                    ))}
-                                    {!project.chats.length &&
-                                        draftProjectId !== project.id && (
-                                            <p className="px-2 py-2 text-xs text-muted-foreground">
-                                                {query
-                                                    ? 'No matching chats'
-                                                    : 'No chats yet'}
-                                            </p>
-                                        )}
-                                </div>
-                            )}
-                        </section>
-                    );
-                })}
-            </div>
+                                    <span>{project?.name || 'Project'}</span>
+                                    <time dateTime={chat.updatedAt}>
+                                        {age(chat.updatedAt, now)}
+                                    </time>
+                                </span>
+                                <strong>{chat.title}</strong>
+                                <span className="chat-card-detail">
+                                    <Folder />
+                                    <span>{chat.cwd}</span>
+                                    <Cpu aria-label="Codex" />
+                                </span>
+                            </Button>
+                        );
+                    })}
+                    {!chats.length && !draftProject && (
+                        <p className="px-2 py-4 text-xs text-muted-foreground">
+                            {query
+                                ? 'No chats match your search.'
+                                : projects.length
+                                  ? 'Start a chat from a project.'
+                                  : 'Add a project to start chatting.'}
+                        </p>
+                    )}
+                </div>
+            )}
             <div className="sidebar-footer">
                 <Button
                     variant="ghost"
-                    className="mb-3 w-full justify-start"
+                    className={
+                        collapsed
+                            ? 'sidebar-icon'
+                            : 'w-full justify-start text-muted-foreground'
+                    }
+                    aria-label="Settings"
+                    title="Settings"
                     onClick={onOpenSettings}
                 >
-                    <Settings /> Settings
+                    <Settings />
+                    {!collapsed && 'Settings'}
                 </Button>
-                <span
-                    className={`status ${state?.status === 'ready' ? 'connected' : ''}`}
-                >
-                    <span className="dot" />
-                    {state?.status === 'ready'
-                        ? 'Codex connected'
-                        : 'Codex offline'}
-                </span>
             </div>
         </aside>
     );

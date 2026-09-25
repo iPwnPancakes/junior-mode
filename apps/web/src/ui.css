@@ -23,6 +23,8 @@
     --border: #dde3da;
     --input: #dce3d9;
     --ring: #73977e;
+    --success: #398553;
+    --warning: #b97046;
     --sidebar: var(--muted);
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: var(--primary);

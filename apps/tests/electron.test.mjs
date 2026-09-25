@@ -186,7 +186,7 @@ test(
             .getByRole('button', { name: 'Add project', exact: true })
             .click();
         await page
-            .getByRole('region', { name: 'Project Project Alpha', exact: true })
+            .getByText('A new coaching chat in Project Alpha.', { exact: true })
             .waitFor();
 
         await page

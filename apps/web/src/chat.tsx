@@ -106,6 +106,7 @@ function RequestCard({
 export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     const [state, setState] = useState<CodexState | null>(null);
     const [newChat, setNewChat] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [projectId, setProjectId] = useState('');
     const [addingProject, setAddingProject] = useState(false);
     const [message, setMessage] = useState('');
@@ -172,7 +173,13 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     }
 
     return (
-        <main className="chat-layout">
+        <main
+            className={
+                sidebarCollapsed
+                    ? 'chat-layout sidebar-collapsed'
+                    : 'chat-layout'
+            }
+        >
             <ProjectDialog
                 open={addingProject}
                 onOpenChange={setAddingProject}
@@ -190,6 +197,8 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                 }}
             />
             <ProjectSidebar
+                collapsed={sidebarCollapsed}
+                onToggle={() => setSidebarCollapsed((value) => !value)}
                 state={state}
                 disabled={busy || Boolean(running)}
                 draftProjectId={draft && !noProjects ? project?.id : undefined}
@@ -225,9 +234,19 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
             />
             <section className="chat-panel" aria-label="Codex chat">
                 <div className="chat-heading">
-                    <div>
-                        <span className="eyebrow">CODEX CHAT</span>
-                        <h2>
+                    <div className="flex min-w-0 items-center gap-3">
+                        {!noProjects && (
+                            <>
+                                <span className="project-monogram">
+                                    {(project?.name || 'JM').slice(0, 2)}
+                                </span>
+                                <span className="max-w-48 truncate text-sm text-muted-foreground">
+                                    {project?.name}
+                                </span>
+                                <span className="text-muted-foreground">/</span>
+                            </>
+                        )}
+                        <h2 className="truncate">
                             {noProjects
                                 ? 'Welcome'
                                 : draft
@@ -236,9 +255,7 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                         </h2>
                     </div>
                     <span className="status" role="status">
-                        {running
-                            ? 'Codex is working…'
-                            : state?.thread?.status || 'Ready when you are'}
+                        {running ? 'Codex is working…' : ''}
                     </span>
                 </div>
                 {noProjects ? (

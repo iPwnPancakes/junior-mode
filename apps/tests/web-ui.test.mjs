@@ -283,7 +283,7 @@ test('folder command picker supports keyboard, stable hover, hidden folders, dis
         .getByRole('button', { name: 'Add project', exact: true })
         .click();
     await page
-        .getByRole('region', { name: 'Project projects', exact: true })
+        .getByText('A new coaching chat in projects.', { exact: true })
         .waitFor();
     assert.equal(
         calls.find((call) => call.path === '/api/codex/projects').body.cwd,
@@ -442,34 +442,25 @@ test('sidebar settings preserves chat drafts and supports back and Escape', asyn
     assert.deepEqual(errors, []);
 });
 
-test('project sidebar groups chats and starts new chats in the chosen project', async (t) => {
+test('flat chat cards show project context and the toolbar keeps new chats scoped', async (t) => {
     const { page, calls, errors } = await fixture(t, true);
-    const one = page.getByRole('region', { name: 'Project one', exact: true });
-    const two = page.getByRole('region', { name: 'Project two', exact: true });
-    await one
-        .getByRole('button', { name: 'Explain the repo', exact: false })
+    assert.equal(await page.locator('.chat-link').count(), 2);
+    await page
+        .locator('.chat-link')
+        .filter({ hasText: 'Explain the repo' })
+        .getByText('one', { exact: true })
         .waitFor();
-    assert.equal(await one.locator('.chat-link').count(), 1);
-    assert.equal(await two.locator('.chat-link').count(), 1);
-    await one.getByRole('button', { name: 'one', exact: true }).click();
-    assert.equal(await one.locator('.chat-link').count(), 0);
-    await page.getByLabel('Search chats').fill('Explain');
-    await one.locator('.chat-link').waitFor();
-    assert.equal(await two.count(), 0);
+    await page.getByLabel('Search chats').fill('two');
+    assert.equal(await page.locator('.chat-link').count(), 1);
     await page.getByLabel('Search chats').fill('');
-    await two
-        .getByRole('button', { name: 'New chat in two', exact: true })
+    await page.getByRole('button', { name: 'Projects', exact: true }).click();
+    await page
+        .getByRole('option', { name: 'New chat in two', exact: true })
         .click();
     await page
         .locator('.chat-setup')
         .getByText('/projects/two', { exact: true })
         .waitFor();
-    assert.equal(
-        await page
-            .getByRole('combobox', { name: 'Repository', exact: true })
-            .count(),
-        0,
-    );
     await page
         .locator('.chat-setup')
         .getByRole('button', { name: 'New chat', exact: true })
@@ -482,36 +473,29 @@ test('project sidebar groups chats and starts new chats in the chosen project', 
         calls.filter((call) => call.path === '/api/codex/chats').at(-1).body,
         { projectId: 'project-2', coaching: true },
     );
-    // The global new-chat button keeps the currently selected project.
     await page
-        .locator('.chat-sidebar')
+        .locator('.sidebar-toolbar')
         .getByRole('button', { name: 'New chat', exact: true })
-        .first()
         .click();
     await page
         .locator('.chat-setup')
         .getByText('/projects/two', { exact: true })
         .waitFor();
-    await one
-        .getByRole('button', { name: 'New chat in one', exact: true })
+    await page.getByRole('button', { name: 'Projects', exact: true }).click();
+    await page
+        .getByRole('option', { name: 'New chat in one', exact: true })
         .click();
-    await one.locator('.chat-link').waitFor();
     await page
         .locator('.chat-setup')
         .getByText('/projects/one', { exact: true })
         .waitFor();
     await page
-        .locator('.chat-setup')
-        .getByRole('button', { name: 'New chat', exact: true })
+        .getByRole('button', { name: 'Collapse sidebar', exact: true })
         .click();
     await page
-        .getByRole('alert')
-        .filter({ hasText: 'Coaching setup required.' })
-        .waitFor();
-    assert.deepEqual(
-        calls.filter((call) => call.path === '/api/codex/chats').at(-1).body,
-        { projectId: 'project-1', coaching: true },
-    );
+        .getByRole('button', { name: 'Expand sidebar', exact: true })
+        .click();
+    assert.equal(await page.locator('.chat-link').count(), 2);
     assert.deepEqual(errors, []);
 });
 
@@ -568,7 +552,7 @@ test('project picker preserves the chat, restores focus, and retries explicit fo
     await input.press('Control+Enter');
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
     await page
-        .getByRole('region', { name: 'Project New repository', exact: true })
+        .getByText('A new coaching chat in New repository.', { exact: true })
         .waitFor();
     assert.deepEqual(
         calls.filter((call) => call.path === '/api/codex/projects').at(-1).body,
