@@ -82,6 +82,47 @@ composer --working-dir=apps/learning-platform require vendor/package
 
 Commit the root `pnpm-lock.yaml` with JavaScript dependency changes. Do not run npm install or create per-app lockfiles. When switching an existing npm checkout, remove its old `apps/node_modules` and app-level `node_modules` directories before installing with pnpm. PHP dependencies remain locked by the platform's `composer.lock`.
 
+## Shared client preview across worktrees
+
+Use the preview manager on your Linux or macOS development server when Electron
+loads its frontend remotely:
+
+```bash
+pnpm preview status
+pnpm preview use
+pnpm preview logs
+pnpm preview stop
+```
+
+Run `preview use` from the worktree you want to see. It starts a background
+`dev:client`, or stops the managed preview and switches to that worktree. It waits
+for Vite and the backend to respond before reporting ready. Running it again for
+the same healthy worktree does nothing. Electron keeps the same URL; reload it
+after a worktree switch. Frontend edits within the selected worktree use Vite HMR.
+
+The default web/backend ports are 5174/4318, with Vite listening on `0.0.0.0`
+for LAN/VPN access. The backend stays on loopback. Use this only on a trusted
+development network, as with `dev:client --host 0.0.0.0`. Override with
+`pnpm preview use --host 127.0.0.1 --web-port 5175 --backend-port 4319`;
+subsequent switches preserve the running preview's host and ports.
+The manager's explicit settings take precedence over port/host settings in
+`apps/.env`. Platform services are managed separately with `pnpm dev:platform`.
+
+All worktrees of the same Git checkout share one registry and log in
+`$(git rev-parse --git-common-dir)/junior-preview`. Status reports the owning
+worktree, branch at startup, URL, supervisor PID, and health. Logs prints the last
+100 lines from the current/latest instance. Switching replaces that log.
+Stopping a browser backend interrupts its active work; Electron's local backend
+is a separate process and is not stopped by this manager.
+
+Only the authenticated supervisor can stop its own process group. If a port
+belongs to a manually started server or another checkout, `use` reports the
+conflict without killing it. Stop that server in its original terminal once,
+then run `preview use`. A stale registry can be replaced when its ports are free.
+Concurrent switching is locked; if a command is forcibly killed while holding
+the lock, confirm no preview command is running before removing the reported
+lock directory. Windows can continue using foreground `pnpm dev:client`.
+
 ## Electron development
 
 From the repository root, after `pnpm install --frozen-lockfile`:

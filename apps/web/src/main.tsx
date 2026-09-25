@@ -69,7 +69,7 @@ function App() {
     }
 
     return (
-        <div className="app">
+        <div className={tab === 'chat' ? 'app chat-app' : 'app'}>
             <header>
                 <a className="brand" href="#">
                     <span className="mark">jm</span> Junior Mode

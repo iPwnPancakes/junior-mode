@@ -11,6 +11,15 @@ Repository structure and development commands: [README.md](README.md). Desktop/p
 
 Run workspace commands from the repository root: `pnpm dev`, `pnpm check`, and `pnpm pack:desktop`. All four applications share `pnpm-workspace.yaml` and `pnpm-lock.yaml`. Composer still manages PHP dependencies in `apps/learning-platform`. Use `pnpm dev:client` or `pnpm dev:platform` to run only one side.
 
+## Shared client preview
+
+- Use `pnpm preview status` to identify the worktree serving the shared remote Electron preview.
+- When the user asks to see changes, run `pnpm preview use` from the intended worktree, then verify it reports ready. The default URL keeps port 5174 across switches.
+- Use `pnpm preview logs` for startup/runtime failures and `pnpm preview stop` to stop the managed client. These commands share ownership across this repository's Git worktrees.
+- Do not kill arbitrary port listeners. The manager refuses unmanaged processes; identify their command and worktree before deliberately migrating an existing manual dev server.
+- Switching restarts the preview's browser backend and interrupts its active work. Electron's local backend is separate. Reload Electron after switching worktrees; subsequent frontend edits use HMR.
+- Platform services remain separate. See README's shared preview section for ports, host overrides, and stale-lock recovery.
+
 ## Shared context
 
 - Domain vocabulary and decisions: `CONTEXT.md` and `docs/adr`.

@@ -1,5 +1,5 @@
 :root {
-    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-family: "Instrument Sans", system-ui, sans-serif;
     color: #25352f;
     background: #f6f7f3;
     font-synthesis: none;
@@ -467,5 +467,221 @@ textarea:focus {
     }
     .composer-actions {
         align-items: flex-end;
+    }
+}
+
+/* Keep the chat shell compact so history and conversation own the window. */
+.chat-app {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+}
+.chat-app > header {
+    height: 56px;
+    flex-shrink: 0;
+    padding: 0 20px;
+    background: #fff;
+}
+.chat-app .brand {
+    font-size: 14px;
+}
+.chat-app .mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+}
+.chat-app > footer {
+    display: none;
+}
+.chat-app .chat-layout {
+    max-width: none;
+    min-height: 0;
+    padding: 0;
+    gap: 0;
+    grid-template-columns: 260px minmax(0, 1fr);
+}
+.chat-sidebar {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 18px 12px 12px;
+    background: #f1f2ef;
+    border-right: 1px solid #dde3da;
+}
+.sidebar-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px 16px;
+}
+.sidebar-heading h1 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0;
+}
+.chat-count {
+    font-size: 11px;
+    color: #798178;
+}
+.new-chat-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    background: #fff;
+    border-color: #d9ded7;
+    color: #25352f;
+    text-align: left;
+}
+.new-chat-button > span {
+    font-size: 18px;
+    line-height: 1;
+}
+.chat-search {
+    margin-top: 12px;
+    padding: 9px 11px;
+    font-size: 12px;
+    background: transparent;
+}
+.chat-list-title {
+    margin: 24px 8px 10px;
+    font-size: 11px;
+    color: #798178;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+.chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    max-height: none;
+    min-height: 0;
+}
+.chat-list > .hint {
+    padding: 0 8px;
+}
+.chat-link {
+    border: 0;
+    flex-shrink: 0;
+    padding: 10px 12px;
+    border-radius: 6px;
+}
+.chat-link:hover:not(:disabled) {
+    background: #e7eae4;
+    filter: none;
+}
+.chat-link.active {
+    background: #dfe6dc;
+}
+.chat-link strong {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.chat-link span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    margin-top: 4px;
+}
+.sidebar-footer {
+    border-top: 1px solid #dde3da;
+    margin-top: 12px;
+    padding: 16px 8px 4px;
+}
+.chat-app .chat-panel {
+    height: auto;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+}
+.chat-heading {
+    min-height: 65px;
+    padding: 12px 28px;
+}
+.chat-heading .eyebrow {
+    display: none;
+}
+.chat-heading h2 {
+    font-size: 14px;
+    margin: 0;
+}
+.chat-setup {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 40px max(24px, calc((100% - 520px) / 2));
+}
+.chat-setup h2 {
+    font-size: 26px;
+}
+.chat-setup form > button {
+    margin-top: 20px;
+}
+.chat-setup input[type="checkbox"] {
+    width: auto;
+}
+.chat-app .transcript {
+    padding: 32px max(24px, calc((100% - 800px) / 2));
+}
+.chat-app .chat-controls {
+    flex-shrink: 0;
+    padding: 16px max(24px, calc((100% - 800px) / 2));
+    border-top: 0;
+}
+.chat-controls:empty {
+    display: none;
+}
+@media (max-width: 800px) {
+    .chat-app > header {
+        min-height: 56px;
+        height: auto;
+        padding: 10px 16px;
+    }
+    .chat-app .surface {
+        display: none;
+    }
+    .chat-app .chat-layout {
+        grid-template-columns: 210px minmax(0, 1fr);
+    }
+}
+@media (max-width: 560px) {
+    .chat-app .chat-layout {
+        grid-template-columns: 145px minmax(0, 1fr);
+    }
+    .chat-sidebar {
+        padding: 14px 6px 10px;
+    }
+    .chat-heading {
+        padding: 14px;
+    }
+    .chat-heading .status {
+        white-space: normal;
+        font-size: 10px;
+    }
+    .chat-app .transcript,
+    .chat-app .chat-controls,
+    .chat-setup {
+        padding: 16px;
+    }
+    .composer-actions {
+        flex-wrap: wrap;
+    }
+    .chat-app nav button {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+    .sidebar-footer {
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+    .sidebar-footer .status {
+        font-size: 10px;
     }
 }

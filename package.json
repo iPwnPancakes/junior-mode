@@ -7,6 +7,7 @@
     },
     "scripts": {
         "dev": "node apps/scripts/dev.mjs",
+        "preview": "node apps/scripts/preview.mjs",
         "dev:client": "node apps/scripts/dev.mjs --client",
         "dev:platform": "node apps/scripts/dev.mjs --platform",
         "dev:web": "pnpm --filter @junior-mode/web dev",
