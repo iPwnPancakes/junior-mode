@@ -167,6 +167,38 @@ test(
             .locator('.chat-setup')
             .getByRole('button', { name: 'New chat', exact: true })
             .click();
+        // App-created chats always request coaching, even without an opt-in.
+        await page
+            .getByRole('alert')
+            .filter({ hasText: 'Install or update the coaching plugin' })
+            .waitFor();
+        assert.equal(
+            (
+                await page.evaluate(() =>
+                    globalThis.window.juniorMode.getCodexState(),
+                )
+            ).threads.length,
+            0,
+        );
+        assert.equal(
+            await page
+                .getByLabel('Enable coaching for this enrolled repository')
+                .count(),
+            0,
+        );
+        // Seed a legacy plain thread to test transport without a live platform.
+        await page.evaluate(
+            (cwd) =>
+                globalThis.window.juniorMode.startChat({
+                    cwd,
+                    coaching: false,
+                }),
+            repository,
+        );
+        await page
+            .locator('.chat-link')
+            .filter({ hasText: 'New chat' })
+            .click();
         await page.getByLabel('Message Codex').fill('approve');
         await page.getByRole('button', { name: 'Send message' }).click();
         await page.getByRole('button', { name: 'Allow once' }).click();

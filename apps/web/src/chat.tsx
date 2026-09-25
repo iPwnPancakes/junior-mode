@@ -96,7 +96,6 @@ export function Chat() {
     const [cwd, setCwd] = useState("");
     const [newChat, setNewChat] = useState(false);
     const [search, setSearch] = useState("");
-    const [coaching, setCoaching] = useState(false);
     const [message, setMessage] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
@@ -276,7 +275,8 @@ export function Chat() {
                         {" "}
                         <h2>Start a new chat</h2>
                         <p>
-                            Choose a repository to build something with Codex.
+                            Choose an enrolled repository to start a coaching
+                            chat.
                         </p>
                         <p className="runtime-note">
                             {isDesktop
@@ -336,7 +336,7 @@ export function Chat() {
                                             );
                                         return backend.startChat({
                                             cwd: folder?.currentPath || cwd,
-                                            coaching,
+                                            coaching: true,
                                         });
                                     })
                                 ) {
@@ -351,17 +351,6 @@ export function Chat() {
                                 disabled={busy || Boolean(running)}
                                 host={state?.host}
                             />
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={coaching}
-                                    onChange={(event) =>
-                                        setCoaching(event.target.checked)
-                                    }
-                                    disabled={busy || running}
-                                />{" "}
-                                Enable coaching for this enrolled repository
-                            </label>
                             <button disabled={!cwd.trim() || busy || running}>
                                 New chat
                             </button>
@@ -390,11 +379,6 @@ export function Chat() {
                                 <p>
                                     Choose a repository, start a chat, and ask
                                     Codex to help you explore or change it.
-                                </p>
-                                <p className="hint">
-                                    These are Codex chats. Coaching and
-                                    learning-record synchronization are not
-                                    connected yet.
                                 </p>
                             </div>
                         )}
