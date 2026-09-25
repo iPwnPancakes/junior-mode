@@ -72,11 +72,22 @@ export function RepositoryPicker({
         };
     }, [value, showHidden, visible]);
 
-    useEffect(() => {
-        list.current
-            ?.querySelector('[aria-selected="true"]')
-            ?.scrollIntoView({ block: 'nearest' });
-    }, [selected]);
+    function selectWithKeyboard(index: number) {
+        setSelected(index);
+        const container = list.current;
+        const option = container?.querySelector<HTMLElement>(
+            `#repository-folder-${index}`,
+        );
+        if (!container || !option) return;
+
+        // Keyboard navigation reveals the row inside this list only.
+        // Hover must never scroll the list or its surrounding setup panel.
+        const bounds = container.getBoundingClientRect();
+        const row = option.getBoundingClientRect();
+        if (row.top < bounds.top) container.scrollTop -= bounds.top - row.top;
+        else if (row.bottom > bounds.bottom)
+            container.scrollTop += row.bottom - bounds.bottom;
+    }
 
     function navigate(path: string) {
         onChange(
@@ -147,12 +158,12 @@ export function RepositoryPicker({
                             event.preventDefault();
                             setOpen(true);
                             if (entries.length)
-                                setSelected((index) =>
+                                selectWithKeyboard(
                                     event.key === 'ArrowDown'
-                                        ? (index + 1) % entries.length
-                                        : (index <= 0
+                                        ? (selected + 1) % entries.length
+                                        : (selected <= 0
                                               ? entries.length
-                                              : index) - 1,
+                                              : selected) - 1,
                                 );
                         } else if (
                             visible &&
@@ -237,7 +248,7 @@ export function RepositoryPicker({
                                 tabIndex={-1}
                                 className="repository-folder"
                                 onMouseDown={(event) => event.preventDefault()}
-                                onMouseEnter={() => setSelected(index)}
+                                onMouseMove={() => setSelected(index)}
                                 onClick={() => navigate(entry.path)}
                             >
                                 <svg
