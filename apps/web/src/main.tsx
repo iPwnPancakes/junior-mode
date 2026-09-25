@@ -1,3 +1,9 @@
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { StrictMode, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -69,34 +75,32 @@ function App() {
     }
 
     return (
-        <div className={tab === 'chat' ? 'app chat-app' : 'app'}>
+        <Tabs
+            value={tab}
+            onValueChange={(value) => setTab(value as 'chat' | 'platform')}
+            className={tab === 'chat' ? 'app chat-app gap-0' : 'app gap-0'}
+        >
             <header>
                 <a className="brand" href="#">
                     <span className="mark">jm</span> Junior Mode
                 </a>
-                <nav aria-label="Main navigation">
-                    <button
-                        className={tab === 'chat' ? 'selected' : 'secondary'}
-                        onClick={() => setTab('chat')}
-                    >
-                        Chat
-                    </button>
-                    <button
-                        className={
-                            tab === 'platform' ? 'selected' : 'secondary'
-                        }
-                        onClick={() => setTab('platform')}
-                    >
+                <TabsList aria-label="Main navigation">
+                    <TabsTrigger value="chat">Chat</TabsTrigger>
+                    <TabsTrigger value="platform">
                         Learning platform
-                    </button>
-                </nav>
-                <span className="surface">
+                    </TabsTrigger>
+                </TabsList>
+                <Badge variant="outline" className="surface">
                     {isDesktop ? 'Desktop' : 'Browser preview'}
-                </span>
+                </Badge>
             </header>
-            {tab === 'chat' ? (
+            <TabsContent
+                value="chat"
+                className="flex min-h-0 flex-1 data-[state=inactive]:hidden"
+            >
                 <Chat />
-            ) : (
+            </TabsContent>
+            <TabsContent value="platform">
                 <main>
                     <div className="intro">
                         <span className="eyebrow">YOUR LEARNING COMPANION</span>
@@ -110,8 +114,8 @@ function App() {
                             ready.
                         </p>
                     </div>
-                    <section
-                        className="connection-card"
+                    <Card
+                        className="connection-card gap-0 p-7"
                         aria-labelledby="connection-title"
                     >
                         <div className="card-heading">
@@ -135,11 +139,11 @@ function App() {
                             installation below.
                         </p>
                         <form onSubmit={connect}>
-                            <label htmlFor="platform-url">
+                            <Label className="mb-2" htmlFor="platform-url">
                                 Platform address
-                            </label>
+                            </Label>
                             <div className="input-row">
-                                <input
+                                <Input
                                     id="platform-url"
                                     type="url"
                                     value={url}
@@ -151,12 +155,12 @@ function App() {
                                     spellCheck={false}
                                     aria-describedby="connection-help"
                                 />
-                                <button
+                                <Button
                                     type="submit"
                                     disabled={busy || !connection}
                                 >
                                     {busy ? 'Working…' : 'Connect'}
-                                </button>
+                                </Button>
                             </div>
                             <p id="connection-help" className="hint">
                                 Use your platform’s HTTP or HTTPS address,
@@ -179,28 +183,28 @@ function App() {
                                     </span>
                                 </div>
                                 <div className="actions">
-                                    <button
-                                        className="secondary"
+                                    <Button
+                                        variant="secondary"
                                         disabled={busy}
                                         onClick={() =>
                                             void run(backend.checkPlatform)
                                         }
                                     >
                                         Check connection
-                                    </button>
-                                    <button
-                                        className="text-button"
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
                                         disabled={busy}
                                         onClick={() =>
                                             void run(backend.disconnectPlatform)
                                         }
                                     >
                                         Disconnect
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         )}
-                    </section>
+                    </Card>
                     <PlatformAuthorizationPanel
                         key={connection?.platformUrl}
                         connected={Boolean(connection?.platformUrl)}
@@ -210,12 +214,12 @@ function App() {
                         sign you in.
                     </p>
                 </main>
-            )}
+            </TabsContent>
             <footer>
                 <span>Junior Mode</span>
                 <span>Make progress. Build understanding.</span>
             </footer>
-        </div>
+        </Tabs>
     );
 }
 

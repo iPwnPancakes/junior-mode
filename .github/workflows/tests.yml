@@ -56,6 +56,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint:client
       - run: pnpm run test:client
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run test:web
       - run: pnpm run setup:desktop
       - run: pnpm run pack:desktop
       - name: Test packaged Electron app

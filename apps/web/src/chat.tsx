@@ -1,12 +1,16 @@
-import { RepositoryPicker } from "./repository-picker";
-import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { RepositoryPicker } from './repository-picker';
+import { useEffect, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import type {
     CodexAnswer,
     CodexRequest,
     CodexState,
-} from "@junior-mode/backend";
-import { backend, isDesktop } from "./backend";
+} from '@junior-mode/backend';
+import { backend, isDesktop } from './backend';
 
 function RequestCard({
     request,
@@ -22,23 +26,25 @@ function RequestCard({
         <section className="codex-request" aria-label={request.title}>
             <h3>{request.title}</h3>
             {request.detail && <pre>{request.detail}</pre>}
-            {request.kind === "approval" ? (
+            {request.kind === 'approval' ? (
                 <div className="actions">
                     {request.decisions?.map((decision) => (
-                        <button
+                        <Button
                             key={decision}
                             disabled={busy}
-                            className={decision === "accept" ? "" : "secondary"}
+                            variant={
+                                decision === 'accept' ? 'default' : 'secondary'
+                            }
                             onClick={() =>
                                 respond({ id: request.id, decision })
                             }
                         >
-                            {decision === "accept"
-                                ? "Allow once"
-                                : decision === "decline"
-                                  ? "Decline"
-                                  : "Cancel"}
-                        </button>
+                            {decision === 'accept'
+                                ? 'Allow once'
+                                : decision === 'decline'
+                                  ? 'Decline'
+                                  : 'Cancel'}
+                        </Button>
                     ))}
                 </div>
             ) : (
@@ -50,13 +56,17 @@ function RequestCard({
                 >
                     {request.questions?.map((question) => (
                         <div key={question.id}>
-                            <label htmlFor={`question-${question.id}`}>
+                            <Label
+                                className="mb-2"
+                                htmlFor={`question-${question.id}`}
+                            >
                                 {question.question}
-                            </label>
+                            </Label>
                             {question.options?.map((option) => (
-                                <button
+                                <Button
                                     type="button"
-                                    className="secondary answer-option"
+                                    variant="secondary"
+                                    className="answer-option h-auto whitespace-normal text-left"
                                     key={option.label}
                                     title={option.description}
                                     onClick={() =>
@@ -67,12 +77,12 @@ function RequestCard({
                                     }
                                 >
                                     {option.label}
-                                </button>
+                                </Button>
                             ))}
-                            <input
+                            <Input
                                 id={`question-${question.id}`}
-                                type={question.isSecret ? "password" : "text"}
-                                value={answers[question.id] || ""}
+                                type={question.isSecret ? 'password' : 'text'}
+                                value={answers[question.id] || ''}
                                 maxLength={4000}
                                 required
                                 onChange={(event) =>
@@ -84,7 +94,7 @@ function RequestCard({
                             />
                         </div>
                     ))}
-                    <button disabled={busy}>Send answer</button>
+                    <Button disabled={busy}>Send answer</Button>
                 </form>
             )}
         </section>
@@ -93,16 +103,16 @@ function RequestCard({
 
 export function Chat() {
     const [state, setState] = useState<CodexState | null>(null);
-    const [cwd, setCwd] = useState("");
+    const [cwd, setCwd] = useState('');
     const [newChat, setNewChat] = useState(false);
-    const [search, setSearch] = useState("");
-    const [message, setMessage] = useState("");
+    const [search, setSearch] = useState('');
+    const [message, setMessage] = useState('');
     const [busy, setBusy] = useState(false);
-    const [error, setError] = useState("");
-    const [streamError, setStreamError] = useState("");
+    const [error, setError] = useState('');
+    const [streamError, setStreamError] = useState('');
     const transcript = useRef<HTMLDivElement>(null);
     const follow = useRef(true);
-    const running = state?.thread?.status === "running";
+    const running = state?.thread?.status === 'running';
 
     useEffect(
         () =>
@@ -114,7 +124,7 @@ export function Chat() {
                         ? current
                         : next,
                 );
-                setStreamError("");
+                setStreamError('');
             }, setStreamError),
         [],
     );
@@ -125,7 +135,7 @@ export function Chat() {
 
     async function run(operation: () => Promise<CodexState>) {
         setBusy(true);
-        setError("");
+        setError('');
         try {
             const next = await operation();
             // An event can arrive while the response is in flight.
@@ -140,7 +150,7 @@ export function Chat() {
             setError(
                 failure instanceof Error
                     ? failure.message
-                    : "Could not complete the chat operation.",
+                    : 'Could not complete the chat operation.',
             );
             return false;
         } finally {
@@ -150,7 +160,7 @@ export function Chat() {
     async function send(event: FormEvent) {
         event.preventDefault();
         follow.current = true;
-        if (await run(() => backend.sendMessage(message))) setMessage("");
+        if (await run(() => backend.sendMessage(message))) setMessage('');
     }
 
     return (
@@ -162,8 +172,9 @@ export function Chat() {
                         {state?.threads.length || 0}
                     </span>
                 </div>
-                <button
-                    className="new-chat-button"
+                <Button
+                    variant="outline"
+                    className="new-chat-button justify-start"
                     disabled={busy || running}
                     onClick={() => {
                         setCwd(state?.thread?.cwd || cwd);
@@ -171,8 +182,8 @@ export function Chat() {
                     }}
                 >
                     <span aria-hidden="true">＋</span> New chat
-                </button>
-                <input
+                </Button>
+                <Input
                     className="chat-search"
                     type="search"
                     aria-label="Search chats"
@@ -192,15 +203,16 @@ export function Chat() {
                                 .includes(search.toLowerCase()),
                         )
                         .map((chat) => (
-                            <button
+                            <Button
+                                variant="ghost"
                                 className={
                                     !newChat && state.thread?.id === chat.id
-                                        ? "chat-link active"
-                                        : "chat-link"
+                                        ? 'chat-link active h-auto w-full flex-col items-start gap-0 whitespace-normal text-left'
+                                        : 'chat-link h-auto w-full flex-col items-start gap-0 whitespace-normal text-left'
                                 }
                                 aria-current={
                                     !newChat && state.thread?.id === chat.id
-                                        ? "page"
+                                        ? 'page'
                                         : undefined
                                 }
                                 title={chat.cwd}
@@ -213,7 +225,7 @@ export function Chat() {
                                     ).then((opened) => {
                                         if (opened) {
                                             setNewChat(false);
-                                            setMessage("");
+                                            setMessage('');
                                         }
                                     });
                                 }}
@@ -223,16 +235,16 @@ export function Chat() {
                                     {chat.cwd
                                         .split(/[\\/]/)
                                         .filter(Boolean)
-                                        .pop()}{" "}
-                                    ·{" "}
+                                        .pop()}{' '}
+                                    ·{' '}
                                     {new Date(
                                         chat.updatedAt,
                                     ).toLocaleDateString(undefined, {
-                                        month: "short",
-                                        day: "numeric",
+                                        month: 'short',
+                                        day: 'numeric',
                                     })}
                                 </span>
-                            </button>
+                            </Button>
                         ))}
                     {Boolean(state?.threads.length) &&
                         !state?.threads.some((chat) =>
@@ -245,12 +257,12 @@ export function Chat() {
                 </div>
                 <div className="sidebar-footer">
                     <span
-                        className={`status ${state?.status === "ready" ? "connected" : ""}`}
+                        className={`status ${state?.status === 'ready' ? 'connected' : ''}`}
                     >
                         <span className="dot" />
-                        {state?.status === "ready"
-                            ? "Codex connected"
-                            : "Codex offline"}
+                        {state?.status === 'ready'
+                            ? 'Codex connected'
+                            : 'Codex offline'}
                     </span>
                 </div>
             </aside>
@@ -260,19 +272,19 @@ export function Chat() {
                         <span className="eyebrow">CODEX CHAT</span>
                         <h2>
                             {newChat || !state?.thread
-                                ? "New chat"
+                                ? 'New chat'
                                 : state.thread.title}
                         </h2>
                     </div>
                     <span className="status" role="status">
                         {running
-                            ? "Codex is working…"
-                            : state?.thread?.status || "Ready when you are"}
+                            ? 'Codex is working…'
+                            : state?.thread?.status || 'Ready when you are'}
                     </span>
                 </div>
                 {newChat || !state?.thread ? (
                     <div className="chat-setup">
-                        {" "}
+                        {' '}
                         <h2>Start a new chat</h2>
                         <p>
                             Choose an enrolled repository to start a coaching
@@ -280,41 +292,41 @@ export function Chat() {
                         </p>
                         <p className="runtime-note">
                             {isDesktop
-                                ? "Runs on your computer"
-                                : "Runs on the preview server"}
-                            {state ? ` · ${state.host}` : ""}
+                                ? 'Runs on your computer'
+                                : 'Runs on the preview server'}
+                            {state ? ` · ${state.host}` : ''}
                         </p>
                         <div className="codex-connection">
                             <span
-                                className={`status ${state?.status === "ready" && state.account ? "connected" : ""}`}
+                                className={`status ${state?.status === 'ready' && state.account ? 'connected' : ''}`}
                             >
                                 <span className="dot" />
                                 {state?.account ||
-                                    (state?.status === "connecting"
-                                        ? "Starting Codex…"
-                                        : "Codex not connected")}
+                                    (state?.status === 'connecting'
+                                        ? 'Starting Codex…'
+                                        : 'Codex not connected')}
                             </span>
-                            <button
-                                className="secondary"
+                            <Button
+                                variant="secondary"
                                 disabled={
                                     busy ||
                                     running ||
-                                    state?.status === "connecting"
+                                    state?.status === 'connecting'
                                 }
                                 onClick={() => void run(backend.connectCodex)}
                             >
-                                {state?.status === "ready"
-                                    ? "Reconnect Codex"
-                                    : "Connect Codex"}
-                            </button>
+                                {state?.status === 'ready'
+                                    ? 'Reconnect Codex'
+                                    : 'Connect Codex'}
+                            </Button>
                         </div>
                         {!state?.account && (
                             <p className="hint">
-                                Install Codex CLI and run{" "}
-                                <code>codex login</code> on{" "}
+                                Install Codex CLI and run{' '}
+                                <code>codex login</code> on{' '}
                                 {isDesktop
-                                    ? "your computer"
-                                    : "the preview server"}
+                                    ? 'your computer'
+                                    : 'the preview server'}
                                 , then connect. Your existing Codex account and
                                 configuration are used.
                             </p>
@@ -332,7 +344,7 @@ export function Chat() {
                                             : null;
                                         if (folder && !folder.currentPath)
                                             throw new Error(
-                                                "Choose an existing folder first.",
+                                                'Choose an existing folder first.',
                                             );
                                         return backend.startChat({
                                             cwd: folder?.currentPath || cwd,
@@ -341,7 +353,7 @@ export function Chat() {
                                     })
                                 ) {
                                     setNewChat(false);
-                                    setMessage("");
+                                    setMessage('');
                                 }
                             }}
                         >
@@ -351,9 +363,9 @@ export function Chat() {
                                 disabled={busy || Boolean(running)}
                                 host={state?.host}
                             />
-                            <button disabled={!cwd.trim() || busy || running}>
+                            <Button disabled={!cwd.trim() || busy || running}>
                                 New chat
-                            </button>
+                            </Button>
                         </form>
                     </div>
                 ) : (
@@ -383,7 +395,7 @@ export function Chat() {
                             </div>
                         )}
                         {state?.thread?.items.map((item) =>
-                            ["userMessage", "agentMessage"].includes(
+                            ['userMessage', 'agentMessage'].includes(
                                 item.type,
                             ) ? (
                                 <article
@@ -391,20 +403,20 @@ export function Chat() {
                                     key={item.id}
                                 >
                                     <strong>
-                                        {item.type === "userMessage"
-                                            ? "You"
-                                            : "Codex"}
+                                        {item.type === 'userMessage'
+                                            ? 'You'
+                                            : 'Codex'}
                                     </strong>
-                                    <div>{item.text || "…"}</div>
+                                    <div>{item.text || '…'}</div>
                                 </article>
                             ) : (
                                 <details className="tool-item" key={item.id}>
                                     <summary>
-                                        {item.type === "commandExecution"
-                                            ? "Command"
-                                            : item.type === "fileChange"
-                                              ? "File changes"
-                                              : item.type}{" "}
+                                        {item.type === 'commandExecution'
+                                            ? 'Command'
+                                            : item.type === 'fileChange'
+                                              ? 'File changes'
+                                              : item.type}{' '}
                                         · {item.status}
                                     </summary>
                                     <pre>{item.text}</pre>
@@ -434,8 +446,11 @@ export function Chat() {
                             className="composer"
                             onSubmit={(event) => void send(event)}
                         >
-                            <label htmlFor="chat-message">Message Codex</label>
-                            <textarea
+                            <Label className="mb-2" htmlFor="chat-message">
+                                Message Codex
+                            </Label>
+                            <Textarea
+                                className="min-h-[70px] max-h-[220px] resize-y"
                                 id="chat-message"
                                 placeholder="What would you like to work on?"
                                 value={message}
@@ -453,18 +468,18 @@ export function Chat() {
                                     requests appear here
                                 </span>
                                 {running ? (
-                                    <button
+                                    <Button
                                         type="button"
-                                        className="secondary"
+                                        variant="secondary"
                                         disabled={!state?.thread?.turnId}
                                         onClick={() =>
                                             void run(backend.interruptChat)
                                         }
                                     >
                                         Stop
-                                    </button>
+                                    </Button>
                                 ) : (
-                                    <button
+                                    <Button
                                         disabled={
                                             busy ||
                                             !state?.thread ||
@@ -473,7 +488,7 @@ export function Chat() {
                                         }
                                     >
                                         Send message
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         </form>

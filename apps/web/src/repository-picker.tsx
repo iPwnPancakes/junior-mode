@@ -1,5 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
+import {
+    ArrowUp,
+    ChevronRight,
+    ChevronsUpDown,
+    Folder,
+    Home,
+} from 'lucide-react';
 import type { DirectoryListing } from '@junior-mode/backend';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Command,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import { backend, isDesktop } from './backend';
 
 export function RepositoryPicker({
@@ -15,7 +37,7 @@ export function RepositoryPicker({
 }) {
     const [open, setOpen] = useState(false);
     const [showHidden, setShowHidden] = useState(false);
-    const [selected, setSelected] = useState(-1);
+    const [selected, setSelected] = useState('');
     const [result, setResult] = useState<{
         query: string;
         hidden: boolean;
@@ -23,37 +45,30 @@ export function RepositoryPicker({
         error?: string;
     } | null>(null);
     const input = useRef<HTMLInputElement>(null);
-    const list = useRef<HTMLDivElement>(null);
     const visible = open && !disabled;
     const current =
         result?.query === value && result.hidden === showHidden ? result : null;
     const listing = current?.listing;
-    const entries = listing?.entries || [];
 
     useEffect(() => {
         if (!visible) return;
         let active = true;
         const timer = setTimeout(async () => {
             try {
-                if (!backend.browseDirectories) {
+                if (!backend.browseDirectories)
                     throw new Error(
-                        'Update and restart the desktop app to browse folders. You can still paste an absolute path.',
+                        'Update and restart the desktop app to browse folders.',
                     );
-                }
                 const next = await backend.browseDirectories({
                     path: value,
                     showHidden,
                 });
-                if (active) {
+                if (active)
                     setResult({
                         query: value,
                         hidden: showHidden,
                         listing: next,
                     });
-                    setSelected(
-                        next.currentPath ? -1 : next.entries.length ? 0 : -1,
-                    );
-                }
             } catch (error) {
                 if (active)
                     setResult({
@@ -72,145 +87,74 @@ export function RepositoryPicker({
         };
     }, [value, showHidden, visible]);
 
-    function selectWithKeyboard(index: number) {
-        setSelected(index);
-        const container = list.current;
-        const option = container?.querySelector<HTMLElement>(
-            `#repository-folder-${index}`,
-        );
-        if (!container || !option) return;
-
-        // Keyboard navigation reveals the row inside this list only.
-        // Hover must never scroll the list or its surrounding setup panel.
-        const bounds = container.getBoundingClientRect();
-        const row = option.getBoundingClientRect();
-        if (row.top < bounds.top) container.scrollTop -= bounds.top - row.top;
-        else if (row.bottom > bounds.bottom)
-            container.scrollTop += row.bottom - bounds.bottom;
-    }
-
     function navigate(path: string) {
-        onChange(
-            path.endsWith(listing?.separator || '/')
-                ? path
-                : path + (listing?.separator || '/'),
-        );
-        setSelected(-1);
+        const separator = listing?.separator || '/';
+        onChange(path.endsWith(separator) ? path : path + separator);
+        setSelected('');
         input.current?.focus();
-        setOpen(true);
     }
 
     function choose() {
         if (!listing?.currentPath) return;
         onChange(listing.currentPath);
-        input.current?.focus();
         setOpen(false);
     }
 
     return (
-        <div
-            className="repository-picker"
-            onBlur={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget))
-                    setOpen(false);
-            }}
-        >
-            <label htmlFor="repository-path">Repository</label>
-            <div className="repository-input-row">
-                <span className="repository-input-icon" aria-hidden="true">
-                    ⌕
-                </span>
-                <input
-                    ref={input}
-                    id="repository-path"
-                    role="combobox"
-                    aria-autocomplete="list"
-                    aria-expanded={visible}
-                    aria-controls={visible ? 'repository-folders' : undefined}
-                    aria-activedescendant={
-                        visible && entries[selected]
-                            ? `repository-folder-${selected}`
-                            : undefined
-                    }
-                    aria-describedby="repository-help"
-                    placeholder="Type a path or browse folders…"
-                    autoComplete="off"
-                    spellCheck={false}
-                    value={value}
-                    disabled={disabled}
-                    required
-                    onFocus={() => setOpen(true)}
-                    onChange={(event) => {
-                        onChange(event.target.value);
-                        setSelected(-1);
-                        setOpen(true);
-                    }}
-                    onKeyDown={(event) => {
-                        if (event.nativeEvent.isComposing) return;
-                        if (event.key === 'Escape' && visible) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            setOpen(false);
-                        } else if (
-                            event.key === 'ArrowDown' ||
-                            event.key === 'ArrowUp'
-                        ) {
-                            event.preventDefault();
-                            setOpen(true);
-                            if (entries.length)
-                                selectWithKeyboard(
-                                    event.key === 'ArrowDown'
-                                        ? (selected + 1) % entries.length
-                                        : (selected <= 0
-                                              ? entries.length
-                                              : selected) - 1,
-                                );
-                        } else if (
-                            visible &&
-                            (event.key === 'Enter' ||
-                                (event.key === 'Tab' &&
-                                    !event.shiftKey &&
-                                    entries[selected]))
-                        ) {
-                            event.preventDefault();
-                            if (entries[selected])
-                                navigate(entries[selected].path);
-                            else if (event.key === 'Enter') choose();
-                        }
-                    }}
-                />
-                <button
-                    type="button"
-                    className="secondary repository-browse"
-                    disabled={disabled}
-                    onClick={() => {
+        <div className="space-y-2">
+            <Label htmlFor="repository-path">Repository</Label>
+            <Popover open={visible} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="repository-path"
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={visible}
+                        aria-label="Repository"
+                        aria-describedby="repository-help"
+                        disabled={disabled}
+                        className="h-10 w-full justify-between font-normal"
+                    >
+                        <Folder className="shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate text-left">
+                            {value || 'Choose a repository…'}
+                        </span>
+                        <ChevronsUpDown className="shrink-0 text-muted-foreground" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                    align="start"
+                    collisionPadding={12}
+                    className="flex max-h-[var(--radix-popover-content-available-height)] w-[var(--radix-popover-trigger-width)] min-w-64 max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0"
+                    onOpenAutoFocus={(event) => {
+                        event.preventDefault();
                         input.current?.focus();
-                        setOpen(true);
                     }}
                 >
-                    Browse
-                </button>
-            </div>
-            {visible && (
-                <div className="repository-popover">
-                    <div className="repository-toolbar">
-                        <span title={host}>
+                    <div className="flex shrink-0 items-center gap-1 px-3 py-2">
+                        <span
+                            className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
+                            title={host}
+                        >
                             Folders on{' '}
                             {host ||
                                 (isDesktop
                                     ? 'your computer'
                                     : 'the preview server')}
                         </span>
-                        <button
+                        <Button
                             type="button"
-                            className="text-button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => navigate(listing?.home || '~')}
                         >
-                            Home
-                        </button>
-                        <button
+                            <Home /> Home
+                        </Button>
+                        <Button
                             type="button"
-                            className="text-button"
+                            variant="ghost"
+                            size="sm"
                             disabled={
                                 !listing ||
                                 listing.directory === listing.parentPath
@@ -219,87 +163,121 @@ export function RepositoryPicker({
                                 if (listing) navigate(listing.parentPath);
                             }}
                         >
-                            ↑ Up
-                        </button>
+                            <ArrowUp /> Up
+                        </Button>
                     </div>
-                    {listing && (
-                        <div
-                            className="repository-location"
-                            title={listing.directory}
-                        >
-                            {listing.directory}
-                        </div>
-                    )}
-                    <div
-                        ref={list}
-                        id="repository-folders"
-                        role="listbox"
-                        aria-label="Folders"
-                        aria-busy={!current}
-                        className="repository-folders"
+                    <Separator />
+                    <Command
+                        className="h-auto min-h-0 flex-1"
+                        shouldFilter={false}
+                        loop
+                        value={selected}
+                        onValueChange={setSelected}
                     >
-                        {entries.map((entry, index) => (
-                            <button
-                                type="button"
-                                role="option"
-                                aria-selected={index === selected}
-                                id={`repository-folder-${index}`}
-                                key={entry.path}
-                                tabIndex={-1}
-                                className="repository-folder"
-                                onMouseDown={(event) => event.preventDefault()}
-                                onMouseMove={() => setSelected(index)}
-                                onClick={() => navigate(entry.path)}
-                            >
-                                <svg
-                                    aria-hidden="true"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.5"
-                                >
-                                    <path d="M3 7V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />
-                                </svg>
-                                <span>{entry.name}</span>
-                                <span aria-hidden="true">›</span>
-                            </button>
-                        ))}
-                    </div>
-                    <div role="status" className="repository-feedback">
-                        {!current
-                            ? 'Loading folders…'
-                            : current.error ||
-                              (!entries.length ? 'No matching folders.' : '')}
-                        {listing?.truncated &&
-                            'More folders available. Keep typing to narrow the list.'}
-                    </div>
-                    <div className="repository-picker-footer">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={showHidden}
-                                onChange={(event) =>
-                                    setShowHidden(event.target.checked)
+                        <CommandInput
+                            ref={input}
+                            aria-label="Folder path"
+                            placeholder="Type a path or browse folders…"
+                            value={value}
+                            onValueChange={(path) => {
+                                onChange(path);
+                                setSelected('');
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.nativeEvent.isComposing) return;
+                                if (
+                                    event.key === 'Tab' &&
+                                    !event.shiftKey &&
+                                    listing?.entries.some(
+                                        (entry) => entry.path === selected,
+                                    )
+                                ) {
+                                    event.preventDefault();
+                                    navigate(selected);
+                                } else if (
+                                    event.key === 'Enter' &&
+                                    !selected &&
+                                    listing?.currentPath
+                                ) {
+                                    event.preventDefault();
+                                    choose();
                                 }
-                            />{' '}
-                            Show hidden
-                        </label>
-                        <button
+                            }}
+                        />
+                        {listing && (
+                            <div
+                                className="truncate px-3 py-2 text-xs text-muted-foreground"
+                                title={listing.directory}
+                            >
+                                {listing.directory}
+                            </div>
+                        )}
+                        <CommandList
+                            aria-label="Folders"
+                            aria-busy={!current}
+                            className="min-h-0 max-h-52 flex-1 p-1"
+                        >
+                            {listing?.entries.map((entry) => (
+                                <CommandItem
+                                    key={entry.path}
+                                    value={entry.path}
+                                    onSelect={() => navigate(entry.path)}
+                                    className="py-2"
+                                >
+                                    <Folder />
+                                    <span className="min-w-0 flex-1 truncate">
+                                        {entry.name}
+                                    </span>
+                                    <ChevronRight />
+                                </CommandItem>
+                            ))}
+                        </CommandList>
+                        <div
+                            role="status"
+                            className="px-3 py-2 text-xs text-muted-foreground empty:hidden"
+                        >
+                            {!current
+                                ? 'Loading folders…'
+                                : current.error ||
+                                  (!listing?.entries.length
+                                      ? 'No matching folders.'
+                                      : '')}
+                            {listing?.truncated &&
+                                'More folders available. Keep typing to narrow the list.'}
+                        </div>
+                    </Command>
+                    <Separator />
+                    <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="show-hidden-folders"
+                                checked={showHidden}
+                                onCheckedChange={(checked) =>
+                                    setShowHidden(checked === true)
+                                }
+                            />
+                            <Label
+                                htmlFor="show-hidden-folders"
+                                className="text-xs font-normal"
+                            >
+                                Show hidden
+                            </Label>
+                        </div>
+                        <Button
                             type="button"
+                            size="sm"
                             disabled={!listing?.currentPath}
                             onClick={choose}
                         >
                             Use this folder
-                        </button>
+                        </Button>
                     </div>
-                    <div className="repository-shortcuts">
+                    <div className="px-3 pb-2 text-[10px] text-muted-foreground">
                         ↑ ↓ navigate · Enter / Tab open · Esc close
                     </div>
-                </div>
-            )}
-            <p id="repository-help" className="hint">
+                </PopoverContent>
+            </Popover>
+            <p id="repository-help" className="text-xs text-muted-foreground">
                 Type a path or browse folders. Use ~/ to start from home.
             </p>
         </div>

@@ -11,6 +11,16 @@ Repository structure and development commands: [README.md](README.md). Desktop/p
 
 Run workspace commands from the repository root: `pnpm dev`, `pnpm check`, and `pnpm pack:desktop`. All four applications share `pnpm-workspace.yaml` and `pnpm-lock.yaml`. Composer still manages PHP dependencies in `apps/learning-platform`. Use `pnpm dev:client` or `pnpm dev:platform` to run only one side.
 
+## Client UI
+
+The Electron/browser frontend in `apps/web` uses shadcn/ui. Reuse components from
+`src/components/ui` for controls, menus, popovers, and tabs. Add registry components
+with `pnpm dlx shadcn@latest add <component> -c apps/web` from the repository root.
+Use theme tokens in `src/ui.css`; keep application layout in `src/style.css`.
+Avoid global control styles that override component hover, focus, or disabled
+states. Run `pnpm test:web` for browser interaction changes (install Chromium with
+`pnpm exec playwright install chromium` if needed).
+
 ## Shared client preview
 
 - Use `pnpm preview status` to identify the worktree serving the shared remote Electron preview.

@@ -25,6 +25,7 @@
         "check": "pnpm run check:client && pnpm run check:platform",
         "lint:client": "cd apps && eslint .",
         "test:client": "pnpm --filter @junior-mode/backend test && pnpm --filter junior-mode-desktop test",
+        "test:web": "node --test apps/tests/web-ui.test.mjs",
         "test:electron": "cd apps && node --test tests/electron.test.mjs",
         "typecheck": "pnpm --filter @junior-mode/web typecheck"
     },

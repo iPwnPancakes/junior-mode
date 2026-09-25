@@ -82,6 +82,23 @@ composer --working-dir=apps/learning-platform require vendor/package
 
 Commit the root `pnpm-lock.yaml` with JavaScript dependency changes. Do not run npm install or create per-app lockfiles. When switching an existing npm checkout, remove its old `apps/node_modules` and app-level `node_modules` directories before installing with pnpm. PHP dependencies remain locked by the platform's `composer.lock`.
 
+## Desktop and browser UI components
+
+The shared React frontend in `apps/web` uses [shadcn/ui](https://ui.shadcn.com/docs/installation/vite),
+Radix primitives, Lucide icons, and Tailwind CSS v4. Electron renders this same
+frontend. UI components live in `apps/web/src/components/ui`; `components.json`
+configures the registry and `@/` import alias. Theme tokens live in `src/ui.css`;
+`src/style.css` contains app-specific layout styles.
+
+Prefer the existing shadcn components for controls and interactions. Add more
+from the repository root with `pnpm dlx shadcn@latest add <component> -c apps/web`.
+The repository picker composes Popover, Command, Checkbox, and Button; folder
+enumeration still comes from the active backend host.
+
+Run `pnpm exec playwright install chromium` once, then `pnpm test:web` for
+browser interaction tests. They launch an isolated Vite server and mock backend
+responses, leaving the shared preview and real chats untouched.
+
 ## Shared client preview across worktrees
 
 Use the preview manager on your Linux or macOS development server when Electron

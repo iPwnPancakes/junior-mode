@@ -58,7 +58,7 @@ test(
         page.on('pageerror', (error) => errors.push(error.message));
         page.on('request', (request) => rendererRequests.push(request.url()));
         await page
-            .getByRole('button', { name: 'Learning platform', exact: true })
+            .getByRole('tab', { name: 'Learning platform', exact: true })
             .click();
         const platformUrl = `http://127.0.0.1:${platform.address().port}`;
         await page.getByLabel('Platform address').fill(platformUrl);
@@ -87,7 +87,7 @@ test(
 
         await page.reload();
         await page
-            .getByRole('button', { name: 'Learning platform', exact: true })
+            .getByRole('tab', { name: 'Learning platform', exact: true })
             .click();
         await page
             .getByRole('button', { name: 'Check connection', exact: true })
@@ -153,8 +153,13 @@ test(
         page.on('pageerror', (error) => errors.push(error.message));
         const repository = join(directory, 'Project Alpha');
         await mkdir(repository);
-        const picker = page.getByRole('combobox', {
+        const repositoryTrigger = page.getByRole('combobox', {
             name: 'Repository',
+            exact: true,
+        });
+        await repositoryTrigger.click();
+        const picker = page.getByRole('combobox', {
+            name: 'Folder path',
             exact: true,
         });
         await picker.fill(join(directory, 'Pro'));
@@ -162,7 +167,7 @@ test(
         await picker.press('Enter');
         await page.getByText('No matching folders.', { exact: true }).waitFor();
         await page.getByRole('button', { name: 'Use this folder' }).click();
-        assert.equal(await picker.inputValue(), repository);
+        assert.equal(await repositoryTrigger.innerText(), repository);
         await page
             .locator('.chat-setup')
             .getByRole('button', { name: 'New chat', exact: true })

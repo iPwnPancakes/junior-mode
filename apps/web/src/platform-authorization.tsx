@@ -1,3 +1,7 @@
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useEffect, useState } from 'react';
 import type {
     CoachingPluginState,
@@ -44,8 +48,8 @@ export function PlatformAuthorizationPanel({
         }
     }
     return (
-        <section
-            className="connection-card"
+        <Card
+            className="connection-card mt-5 gap-3 p-7"
             aria-labelledby="authorization-title"
         >
             <h2 id="authorization-title">Coaching authorization</h2>
@@ -58,8 +62,10 @@ export function PlatformAuthorizationPanel({
                     ? `Authorized as ${state.learner} (${state.client})`
                     : (state?.status ?? 'Loading…')}
             </p>
-            <label htmlFor="client-name">Client name</label>
-            <input
+            <Label className="mb-2" htmlFor="client-name">
+                Client name
+            </Label>
+            <Input
                 id="client-name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -67,21 +73,21 @@ export function PlatformAuthorizationPanel({
                 disabled={busy}
             />
             <div className="actions">
-                <button
+                <Button
                     disabled={!connected || busy}
                     onClick={() =>
                         void run(() => backend.beginPlatformAuthorization(name))
                     }
                 >
                     Authorize client
-                </button>
-                <button
-                    className="secondary"
+                </Button>
+                <Button
+                    variant="secondary"
                     disabled={!connected || busy}
                     onClick={() => void run(backend.checkPlatformAuthorization)}
                 >
                     Check authorization
-                </button>
+                </Button>
             </div>
             {state?.authorizationUrl && (
                 <div>
@@ -91,7 +97,7 @@ export function PlatformAuthorizationPanel({
                         <strong>{state.userCode}</strong>:
                     </p>
                     <p className="hint">{state.authorizationUrl}</p>
-                    <button
+                    <Button
                         disabled={busy}
                         onClick={() =>
                             void backend
@@ -100,29 +106,28 @@ export function PlatformAuthorizationPanel({
                         }
                     >
                         Open approval in browser
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         disabled={busy}
                         onClick={() =>
                             void run(backend.completePlatformAuthorization)
                         }
                     >
                         I approved this client
-                    </button>
+                    </Button>
                 </div>
             )}
             <h3>Coaching plugin</h3>
             <p>
                 {plugin?.installed
                     ? `Version ${plugin.version} installed`
-                    : 'Install the bundled coaching workflows before enabling coaching.'}
+                    : 'Install the bundled coaching workflows before starting your first coaching chat.'}
             </p>
             <p className="hint">
-                Installation adds only the Junior Mode plugin to Codex. Coaching
-                starts only when you enable it for a chat in an enrolled
-                repository.
+                Installation adds only the Junior Mode plugin to Codex. New
+                chats automatically use coaching in enrolled repositories.
             </p>
-            <button
+            <Button
                 disabled={busy}
                 onClick={() => {
                     setBusy(true);
@@ -137,12 +142,12 @@ export function PlatformAuthorizationPanel({
                 {plugin?.installed
                     ? 'Reinstall coaching plugin'
                     : 'Install coaching plugin'}
-            </button>
+            </Button>
             {error && (
                 <p className="error" role="alert">
                     {error}
                 </p>
             )}
-        </section>
+        </Card>
     );
 }
