@@ -577,7 +577,6 @@ export default function LearnerPage({
     learningActivities = [],
 }: Props) {
     const tree = buildTree(competencies);
-    const hasActiveCompetencies = competencies.some(isActive);
     const pastFocuses = priorities.filter(
         (priority) => priority.status !== 'active',
     );
@@ -595,7 +594,7 @@ export default function LearnerPage({
                             : 'What you are growing and what coaching will look for.'
                     }
                     actions={
-                        canManage && hasActiveCompetencies ? (
+                        canManage && tree.length > 0 ? (
                             <DialogButton
                                 label="Add competency"
                                 icon={<Plus aria-hidden="true" />}

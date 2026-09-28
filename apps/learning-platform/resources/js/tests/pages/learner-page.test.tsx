@@ -222,6 +222,21 @@ describe('Learner page', () => {
         );
     });
 
+    it('still adds competencies after every one is archived', async () => {
+        const { user } = renderLearnerPage({
+            competencies: [competency({ archivedAt: '2026-09-28' })],
+            priorities: [],
+        });
+
+        await user.click(
+            screen.getByRole('button', { name: 'Add competency' }),
+        );
+
+        expect(
+            screen.getByRole('dialog', { name: 'Add a competency' }),
+        ).toBeInTheDocument();
+    });
+
     it('keeps the Learner view read-only', () => {
         renderLearnerPage({ canManage: false });
 
