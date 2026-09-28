@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\BuildMentorLearnerOverview;
 use App\Models\CatalogProposal;
 use App\Models\CoachingPriority;
 use App\Models\CoachingSession;
@@ -103,4 +104,28 @@ test('the Mentor dashboard gives each Learner one next step in priority order', 
         ->and($steps[$withoutRepository->id]['href'])->toBe(route('enrolled-repositories.index'))
         ->and($steps[$onTrack->id]['href'])->toBe(route('learners.show', $onTrack))
         ->and($steps->has($otherLearner->id))->toBeFalse();
+});
+
+test('the Mentor overview returns integer active counts and reindexes filtered focus lists', function () {
+    $mentor = User::factory()->mentor()->create();
+    $learner = User::factory()->learner($mentor)->create();
+    $competency = Competency::factory()->forLearner($learner)->create();
+    Competency::factory()->forLearner($learner)->archived()->create();
+    Competency::factory()->forLearner($learner)->create(['merged_into_id' => $competency->id]);
+
+    foreach ([now()->subDay(), now()->addWeek()] as $expiresAt) {
+        CoachingPriority::factory()->create([
+            'learner_id' => $learner->id,
+            'competency_id' => $competency->id,
+            'created_by_id' => $mentor->id,
+            'expires_at' => $expiresAt,
+        ]);
+    }
+
+    $overview = app(BuildMentorLearnerOverview::class)->handle($mentor);
+
+    expect(array_is_list($overview))->toBeTrue()
+        ->and($overview)->toHaveCount(1)
+        ->and($overview[0]['competencyCount'])->toBe(1)
+        ->and($overview[0]['focus'])->toBe([$competency->name]);
 });

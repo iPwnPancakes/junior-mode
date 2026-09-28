@@ -189,10 +189,8 @@ test(
             .getByText('A new coaching chat in Project Alpha.', { exact: true })
             .waitFor();
 
-        await page
-            .locator('.chat-setup')
-            .getByRole('button', { name: 'New chat', exact: true })
-            .click();
+        await page.getByLabel('Message Codex').fill('Start coaching');
+        await page.getByRole('button', { name: 'Send message' }).click();
         // App-created chats always request coaching, even without an opt-in.
         await page
             .getByRole('alert')

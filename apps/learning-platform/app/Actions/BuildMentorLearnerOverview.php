@@ -62,22 +62,21 @@ class BuildMentorLearnerOverview
             ->unique('learner_id')
             ->keyBy('learner_id');
 
-        return $learners->map(fn (User $learner): array => [
+        return array_values($learners->map(fn (User $learner): array => [
             'id' => $learner->id,
             'name' => $learner->name,
             'email' => $learner->email,
-            'competencyCount' => $learner->active_competencies_count,
-            'focus' => $learner->coachingPriorities
+            'competencyCount' => (int) $learner->getAttribute('active_competencies_count'),
+            'focus' => array_values($learner->coachingPriorities
                 ->reject(fn (CoachingPriority $priority): bool => $priority->isExpired())
                 ->map(fn (CoachingPriority $priority): string => $priority->competency->name)
-                ->values()
-                ->all(),
+                ->all()),
             'nextStep' => $this->nextStep(
                 $learner,
                 $proposals->get($learner->id),
                 $handoffs->get($learner->id),
             ),
-        ])->values()->all();
+        ])->all());
     }
 
     /** @return array{kind: string, label: string, detail: string, href: string} */
@@ -94,7 +93,7 @@ class BuildMentorLearnerOverview
             ];
         }
 
-        if ($learner->active_competencies_count === 0) {
+        if ((int) $learner->getAttribute('active_competencies_count') === 0) {
             return [
                 'kind' => 'set_up_plan',
                 'label' => __('Set up coaching plan'),
