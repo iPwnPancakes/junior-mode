@@ -768,6 +768,81 @@
         height: 13px;
         flex-shrink: 0;
     }
+    /* The settle action overlays the card's time label, like t3code. */
+    .sidebar-chat-row {
+        position: relative;
+        flex-shrink: 0;
+    }
+    .sidebar-chat-row:hover .sidebar-chat-card:not(:disabled) {
+        background: var(--highlighted);
+        color: var(--highlighted-foreground);
+    }
+    .sidebar-chat-row:hover .sidebar-chat-card:not(:disabled) .chat-card-project,
+    .sidebar-chat-row:hover .sidebar-chat-card:not(:disabled) .chat-card-detail {
+        color: var(--highlighted-foreground);
+        opacity: 0.8;
+    }
+    .sidebar-chat-action {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 26px;
+        height: 26px;
+        color: inherit;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .sidebar-chat-action svg {
+        width: 14px;
+        height: 14px;
+    }
+    .sidebar-chat-row:hover .sidebar-chat-action,
+    .sidebar-chat-row:focus-within .sidebar-chat-action {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .sidebar-chat-row:hover:has(.sidebar-chat-card:not(:disabled)) .sidebar-chat-action,
+    .sidebar-chat-row:has(.sidebar-chat-card[aria-current='page']) .sidebar-chat-action {
+        color: var(--highlighted-foreground);
+    }
+    .sidebar-chat-row:hover time,
+    .sidebar-chat-row:focus-within time {
+        visibility: hidden;
+    }
+    @media (hover: none) {
+        .sidebar-chat-action {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .sidebar-chat-row time {
+            visibility: hidden;
+        }
+    }
+    .sidebar-chat-row[data-settled] .sidebar-chat-card:not([aria-current='page']) strong {
+        color: var(--muted-foreground);
+    }
+    .sidebar-chat-row[data-settled]:hover .sidebar-chat-card:not(:disabled) strong {
+        color: inherit;
+    }
+    .sidebar-shelf-toggle {
+        flex-shrink: 0;
+        justify-content: flex-start;
+        gap: 8px;
+        margin-top: 6px;
+        padding: 0 8px;
+        font-size: 12px;
+        color: var(--muted-foreground);
+    }
+    .sidebar-shelf-toggle .shelf-rule {
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+    .sidebar-shelf-toggle svg {
+        width: 13px;
+        height: 13px;
+        transition: transform 150ms;
+    }
     .sidebar-footer {
         margin-top: auto;
         padding: 10px 0 0;

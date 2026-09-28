@@ -55,6 +55,9 @@ test('IPC calls backend capabilities and rejects untrusted frames before side ef
         'openChat',
         'sendMessage',
         'interruptChat',
+        'settleChat',
+        'unsettleChat',
+        'setAutoSettle',
         'respondToCodex',
     ]) {
         assert.throws(

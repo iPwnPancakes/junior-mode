@@ -152,6 +152,15 @@ export function createBackendServer(backend) {
                 case 'POST /api/codex/interrupt':
                     result = await backend.interruptChat();
                     break;
+                case 'POST /api/codex/settle':
+                    result = await backend.settleChat(body.id);
+                    break;
+                case 'POST /api/codex/unsettle':
+                    result = await backend.unsettleChat(body.id);
+                    break;
+                case 'PUT /api/codex/auto-settle':
+                    result = await backend.setAutoSettle(body.days);
+                    break;
                 case 'POST /api/codex/respond':
                     result = await backend.respondToCodex(body);
                     break;

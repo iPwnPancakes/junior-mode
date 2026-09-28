@@ -44,6 +44,7 @@ async function fixture(t, history = false) {
         threads: [],
         requests: [],
         error: null,
+        autoSettleAfterDays: 3,
     };
     if (history)
         state.threads = [
@@ -170,6 +171,28 @@ async function fixture(t, history = false) {
                     },
                 ],
             };
+            return route.fulfill({ json: state });
+        }
+        if (path === '/api/codex/settle' || path === '/api/codex/unsettle') {
+            const chat = state.threads.find((thread) => thread.id === body.id);
+            if (path === '/api/codex/settle')
+                Object.assign(chat, {
+                    settledOverride: 'settled',
+                    settledAt: '2026-09-25T12:00:00Z',
+                });
+            else {
+                chat.settledOverride = 'active';
+                delete chat.settledAt;
+            }
+            // Like the backend, the open chat mirrors its summary.
+            if (state.thread?.id === chat.id)
+                state.thread = { ...state.thread, ...chat };
+            state.revision++;
+            return route.fulfill({ json: state });
+        }
+        if (path === '/api/codex/auto-settle') {
+            state.autoSettleAfterDays = body.days;
+            state.revision++;
             return route.fulfill({ json: state });
         }
         if (path === '/api/codex/message') {
@@ -777,4 +800,68 @@ test('running chat keeps the draft and Enter cannot submit or interrupt it', asy
     assert.equal(calls.filter((call) => ['/api/codex/message', '/api/codex/interrupt'].includes(call.path)).length, 0);
     await stop.click();
     assert.equal(calls.filter((call) => call.path === '/api/codex/interrupt').length, 1);
+});
+
+test('chats settle into a collapsible shelf, stay searchable, and un-settle', async (t) => {
+    const { page, calls, errors } = await fixture(t, true);
+    const row = (title) =>
+        page.locator('.sidebar-chat-row').filter({ hasText: title });
+    await row('Explain the repo').hover();
+    await row('Explain the repo')
+        .getByRole('button', { name: 'Settle chat', exact: true })
+        .click();
+    const shelf = page.getByRole('button', { name: /^Settled/ });
+    await shelf.waitFor();
+    assert.equal(await shelf.getAttribute('aria-expanded'), 'false');
+    assert.equal(await page.locator('.chat-link').count(), 1);
+    assert.deepEqual(
+        calls.find((call) => call.path === '/api/codex/settle').body,
+        { id: 'chat-1' },
+    );
+
+    await page.getByLabel('Search chats').fill('Explain');
+    await row('Explain the repo').waitFor();
+    await page.getByLabel('Search chats').fill('');
+    assert.equal(await page.locator('.chat-link').count(), 1);
+
+    await shelf.click();
+    assert.equal(await shelf.getAttribute('aria-expanded'), 'true');
+    await row('Explain the repo').click();
+    await page
+        .locator('.chat-heading')
+        .getByText('Settled', { exact: true })
+        .waitFor();
+    await row('Explain the repo').hover();
+    await row('Explain the repo')
+        .getByRole('button', { name: 'Un-settle chat', exact: true })
+        .click();
+    await shelf.waitFor({ state: 'detached' });
+    assert.equal(await page.locator('.chat-link').count(), 2);
+    assert.equal(
+        await page
+            .locator('.chat-heading')
+            .getByText('Settled', { exact: true })
+            .count(),
+        0,
+    );
+
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Chats', exact: true }).click();
+    const auto = page.getByRole('checkbox', {
+        name: 'Settle inactive chats automatically',
+    });
+    assert.equal(await auto.getAttribute('aria-checked'), 'true');
+    await page.getByLabel('Days without activity').fill('7');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await auto.click();
+    await page.getByLabel('Days without activity').waitFor({
+        state: 'detached',
+    });
+    assert.deepEqual(
+        calls
+            .filter((call) => call.path === '/api/codex/auto-settle')
+            .map((call) => call.body),
+        [{ days: 7 }, { days: null }],
+    );
+    assert.deepEqual(errors, []);
 });

@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Cable, GraduationCap } from 'lucide-react';
+import type { FormEvent } from 'react';
+import {
+    ArrowLeft,
+    Cable,
+    GraduationCap,
+    MessagesSquare,
+} from 'lucide-react';
 import type { CodexState } from '@junior-mode/backend';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { backend, isDesktop } from './backend';
 import { PlatformSettings } from './platform-settings';
@@ -129,6 +138,126 @@ function Providers() {
     );
 }
 
+function ChatSettings() {
+    const [state, setState] = useState<CodexState | null>(null);
+    // An unsaved edit; otherwise the field shows the saved value.
+    const [edited, setEdited] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    const saved = state?.autoSettleAfterDays;
+    const days = edited ?? String(saved ?? 3);
+
+    useEffect(
+        () =>
+            backend.subscribeCodex(
+                (next) =>
+                    setState((current) =>
+                        current?.instanceId === next.instanceId &&
+                        current.revision > next.revision
+                            ? current
+                            : next,
+                    ),
+                setError,
+            ),
+        [],
+    );
+
+    async function apply(value: number | null) {
+        setBusy(true);
+        setError('');
+        try {
+            setState(await backend.setAutoSettle(value));
+            setEdited(null);
+        } catch (failure) {
+            setError(
+                failure instanceof Error
+                    ? failure.message
+                    : 'Could not save the chat settings.',
+            );
+        } finally {
+            setBusy(false);
+        }
+    }
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        void apply(Number(days));
+    }
+
+    const enabled = saved !== null && saved !== undefined;
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-xl font-semibold">Chats</h1>
+                <p className="text-muted-foreground mt-2 text-sm">
+                    Settle finished chats to move them out of the active list
+                    without deleting the conversation. Sending a message in a
+                    settled chat returns it to active work.
+                </p>
+            </div>
+            <Card className="gap-5 p-6">
+                <div className="flex items-start gap-3">
+                    <Checkbox
+                        id="auto-settle"
+                        className="mt-0.5"
+                        checked={enabled}
+                        disabled={!state || busy}
+                        onCheckedChange={(checked) =>
+                            void apply(
+                                checked === true ? Number(days) || 3 : null,
+                            )
+                        }
+                    />
+                    <div className="space-y-1">
+                        <Label htmlFor="auto-settle">
+                            Settle inactive chats automatically
+                        </Label>
+                        <p className="text-muted-foreground text-sm">
+                            Running chats and chats you un-settled stay active
+                            until their next message.
+                        </p>
+                    </div>
+                </div>
+                {enabled && (
+                    <form
+                        className="flex items-end gap-3 border-t pt-5"
+                        onSubmit={submit}
+                    >
+                        <div className="space-y-2">
+                            <Label htmlFor="auto-settle-days">
+                                Days without activity
+                            </Label>
+                            <Input
+                                id="auto-settle-days"
+                                className="w-28"
+                                type="number"
+                                min={1}
+                                max={365}
+                                step={1}
+                                required
+                                value={days}
+                                onChange={(event) =>
+                                    setEdited(event.target.value)
+                                }
+                            />
+                        </div>
+                        <Button
+                            variant="secondary"
+                            disabled={busy || Number(days) === saved}
+                        >
+                            Save
+                        </Button>
+                    </form>
+                )}
+                {error && (
+                    <p className="error" role="alert">
+                        {error}
+                    </p>
+                )}
+            </Card>
+        </div>
+    );
+}
+
 export function Settings({ onBack }: { onBack: () => void }) {
     useEffect(() => {
         function handleKey(event: KeyboardEvent) {
@@ -166,6 +295,13 @@ export function Settings({ onBack }: { onBack: () => void }) {
                         <GraduationCap />
                         Learning platform
                     </TabsTrigger>
+                    <TabsTrigger
+                        value="chats"
+                        className="h-11 flex-none justify-start gap-3 px-3 sm:w-full"
+                    >
+                        <MessagesSquare />
+                        Chats
+                    </TabsTrigger>
                 </TabsList>
                 <Button
                     variant="ghost"
@@ -181,6 +317,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
                 </TabsContent>
                 <TabsContent value="platform" className="mx-auto max-w-3xl">
                     <PlatformSettings />
+                </TabsContent>
+                <TabsContent value="chats" className="mx-auto max-w-3xl">
+                    <ChatSettings />
                 </TabsContent>
             </div>
         </Tabs>

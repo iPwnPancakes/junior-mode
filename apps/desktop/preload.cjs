@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('juniorMode', {
     openChat: (id) => ipcRenderer.invoke('junior-mode:openChat', id),
     sendMessage: (text) => ipcRenderer.invoke('junior-mode:sendMessage', text),
     interruptChat: () => ipcRenderer.invoke('junior-mode:interruptChat'),
+    settleChat: (id) => ipcRenderer.invoke('junior-mode:settleChat', id),
+    unsettleChat: (id) => ipcRenderer.invoke('junior-mode:unsettleChat', id),
+    setAutoSettle: (days) =>
+        ipcRenderer.invoke('junior-mode:setAutoSettle', days),
     respondToCodex: (answer) =>
         ipcRenderer.invoke('junior-mode:respondToCodex', answer),
     subscribeCodex: (listener, onError) => {

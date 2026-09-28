@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
+    ChevronDown,
+    CircleCheck,
     Cpu,
     Folder,
     FolderPlus,
@@ -7,8 +9,9 @@ import {
     Search,
     Settings,
     SquarePen,
+    Undo2,
 } from 'lucide-react';
-import type { CodexState, Project } from '@junior-mode/backend';
+import type { ChatSummary, CodexState, Project } from '@junior-mode/backend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -34,6 +37,11 @@ function age(updatedAt: string, now: number) {
     return Math.floor(minutes / 1440) + 'd';
 }
 
+const settledShelfKey = 'junior-mode:sidebar:settled-expanded';
+const isSettled = (chat: ChatSummary) => chat.settledOverride === 'settled';
+// Settled chats are history, ordered by when the work wrapped up.
+const settledTime = (chat: ChatSummary) => chat.settledAt ?? chat.updatedAt;
+
 export function ProjectSidebar({
     state,
     disabled,
@@ -41,6 +49,9 @@ export function ProjectSidebar({
     onNewChat,
     onAddProject,
     onOpenChat,
+    onSettleChat,
+    onUnsettleChat,
+    actionsDisabled,
     onOpenSettings,
     collapsed,
     onToggle,
@@ -51,12 +62,18 @@ export function ProjectSidebar({
     onNewChat: (project?: Project) => void;
     onAddProject: () => void;
     onOpenChat: (id: string) => void;
+    onSettleChat: (id: string) => void;
+    onUnsettleChat: (id: string) => void;
+    actionsDisabled: boolean;
     onOpenSettings: () => void;
     collapsed: boolean;
     onToggle: () => void;
 }) {
     const [search, setSearch] = useState('');
     const [projectsOpen, setProjectsOpen] = useState(false);
+    const [settledOpen, setSettledOpen] = useState(
+        () => localStorage.getItem(settledShelfKey) === 'true',
+    );
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 60000);
@@ -77,6 +94,85 @@ export function ProjectSidebar({
             );
         })
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const activeChats = chats.filter((chat) => !isSettled(chat));
+    const settledChats = chats
+        .filter(isSettled)
+        .sort((a, b) => settledTime(b).localeCompare(settledTime(a)));
+    // Search reaches into the shelf so settled chats stay findable.
+    const showSettled = settledOpen || Boolean(query);
+    function toggleSettled() {
+        setSettledOpen((open) => {
+            localStorage.setItem(settledShelfKey, String(!open));
+            return !open;
+        });
+    }
+    function chatCard(chat: ChatSummary) {
+        const project = projects.find((entry) => entry.id === chat.projectId);
+        const settled = isSettled(chat);
+        const time = settled ? settledTime(chat) : chat.updatedAt;
+        const running =
+            state?.thread?.id === chat.id && state.thread.status === 'running';
+        return (
+            <div
+                key={chat.id}
+                className="sidebar-chat-row"
+                data-settled={settled || undefined}
+            >
+                <Button
+                    variant="ghost"
+                    className="chat-link sidebar-chat-card h-auto flex-col items-stretch justify-start gap-1 px-2.5 py-2 text-left"
+                    aria-current={
+                        !draftProjectId && state?.thread?.id === chat.id
+                            ? 'page'
+                            : undefined
+                    }
+                    disabled={disabled}
+                    onClick={() => onOpenChat(chat.id)}
+                    title={chat.cwd}
+                >
+                    <span className="chat-card-project">
+                        <span className="project-monogram">
+                            {(project?.name || 'JM').slice(0, 2)}
+                        </span>
+                        <span>{project?.name || 'Project'}</span>
+                        <time
+                            dateTime={time}
+                            title={settled ? 'Settled' : undefined}
+                        >
+                            {age(time, now)}
+                        </time>
+                    </span>
+                    <strong>{chat.title}</strong>
+                    <span className="chat-card-detail">
+                        <Folder />
+                        <span>{chat.cwd}</span>
+                        <Cpu aria-label="Codex" />
+                    </span>
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="sidebar-chat-action"
+                    aria-label={settled ? 'Un-settle chat' : 'Settle chat'}
+                    title={
+                        running
+                            ? 'Stop the current turn before settling'
+                            : settled
+                              ? 'Un-settle chat'
+                              : 'Settle chat'
+                    }
+                    disabled={actionsDisabled || running}
+                    onClick={() =>
+                        settled
+                            ? onUnsettleChat(chat.id)
+                            : onSettleChat(chat.id)
+                    }
+                >
+                    {settled ? <Undo2 /> : <CircleCheck />}
+                </Button>
+            </div>
+        );
+    }
     const draftProject = projects.find(
         (project) => project.id === draftProjectId,
     );
@@ -221,43 +317,7 @@ export function ProjectSidebar({
                             </span>
                         </Button>
                     )}
-                    {chats.map((chat) => {
-                        const project = projects.find(
-                            (entry) => entry.id === chat.projectId,
-                        );
-                        return (
-                            <Button
-                                key={chat.id}
-                                variant="ghost"
-                                className="chat-link sidebar-chat-card h-auto flex-col items-stretch justify-start gap-1 px-2.5 py-2 text-left"
-                                aria-current={
-                                    !draftProjectId &&
-                                    state?.thread?.id === chat.id
-                                        ? 'page'
-                                        : undefined
-                                }
-                                disabled={disabled}
-                                onClick={() => onOpenChat(chat.id)}
-                                title={chat.cwd}
-                            >
-                                <span className="chat-card-project">
-                                    <span className="project-monogram">
-                                        {(project?.name || 'JM').slice(0, 2)}
-                                    </span>
-                                    <span>{project?.name || 'Project'}</span>
-                                    <time dateTime={chat.updatedAt}>
-                                        {age(chat.updatedAt, now)}
-                                    </time>
-                                </span>
-                                <strong>{chat.title}</strong>
-                                <span className="chat-card-detail">
-                                    <Folder />
-                                    <span>{chat.cwd}</span>
-                                    <Cpu aria-label="Codex" />
-                                </span>
-                            </Button>
-                        );
-                    })}
+                    {activeChats.map(chatCard)}
                     {!chats.length && !draftProject && (
                         <p className="px-2 py-4 text-xs text-muted-foreground">
                             {query
@@ -266,6 +326,31 @@ export function ProjectSidebar({
                                   ? 'Start a chat from a project.'
                                   : 'Add a project to start chatting.'}
                         </p>
+                    )}
+                    {settledChats.length > 0 && (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="sidebar-shelf-toggle"
+                                aria-expanded={showSettled}
+                                disabled={Boolean(query)}
+                                onClick={toggleSettled}
+                            >
+                                <span>Settled</span>
+                                <span className="text-muted-foreground">
+                                    {settledChats.length}
+                                </span>
+                                <span aria-hidden className="shelf-rule" />
+                                <ChevronDown
+                                    aria-hidden
+                                    className={
+                                        showSettled ? 'rotate-180' : undefined
+                                    }
+                                />
+                            </Button>
+                            {showSettled && settledChats.map(chatCard)}
+                        </>
                     )}
                 </div>
             )}

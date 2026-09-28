@@ -1,5 +1,6 @@
 import { ArrowUp, Folder, PanelLeft, ShieldCheck, Square } from 'lucide-react';
 import { ProjectSidebar } from './project-sidebar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -264,6 +265,9 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                     }
                 });
             }}
+            onSettleChat={(id) => void run(() => backend.settleChat(id))}
+            onUnsettleChat={(id) => void run(() => backend.unsettleChat(id))}
+            actionsDisabled={busy}
             onOpenSettings={() => {
                 setDrawerOpen(false);
                 onOpenSettings();
@@ -362,6 +366,15 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                                   ? 'New chat'
                                   : state?.thread?.title}
                         </h2>
+                        {!draft &&
+                            state?.thread?.settledOverride === 'settled' && (
+                                <Badge
+                                    variant="outline"
+                                    title="Sending a message moves this chat back to active work"
+                                >
+                                    Settled
+                                </Badge>
+                            )}
                     </div>
                     <span className="status" role="status">
                         {running ? 'Codex is working…' : ''}

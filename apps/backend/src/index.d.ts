@@ -26,6 +26,11 @@ export interface ChatSummary {
     cwd: string;
     title: string;
     updatedAt: string;
+    /** When the chat moved to the settled shelf. */
+    settledAt?: string;
+    /** "active" is an explicit un-settle that blocks automatic settlement
+        until new activity clears it. */
+    settledOverride?: 'settled' | 'active';
 }
 
 export interface ChatItem {
@@ -66,6 +71,8 @@ export interface CodexState {
           })
         | null;
     requests: CodexRequest[];
+    /** Idle days before a chat settles automatically; null turns it off. */
+    autoSettleAfterDays: number | null;
 }
 
 export interface CodexAnswer {
@@ -109,6 +116,9 @@ export interface BackendApi {
     openChat(id: string): Promise<CodexState>;
     sendMessage(text: string): Promise<CodexState>;
     interruptChat(): Promise<CodexState>;
+    settleChat(id: string): Promise<CodexState>;
+    unsettleChat(id: string): Promise<CodexState>;
+    setAutoSettle(days: number | null): Promise<CodexState>;
     respondToCodex(answer: CodexAnswer): Promise<CodexState>;
     subscribeCodex(
         listener: (state: CodexState) => void,

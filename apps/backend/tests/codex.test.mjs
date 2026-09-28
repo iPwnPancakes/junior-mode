@@ -21,10 +21,11 @@ import { createBackendServer } from '../src/http.mjs';
 const fixtureScript = fileURLToPath(
     new URL('./fixtures/codex-server.mjs', import.meta.url),
 );
-async function fixture(t) {
+async function fixture(t, overrides = {}) {
     const directory = await mkdtemp(join(tmpdir(), 'junior-codex-'));
     const services = [];
     const options = {
+        ...overrides,
         statePath: join(directory, 'chats.json'),
         processFactory: (handlers) =>
             createCodexProcess({
@@ -406,4 +407,75 @@ test('project creation only creates folders when explicitly requested', async (t
         (await service.addProject({ cwd, create: true })).project.id,
         added.project.id,
     );
+});
+
+test('chats settle and un-settle manually, and new activity returns them to active work', async (t) => {
+    const { service, directory, create } = await fixture(t);
+    await service.startChat({ cwd: directory });
+    await service.sendMessage('wait');
+    const id = (await until(service, (value) => value.thread.turnId)).thread
+        .id;
+    await assert.rejects(service.settleChat(id), /Stop the current turn/);
+    await service.interruptChat();
+    await until(service, (value) => value.thread.status !== 'running');
+
+    let state = await service.settleChat(id);
+    const { settledAt } = state.threads[0];
+    assert.equal(state.threads[0].settledOverride, 'settled');
+    assert.ok(settledAt);
+    assert.equal(state.thread.settledOverride, 'settled');
+    state = await service.settleChat(id);
+    assert.equal(state.threads[0].settledAt, settledAt);
+    await assert.rejects(service.settleChat('missing'), /Unknown/);
+
+    service.dispose();
+    const restored = await create();
+    state = await restored.getCodexState();
+    assert.equal(state.threads[0].settledOverride, 'settled');
+    assert.equal(state.threads[0].settledAt, settledAt);
+
+    state = await restored.unsettleChat(id);
+    assert.equal(state.threads[0].settledOverride, 'active');
+    assert.equal(state.threads[0].settledAt, undefined);
+
+    await restored.settleChat(id);
+    await restored.openChat(id);
+    await restored.sendMessage('Back to work');
+    state = await until(
+        restored,
+        (value) => value.thread.status === 'completed',
+    );
+    assert.equal(state.threads[0].settledOverride, undefined);
+    assert.equal(state.thread.settledOverride, undefined);
+});
+
+test('idle chats settle automatically unless un-settled or turned off', async (t) => {
+    let now = Date.now();
+    const { service, directory, create } = await fixture(t, {
+        now: () => now,
+    });
+    const first = (await service.startChat({ cwd: directory })).thread.id;
+    const second = (await service.startChat({ cwd: directory })).thread.id;
+    assert.equal((await service.getCodexState()).autoSettleAfterDays, 3);
+    await service.settleChat(second);
+    await service.unsettleChat(second);
+    service.dispose();
+
+    now += 4 * 24 * 60 * 60 * 1000;
+    const restored = await create();
+    let state = await restored.getCodexState();
+    const chat = (id) => state.threads.find((entry) => entry.id === id);
+    assert.equal(chat(first).settledOverride, 'settled');
+    assert.equal(chat(first).settledAt, chat(first).updatedAt);
+    assert.equal(chat(second).settledOverride, 'active');
+
+    await restored.unsettleChat(first);
+    await assert.rejects(restored.setAutoSettle(0), /between 1 and 365/);
+    state = await restored.setAutoSettle(null);
+    assert.equal(state.autoSettleAfterDays, null);
+    restored.dispose();
+    const third = await create();
+    assert.equal((await third.getCodexState()).autoSettleAfterDays, null);
+    state = await third.setAutoSettle(7);
+    assert.equal(state.autoSettleAfterDays, 7);
 });

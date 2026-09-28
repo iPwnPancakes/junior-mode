@@ -6,6 +6,8 @@ import { basename, dirname, isAbsolute, join } from 'node:path';
 import { createCodexProcess } from './codex-process.mjs';
 
 const limit = (value) => String(value ?? '').slice(-100000);
+const DAY_MS = 24 * 60 * 60 * 1000;
+export const defaultAutoSettleAfterDays = 3;
 const policy = {
     approvalPolicy: 'never',
     approvalsReviewer: 'user',
@@ -53,6 +55,8 @@ export async function createCodexService({
         throw new Error('Authorize the learning platform first.');
     },
     redact = (value) => value,
+    now = () => Date.now(),
+    autoSettleInterval = 60 * 60 * 1000,
 }) {
     const storage =
         providedStorage ??
@@ -76,8 +80,12 @@ export async function createCodexService({
         thread: null,
         requests: [],
         revision: 0,
+        autoSettleAfterDays: defaultAutoSettleAfterDays,
     };
     Object.assign(state, storage.loadChats());
+    const savedAutoSettle = storage.getSetting('auto-settle-after-days');
+    if (savedAutoSettle !== undefined)
+        state.autoSettleAfterDays = savedAutoSettle;
 
     const snapshot = () => JSON.parse(redact(JSON.stringify(state)));
     function projectResult(project) {
@@ -93,6 +101,49 @@ export async function createCodexService({
     }
     async function save(projects = state.projects) {
         storage.saveChats({ projects, threads: state.threads });
+    }
+    // The open chat is a copy of its summary, so settlement must update both.
+    function settlement(saved, fields) {
+        for (const target of [
+            saved,
+            state.thread?.id === saved.id ? state.thread : null,
+        ]) {
+            if (!target) continue;
+            delete target.settledAt;
+            delete target.settledOverride;
+            Object.assign(target, fields);
+        }
+    }
+    function busyChat(id) {
+        return (
+            state.thread?.id === id &&
+            (state.thread.status === 'running' || state.requests.length > 0)
+        );
+    }
+    function savedChat(id) {
+        const saved = state.threads.find((entry) => entry.id === id);
+        if (!saved) throw new Error('Unknown Junior Mode chat.');
+        return saved;
+    }
+    // Chats idle for the configured number of days move to the settled shelf.
+    // An explicit un-settle ("active") opts a chat out until new activity.
+    async function autoSettle() {
+        if (state.autoSettleAfterDays === null) return;
+        const cutoff = now() - state.autoSettleAfterDays * DAY_MS;
+        let changed = false;
+        for (const saved of state.threads) {
+            if (saved.settledOverride || busyChat(saved.id)) continue;
+            const activityAt = Date.parse(saved.updatedAt);
+            if (Number.isNaN(activityAt) || activityAt >= cutoff) continue;
+            settlement(saved, {
+                settledOverride: 'settled',
+                settledAt: saved.updatedAt,
+            });
+            changed = true;
+        }
+        if (!changed) return;
+        await save();
+        publish();
     }
     function upsert(item) {
         const normalized = displayItem(item);
@@ -310,8 +361,7 @@ export async function createCodexService({
             );
     }
     async function resume(id) {
-        const saved = state.threads.find((entry) => entry.id === id);
-        if (!saved) throw new Error('Unknown Junior Mode chat.');
+        const saved = savedChat(id);
         if (saved.coaching) {
             await coachingSkill();
             await authorizeCoaching(saved.cwd);
@@ -335,6 +385,13 @@ export async function createCodexService({
         }
         state.requests = [];
     }
+
+    await autoSettle();
+    const autoSettleTimer = setInterval(
+        () => void autoSettle().catch(() => {}),
+        autoSettleInterval,
+    );
+    autoSettleTimer.unref?.();
 
     return {
         invalidateConnection() {
@@ -517,6 +574,10 @@ export async function createCodexService({
                         saved.title = text.trim().slice(0, 70);
                     saved.updatedAt = new Date().toISOString();
                     thread.title = saved.title;
+                    thread.updatedAt = saved.updatedAt;
+                    // New activity wakes a settled chat and ends an un-settle
+                    // opt-out, so automatic settlement applies again.
+                    settlement(saved, {});
                     await save();
                 } catch (error) {
                     // A live turn remains stoppable if only saving the index failed.
@@ -536,6 +597,49 @@ export async function createCodexService({
                     threadId: state.thread.id,
                     turnId: state.thread.turnId,
                 });
+                return snapshot();
+            }),
+        settleChat: (id) =>
+            exclusive(async () => {
+                const saved = savedChat(id);
+                if (busyChat(id))
+                    throw new Error(
+                        'Stop the current turn before settling this chat.',
+                    );
+                // Settling again keeps the original settlement time.
+                if (saved.settledOverride !== 'settled') {
+                    settlement(saved, {
+                        settledOverride: 'settled',
+                        settledAt: new Date(now()).toISOString(),
+                    });
+                    await save();
+                    publish();
+                }
+                return snapshot();
+            }),
+        unsettleChat: (id) =>
+            exclusive(async () => {
+                const saved = savedChat(id);
+                if (saved.settledOverride === 'settled') {
+                    settlement(saved, { settledOverride: 'active' });
+                    await save();
+                    publish();
+                }
+                return snapshot();
+            }),
+        setAutoSettle: (days) =>
+            exclusive(async () => {
+                if (
+                    days !== null &&
+                    !(Number.isInteger(days) && days >= 1 && days <= 365)
+                )
+                    throw new Error(
+                        'Choose between 1 and 365 days, or turn automatic settling off.',
+                    );
+                storage.setSetting('auto-settle-after-days', days);
+                state.autoSettleAfterDays = days;
+                publish();
+                await autoSettle();
                 return snapshot();
             }),
         respondToCodex: ({ id, decision, answers } = {}) =>
@@ -569,6 +673,7 @@ export async function createCodexService({
             }),
         dispose() {
             disposed = true;
+            clearInterval(autoSettleTimer);
             transport?.dispose();
             transport = undefined;
             listeners.clear();

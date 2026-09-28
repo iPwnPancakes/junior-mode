@@ -116,7 +116,7 @@ export async function openStorage({
             'PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA secure_delete = ON;',
         );
         const version = db.prepare('PRAGMA user_version').get().user_version;
-        if (version > 1)
+        if (version > 2)
             throw new Error(
                 'This database was created by a newer Junior Mode version.',
             );
@@ -125,9 +125,14 @@ export async function openStorage({
                 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;
                 CREATE TABLE IF NOT EXISTS credentials (key TEXT PRIMARY KEY, value BLOB NOT NULL) STRICT;
                 CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, cwd TEXT NOT NULL UNIQUE, position INTEGER NOT NULL) STRICT;
-                CREATE TABLE IF NOT EXISTS chats (id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), cwd TEXT NOT NULL, title TEXT NOT NULL, updated_at TEXT NOT NULL, coaching INTEGER, position INTEGER NOT NULL) STRICT;
-                PRAGMA user_version = 1;
+                CREATE TABLE IF NOT EXISTS chats (id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), cwd TEXT NOT NULL, title TEXT NOT NULL, updated_at TEXT NOT NULL, coaching INTEGER, position INTEGER NOT NULL, settled_at TEXT, settled_override TEXT CHECK (settled_override IN ('settled','active'))) STRICT;
             `);
+            if (version === 1)
+                db.exec(`
+                    ALTER TABLE chats ADD COLUMN settled_at TEXT;
+                    ALTER TABLE chats ADD COLUMN settled_override TEXT CHECK (settled_override IN ('settled','active'));
+                `);
+            db.exec('PRAGMA user_version = 2');
         });
         const getSetting = (key) => {
             const row = db
@@ -150,7 +155,7 @@ export async function openStorage({
                 projectInsert.run(project.id, project.name, project.cwd, index),
             );
             const chatInsert = db.prepare(
-                'INSERT INTO chats (id,project_id,cwd,title,updated_at,coaching,position) VALUES (?,?,?,?,?,?,?)',
+                'INSERT INTO chats (id,project_id,cwd,title,updated_at,coaching,position,settled_at,settled_override) VALUES (?,?,?,?,?,?,?,?,?)',
             );
             threads.forEach((chat, index) =>
                 chatInsert.run(
@@ -161,6 +166,8 @@ export async function openStorage({
                     chat.updatedAt,
                     chat.coaching === undefined ? null : Number(chat.coaching),
                     index,
+                    chat.settledAt ?? null,
+                    chat.settledOverride ?? null,
                 ),
             );
         }
@@ -231,15 +238,21 @@ export async function openStorage({
                         .map((row) => ({ ...row })),
                     threads: db
                         .prepare(
-                            'SELECT id,project_id AS projectId,cwd,title,updated_at AS updatedAt,coaching FROM chats ORDER BY position',
+                            'SELECT id,project_id AS projectId,cwd,title,updated_at AS updatedAt,coaching,settled_at AS settledAt,settled_override AS settledOverride FROM chats ORDER BY position',
                         )
                         .all()
-                        .map(({ coaching, ...row }) => ({
-                            ...row,
-                            ...(coaching === null
-                                ? {}
-                                : { coaching: Boolean(coaching) }),
-                        })),
+                        .map(
+                            ({ coaching, settledAt, settledOverride, ...row }) => ({
+                                ...row,
+                                ...(coaching === null
+                                    ? {}
+                                    : { coaching: Boolean(coaching) }),
+                                ...(settledAt === null ? {} : { settledAt }),
+                                ...(settledOverride === null
+                                    ? {}
+                                    : { settledOverride }),
+                            }),
+                        ),
                 };
             },
             saveChats: (value) => transaction(() => writeChats(value)),

@@ -128,7 +128,7 @@ test('imports settings, project relationships, plugin state, and encrypted crede
         'SQLite format 3\0',
     );
     const db = new DatabaseSync(f.databasePath);
-    assert.equal(db.prepare('PRAGMA user_version').get().user_version, 1);
+    assert.equal(db.prepare('PRAGMA user_version').get().user_version, 2);
     assert.equal(
         db
             .prepare(
@@ -219,4 +219,34 @@ test('a failed legacy import is retryable and never partially commits or edits o
         platformUrl: 'https://example.test',
     });
     assert.equal(await readFile(path, 'utf8'), '[]');
+});
+
+test('upgrades version 1 chat indexes with settlement state', async (t) => {
+    const f = await fixture(t);
+    await (await f.open()).close();
+    const db = new DatabaseSync(f.databasePath);
+    db.exec(`
+        DROP TABLE chats;
+        CREATE TABLE chats (id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), cwd TEXT NOT NULL, title TEXT NOT NULL, updated_at TEXT NOT NULL, coaching INTEGER, position INTEGER NOT NULL) STRICT;
+        INSERT INTO projects (id,name,cwd,position) VALUES ('p','Project','${f.directory}',0);
+        INSERT INTO chats VALUES ('c','p','${f.directory}','Saved chat','2026-09-25T12:00:00Z',NULL,0);
+        PRAGMA user_version = 1;
+    `);
+    db.close();
+    const storage = await f.open();
+    const chats = storage.loadChats();
+    assert.deepEqual(chats.threads, [
+        {
+            id: 'c',
+            projectId: 'p',
+            cwd: f.directory,
+            title: 'Saved chat',
+            updatedAt: '2026-09-25T12:00:00Z',
+        },
+    ]);
+    chats.threads[0].settledOverride = 'settled';
+    chats.threads[0].settledAt = '2026-09-26T12:00:00Z';
+    storage.saveChats(chats);
+    storage.close();
+    assert.deepEqual((await f.open()).loadChats(), chats);
 });
