@@ -21,6 +21,7 @@ use App\Http\Controllers\CompetencyController;
 use App\Http\Controllers\CompetencyMergeController;
 use App\Http\Controllers\CompetencyTemplateCopyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DevelopmentAccountSwitchController;
 use App\Http\Controllers\EnrolledRepositoryController;
 use App\Http\Controllers\HandoffController;
 use App\Http\Controllers\LearnerInvitationController;
@@ -49,6 +50,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::post('development/switch-account', DevelopmentAccountSwitchController::class)
+        ->name('development.switch-account');
     Route::get('handoffs', [HandoffController::class, 'index'])->name('handoffs.index');
     Route::get('handoffs/{handoff}', [HandoffController::class, 'show'])->name('handoffs.show');
     Route::post('handoffs/{handoff}/share', [HandoffController::class, 'share'])->name('handoffs.share');

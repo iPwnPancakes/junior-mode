@@ -13,6 +13,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             canRegister: boolean;
+            developmentAccountSwitch: 'mentor' | 'learner' | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

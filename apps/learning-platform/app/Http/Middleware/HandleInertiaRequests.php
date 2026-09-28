@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Actions\SwitchDevelopmentAccount;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -43,7 +44,22 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'canRegister' => fn (): bool => User::query()->doesntExist(),
+            'developmentAccountSwitch' => fn (): ?string => $this->developmentAccountSwitch($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * The role a local developer can switch to, or null when switching is unavailable.
+     */
+    private function developmentAccountSwitch(Request $request): ?string
+    {
+        $user = $request->user();
+
+        if (! app()->isLocal() || $user === null || ! app(SwitchDevelopmentAccount::class)->canSwitch($user)) {
+            return null;
+        }
+
+        return $user->isMentor() ? 'learner' : 'mentor';
     }
 }
