@@ -22,7 +22,7 @@ class CompetencyController extends Controller
             'message' => __('Competency added.'),
         ]);
 
-        return to_route('competency-catalogs.show', $learner);
+        return to_route('learners.show', $learner);
     }
 
     public function update(
@@ -38,6 +38,6 @@ class CompetencyController extends Controller
             'message' => __('Competency updated.'),
         ]);
 
-        return to_route('competency-catalogs.show', $learner);
+        return to_route('learners.show', $learner);
     }
 }

@@ -6,7 +6,7 @@ import { SectionCard } from '@/components/section-card';
 import { StatusBadge } from '@/components/status-badge';
 import { buttonVariants } from '@/components/ui/button';
 import { dashboard } from '@/routes';
-import { show as showCoachingRecord } from '@/routes/coaching-records';
+import { show as showLearner } from '@/routes/learners';
 
 type Props = {
     learner: {
@@ -40,14 +40,14 @@ export default function LearnerDashboard({ learner, mentor }: Props) {
                         <div className="grid gap-4">
                             <EmptyState
                                 icon={Compass}
-                                title="Your complete record"
-                                description="Review Assessments and Coaching Priorities chosen by your Mentor."
+                                title="Your coaching plan"
+                                description="See what your mentor wants coaching to focus on and how each competency is going."
                             />
                             <Link
-                                href={showCoachingRecord(learner.id)}
+                                href={showLearner(learner.id)}
                                 className={buttonVariants()}
                             >
-                                View coaching record
+                                View coaching plan
                             </Link>
                         </div>
                     </SectionCard>

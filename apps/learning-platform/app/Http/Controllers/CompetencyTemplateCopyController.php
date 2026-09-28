@@ -30,6 +30,6 @@ class CompetencyTemplateCopyController extends Controller
             ]),
         ]);
 
-        return to_route('competency-catalogs.show', $learner);
+        return to_route('learners.show', $learner);
     }
 }

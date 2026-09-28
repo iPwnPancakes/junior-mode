@@ -27,6 +27,6 @@ class CompetencyMergeController extends Controller
             'message' => __('Competencies merged. The original remains available in history.'),
         ]);
 
-        return to_route('competency-catalogs.show', $learner);
+        return to_route('learners.show', $learner);
     }
 }

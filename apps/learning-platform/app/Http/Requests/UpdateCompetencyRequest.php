@@ -33,7 +33,7 @@ class UpdateCompetencyRequest extends FormRequest
                 'integer',
                 Rule::exists(Competency::class, 'id')->where('learner_id', $learner->id),
             ],
-            'position' => ['required', 'integer', 'min:0'],
+            'position' => ['nullable', 'integer', 'min:0'],
             'prerequisites' => ['nullable', 'string', 'max:2000'],
             'work_opportunities' => ['nullable', 'string', 'max:2000'],
             'technologies' => ['nullable', 'string', 'max:2000'],

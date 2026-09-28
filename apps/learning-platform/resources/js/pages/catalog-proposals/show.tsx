@@ -44,7 +44,7 @@ import {
     update as updateNode,
 } from '@/routes/catalog-proposal-nodes';
 import { update as updateSelection } from '@/routes/catalog-proposal-selections';
-import { show as showCatalog } from '@/routes/competency-catalogs';
+import { show as showLearner } from '@/routes/learners';
 
 type Learner = { id: number; name: string; email: string };
 
@@ -505,13 +505,13 @@ export default function CatalogProposalShow({
                                     proposal.status}
                             </StatusBadge>
                             <Link
-                                href={showCatalog(learner.id)}
+                                href={showLearner(learner.id)}
                                 className={buttonVariants({
                                     variant: 'outline',
                                 })}
                             >
                                 <BookOpen aria-hidden="true" />
-                                Open catalog
+                                Open coaching plan
                             </Link>
                         </>
                     }

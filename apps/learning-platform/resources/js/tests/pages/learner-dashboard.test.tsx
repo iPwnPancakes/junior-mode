@@ -22,10 +22,10 @@ describe('Learner dashboard', () => {
         expect(
             screen.getByRole('heading', { name: 'Your learning record' }),
         ).toBeInTheDocument();
-        expect(screen.getByText('Your complete record')).toBeInTheDocument();
+        expect(screen.getByText('Your coaching plan')).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: 'View coaching record' }),
-        ).toHaveAttribute('href', '/learners/2/coaching-record');
+            screen.getByRole('link', { name: 'View coaching plan' }),
+        ).toHaveAttribute('href', '/learners/2');
         expect(
             screen.getByRole('heading', { name: 'Your Mentor' }),
         ).toBeInTheDocument();

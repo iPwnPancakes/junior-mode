@@ -144,9 +144,9 @@ test('escape never advances progress and caps learner evidence from that session
 test('Learner and authorized Mentor see activity summaries in the platform and outsiders cannot', function () {
     $this->postJson('/mcp', escapeTool('record-coaching-activity', $this->attempt))->assertJsonPath('result.isError', false);
     foreach ([$this->learner, $this->learner->mentor] as $viewer) {
-        $this->actingAs($viewer)->get(route('coaching-records.show', $this->learner))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->has('learningActivities', 1)->where('learningActivities.0.kind', 'accepted_attempt')->where('learningActivities.0.payload.acceptance_rationale', $this->attempt['acceptance_rationale']));
+        $this->actingAs($viewer)->get(route('learners.show', $this->learner))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->has('learningActivities', 1)->where('learningActivities.0.kind', 'accepted_attempt')->where('learningActivities.0.payload.acceptance_rationale', $this->attempt['acceptance_rationale']));
     }
-    $this->actingAs(User::factory()->mentor()->create())->get(route('coaching-records.show', $this->learner))->assertForbidden();
+    $this->actingAs(User::factory()->mentor()->create())->get(route('learners.show', $this->learner))->assertForbidden();
 });
 
 test('an escaped session cannot erase independent evidence from a separate session', function () {

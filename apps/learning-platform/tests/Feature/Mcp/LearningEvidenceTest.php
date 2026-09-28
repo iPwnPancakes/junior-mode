@@ -147,9 +147,9 @@ test('Learners and their Mentor can append browser corrections with empty agent 
     $payload = evidencePayload($this->session->id, $this->competency->id, ['agent_work' => '', 'assistance' => 'review_only', 'hints_used' => 0]);
     $this->postJson('/mcp', evidenceCall('record-learning-evidence', $payload))->assertJsonPath('result.isError', false);
     $original = LearningEvidence::query()->sole();
-    $this->actingAs($this->learner)->get(route('coaching-records.show', $this->learner))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->where('learningProgress.competencies.0.stage', 'independent'));
+    $this->actingAs($this->learner)->get(route('learners.show', $this->learner))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->where('learningProgress.competencies.0.stage', 'independent'));
     $correction = ['evidence' => [...$original->evidence, 'ownership' => 'agent', 'learner_work' => ''], 'correction_reason' => 'The agent supplied this implementation'];
-    $this->actingAs($this->learner)->post(route('learning-evidence-corrections.store', $original), $correction)->assertSessionHasNoErrors()->assertRedirect(route('coaching-records.show', $this->learner));
+    $this->actingAs($this->learner)->post(route('learning-evidence-corrections.store', $original), $correction)->assertSessionHasNoErrors()->assertRedirect(route('learners.show', $this->learner));
     $this->post(route('learning-evidence-corrections.store', $original), $correction)->assertSessionHasNoErrors();
     expect(LearningEvidence::query()->count())->toBe(2)->and(app(BuildLearningProgress::class)->handle($this->learner)['competencies'][0]['stage'])->toBe('introduced');
     $latest = LearningEvidence::query()->latest('id')->first();

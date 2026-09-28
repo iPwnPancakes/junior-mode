@@ -40,10 +40,10 @@ test('Mentors and Learners can view the coaching record with role-appropriate co
     }
 
     $this->actingAs($mentor)
-        ->get(route('coaching-records.show', $learner))
+        ->get(route('learners.show', $learner))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('coaching-records/show')
+            ->component('learners/show')
             ->where('canManage', true)
             ->where('defaultPriorityDurationDays', 7)
             ->has('assessments', 1)
@@ -56,7 +56,7 @@ test('Mentors and Learners can view the coaching record with role-appropriate co
         );
 
     $this->actingAs($learner)
-        ->get(route('coaching-records.show', $learner))
+        ->get(route('learners.show', $learner))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('canManage', false)
@@ -92,12 +92,12 @@ test('Assessment and Coaching Priority inputs are validated against the precise 
     $otherCompetency = Competency::factory()->for($otherLearner, 'learner')->create();
 
     $this->actingAs($mentor)
-        ->from(route('coaching-records.show', $learner))
+        ->from(route('learners.show', $learner))
         ->post(route('assessments.store', $learner), [
             'competency_id' => $otherCompetency->id,
             'level' => 'mastered',
         ])
-        ->assertRedirect(route('coaching-records.show', $learner))
+        ->assertRedirect(route('learners.show', $learner))
         ->assertSessionHasErrors(['competency_id', 'level']);
 
     $this->actingAs($mentor)

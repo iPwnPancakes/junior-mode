@@ -23,6 +23,6 @@ class LearningEvidenceCorrectionController extends Controller
             'correction_reason' => $data['correction_reason'],
         ]);
 
-        return to_route('coaching-records.show', $learningEvidence->learner_id);
+        return to_route('learners.show', $learningEvidence->learner_id);
     }
 }

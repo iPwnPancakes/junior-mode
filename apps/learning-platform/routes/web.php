@@ -13,17 +13,17 @@ use App\Http\Controllers\CoachingPriorityController;
 use App\Http\Controllers\CoachingPriorityRenewalController;
 use App\Http\Controllers\CoachingPriorityReplacementController;
 use App\Http\Controllers\CoachingPriorityResolutionController;
-use App\Http\Controllers\CoachingRecordController;
 use App\Http\Controllers\CoachingSessionController;
 use App\Http\Controllers\CompetencyArchiveController;
-use App\Http\Controllers\CompetencyCatalogController;
 use App\Http\Controllers\CompetencyController;
 use App\Http\Controllers\CompetencyMergeController;
+use App\Http\Controllers\CompetencyPositionController;
 use App\Http\Controllers\CompetencyTemplateCopyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DevelopmentAccountSwitchController;
 use App\Http\Controllers\EnrolledRepositoryController;
 use App\Http\Controllers\HandoffController;
+use App\Http\Controllers\LearnerController;
 use App\Http\Controllers\LearnerInvitationController;
 use App\Http\Controllers\LearningEvidenceCorrectionController;
 use App\Http\Controllers\MentorCoachingSettingsController;
@@ -76,10 +76,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('learners/{learner}/repositories/{enrolledRepository}/enrollment', [RepositoryEnrollmentController::class, 'destroy'])
         ->scopeBindings()
         ->name('repository-enrollments.destroy');
-    Route::get('learners/{learner}/competency-catalog', CompetencyCatalogController::class)
+    Route::get('learners/{learner}', LearnerController::class)
+        ->name('learners.show');
+    Route::redirect('learners/{learner}/competency-catalog', '/learners/{learner}')
         ->name('competency-catalogs.show');
     Route::post('learning-evidence/{learningEvidence}/corrections', LearningEvidenceCorrectionController::class)->name('learning-evidence-corrections.store');
-    Route::get('learners/{learner}/coaching-record', CoachingRecordController::class)
+    Route::redirect('learners/{learner}/coaching-record', '/learners/{learner}')
         ->name('coaching-records.show');
     Route::post('learners/{learner}/assessments', [AssessmentController::class, 'store'])
         ->name('assessments.store');
@@ -110,6 +112,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('learners/{learner}/competencies/{competency}/merge', CompetencyMergeController::class)
         ->scopeBindings()
         ->name('competencies.merge');
+    Route::patch('learners/{learner}/competencies/{competency}/position', CompetencyPositionController::class)
+        ->scopeBindings()
+        ->name('competency-positions.update');
     Route::post('learners/{learner}/competency-template-copies', CompetencyTemplateCopyController::class)
         ->name('competency-template-copies.store');
     Route::get('learners/{learner}/catalog-proposals/{catalogProposal}', [CatalogProposalController::class, 'show'])

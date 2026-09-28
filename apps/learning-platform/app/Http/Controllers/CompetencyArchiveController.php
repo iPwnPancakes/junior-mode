@@ -21,6 +21,6 @@ class CompetencyArchiveController extends Controller
             'message' => __('Competency archived. Historical references remain intact.'),
         ]);
 
-        return to_route('competency-catalogs.show', $learner);
+        return to_route('learners.show', $learner);
     }
 }

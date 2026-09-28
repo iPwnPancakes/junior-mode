@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\CatalogProposalStatus;
-use App\Models\CatalogProposal;
+use App\Actions\BuildMentorLearnerOverview;
 use App\Models\LearnerInvitation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -28,15 +27,7 @@ class DashboardController extends Controller
     private function mentorDashboard(User $mentor): Response
     {
         return Inertia::render('mentor/dashboard', [
-            'learners' => $mentor->learners()
-                ->latest()
-                ->get(['id', 'name', 'email', 'created_at'])
-                ->map(fn (User $learner): array => [
-                    'id' => $learner->id,
-                    'name' => $learner->name,
-                    'email' => $learner->email,
-                    'joinedAt' => $learner->created_at?->toDateString(),
-                ]),
+            'learners' => app(BuildMentorLearnerOverview::class)->handle($mentor),
             'pendingInvitations' => $mentor->sentLearnerInvitations()
                 ->whereNull('accepted_at')
                 ->where('expires_at', '>', now())
@@ -46,20 +37,6 @@ class DashboardController extends Controller
                     'id' => $invitation->id,
                     'email' => $invitation->email,
                     'expiresAt' => $invitation->expires_at->toDateString(),
-                ]),
-            'catalogProposals' => CatalogProposal::query()
-                ->select(['id', 'learner_id', 'status', 'submitted_at'])
-                ->with('learner:id,name')
-                ->whereHas('learner', fn ($query) => $query->where('mentor_id', $mentor->id))
-                ->where('status', CatalogProposalStatus::AwaitingReview)
-                ->latest('submitted_at')
-                ->limit(20)
-                ->get()
-                ->map(fn (CatalogProposal $proposal): array => [
-                    'id' => $proposal->id,
-                    'learnerId' => $proposal->learner_id,
-                    'learnerName' => $proposal->learner->name,
-                    'submittedAt' => $proposal->submitted_at?->toDateString(),
                 ]),
         ]);
     }

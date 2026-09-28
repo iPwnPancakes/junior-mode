@@ -35,7 +35,9 @@ class UpdateCompetency
                 ->where('parent_id', $parentId)
                 ->whereKeyNot($competency->id)
                 ->lockForUpdate();
-            $position = min((int) Arr::get($data, 'position', $targetSiblings->count()), $targetSiblings->count());
+            // Without an explicit position, stay in place unless moving to another parent.
+            $defaultPosition = $parentId === $oldParentId ? $oldPosition : $targetSiblings->count();
+            $position = min((int) (Arr::get($data, 'position') ?? $defaultPosition), $targetSiblings->count());
 
             (clone $targetSiblings)->where('position', '>=', $position)->increment('position');
 
