@@ -37,6 +37,17 @@ Run `pnpm test:web` for browser interaction changes (install Chromium with
 - Switching restarts the preview's browser backend and interrupts its active work. Electron's local backend is separate. Reload Electron after switching worktrees; subsequent frontend edits use HMR.
 - Platform services remain separate. See README's shared preview section for ports, host overrides, and stale-lock recovery.
 
+## Exposing preview environments
+
+The development server is reached by its hostname, `t3code` (user `t3code`). Never
+suggest or configure SSH port forwarding for this project; expose services on all
+interfaces and hand out `http://t3code:<port>` URLs instead.
+
+- Client preview: `pnpm preview use` already listens on `0.0.0.0`. Share `http://t3code:5174`.
+- Learning platform: run `pnpm dev:platform --host 0.0.0.0` from the worktree being previewed. Share `http://t3code:8000`; in the client, connect Settings → Learning platform to that same address. Laravel's Vite on port 5173 then advertises `t3code` for assets and hot reload.
+- Do not pass `--host t3code`: the name resolves to loopback (`127.0.1.1`) on the server itself, so nothing outside can connect.
+- The platform is not managed by `pnpm preview`. Before starting it, check for an existing `dev.mjs --platform` process and which worktree owns it; run only one at a time because ports 8000 and 5173 are fixed.
+
 ## Shared context
 
 - Domain vocabulary and decisions: `CONTEXT.md` and `docs/adr`.

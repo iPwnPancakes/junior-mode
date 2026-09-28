@@ -1,3 +1,4 @@
+import { hostname } from 'node:os';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import concurrently from 'concurrently';
@@ -9,12 +10,10 @@ const apps = fileURLToPath(new URL('../', import.meta.url));
 const env = { ...loadEnv('development', apps, ''), ...process.env };
 const { host, client, platform } = devOptions(process.argv.slice(2), env);
 env.DEV_HOST = host;
-const displayHost =
-    host === '0.0.0.0' || host === '::'
-        ? 'T3_IP'
-        : host.includes(':')
-          ? `[${host}]`
-          : host;
+const listensEverywhere = host === '0.0.0.0' || host === '::';
+// Browsers need a reachable name, not the wildcard listening address.
+const publicHost = listensEverywhere ? env.PREVIEW_HOST || hostname() : null;
+const displayHost = publicHost ?? (host.includes(':') ? `[${host}]` : host);
 
 for (const [name, fallback] of [
     ['WEB_PORT', 5174],
@@ -63,6 +62,9 @@ if (platform) {
             name: 'platform-vite',
             command: `pnpm run dev --host=${host} --port=5173 --strictPort`,
             cwd,
+            env: publicHost
+                ? { ...process.env, PLATFORM_PUBLIC_HOST: publicHost }
+                : process.env,
         },
         {
             name: 'queue',
