@@ -289,10 +289,8 @@ test('folder command picker supports keyboard, stable hover, hidden folders, dis
         calls.find((call) => call.path === '/api/codex/projects').body.cwd,
         '/projects',
     );
-    await page
-        .locator('.chat-setup')
-        .getByRole('button', { name: 'New chat', exact: true })
-        .click();
+    await page.getByLabel('Message Codex').fill('Help me get started');
+    await page.getByLabel('Message Codex').press('Enter');
     await page
         .getByRole('alert')
         .filter({ hasText: 'Coaching setup required.' })
@@ -361,6 +359,7 @@ test('chat search, history selection and composer submit work with shadcn button
         .getByRole('button', { name: 'Send message', exact: true })
         .click();
     await page
+        .getByRole('log')
         .getByText('Help me understand this code.', { exact: true })
         .waitFor();
     assert.equal(await composer.inputValue(), '');
@@ -461,10 +460,8 @@ test('flat chat cards show project context and the toolbar keeps new chats scope
         .locator('.chat-setup')
         .getByText('/projects/two', { exact: true })
         .waitFor();
-    await page
-        .locator('.chat-setup')
-        .getByRole('button', { name: 'New chat', exact: true })
-        .click();
+    await page.getByLabel('Message Codex').fill('Help me get started');
+    await page.getByLabel('Message Codex').press('Enter');
     await page
         .getByRole('alert')
         .filter({ hasText: 'Coaching setup required.' })
@@ -709,4 +706,75 @@ test('interactive highlights stay consistent and readable in light and dark them
             .click();
     }
     assert.deepEqual(errors, []);
+});
+
+
+test('composer supports multiline input, IME composition and keyboard submission', async (t) => {
+    const { page, calls, errors } = await fixture(t, true);
+    await page.locator('.chat-link').first().click();
+    const composer = page.getByLabel('Message Codex');
+    await page.getByText('Full Access', { exact: true }).waitFor();
+    await composer.fill('First line');
+    await composer.press('Shift+Enter');
+    await composer.press('a');
+    assert.equal(await composer.inputValue(), 'First line\na');
+    await composer.dispatchEvent('keydown', { key: 'Enter', isComposing: true });
+    assert.equal(calls.filter((call) => call.path === '/api/codex/message').length, 0);
+    await composer.press('Enter');
+    await page.getByRole('log').getByText('First line\na', { exact: true }).waitFor();
+    assert.equal(await composer.inputValue(), '');
+    assert.equal(await composer.evaluate((input) => input === input.ownerDocument.activeElement), true);
+    assert.deepEqual(errors, []);
+});
+
+test('first message creates a chat and a failed send retries in the same chat', async (t) => {
+    const { page, calls } = await fixture(t, true);
+    let starts = 0;
+    let sends = 0;
+    const thread = { id: 'new-chat', projectId: 'project-1', cwd: '/projects/one', title: 'New chat', items: [], status: 'idle', turnId: null };
+    const snapshot = { instanceId: 'ui-test', revision: 10, status: 'ready', account: 'Learner', projects: [{ id: 'project-1', name: 'one', cwd: '/projects/one' }], threads: [thread], thread, requests: [], error: null };
+    await page.route('**/api/codex/chats', (route) => {
+        starts++;
+        return route.fulfill({ json: snapshot });
+    });
+    await page.route('**/api/codex/message', (route) => {
+        sends++;
+        return sends === 1
+            ? route.fulfill({ status: 400, json: { error: 'Try again' } })
+            : route.fulfill({ json: { ...snapshot, revision: 11 } });
+    });
+    const composer = page.getByLabel('Message Codex');
+    await composer.fill('My first message');
+    await composer.press('Enter');
+    await page.getByRole('alert').filter({ hasText: 'Try again' }).waitFor();
+    assert.equal(await composer.inputValue(), 'My first message');
+    await composer.press('Enter');
+    await composer.evaluate((input) => new Promise((resolve) => {
+        const check = () => input.value === '' ? resolve() : setTimeout(check, 10);
+        check();
+    }));
+    assert.equal(starts, 1);
+    assert.equal(sends, 2);
+    assert.equal(calls.filter((call) => call.path === '/api/codex/open').length, 0);
+});
+
+
+test('running chat keeps the draft and Enter cannot submit or interrupt it', async (t) => {
+    const { page, calls } = await fixture(t, true);
+    await page.route('**/api/codex/open', (route) => route.fulfill({ json: {
+        instanceId: 'ui-test', revision: 10, status: 'ready', account: 'Learner',
+        projects: [{ id: 'project-1', name: 'one', cwd: '/projects/one' }],
+        threads: [], requests: [], error: null,
+        thread: { id: 'chat-1', projectId: 'project-1', title: 'Working', status: 'running', turnId: 'turn-1', items: [] },
+    } }));
+    await page.locator('.chat-link').first().click();
+    const stop = page.getByRole('button', { name: 'Stop', exact: true });
+    await stop.waitFor();
+    const composer = page.getByLabel('Message Codex');
+    await composer.fill('Next request');
+    await composer.press('Enter');
+    assert.equal(await composer.inputValue(), 'Next request');
+    assert.equal(calls.filter((call) => ['/api/codex/message', '/api/codex/interrupt'].includes(call.path)).length, 0);
+    await stop.click();
+    assert.equal(calls.filter((call) => call.path === '/api/codex/interrupt').length, 1);
 });

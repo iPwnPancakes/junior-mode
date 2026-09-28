@@ -328,13 +328,26 @@
     }
     .composer {
         margin: 0;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--card);
+        overflow: hidden;
+    }
+    .composer:focus-within {
+        border-color: var(--ring);
+    }
+    .composer-hint {
+        margin: 8px 0 0;
+        text-align: center;
+        font-size: 11px;
+        color: var(--muted-foreground);
     }
     .composer-actions {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 14px;
-        margin-top: 10px;
+        padding: 0 12px 12px 16px;
     }
     .codex-request {
         padding: 16px;

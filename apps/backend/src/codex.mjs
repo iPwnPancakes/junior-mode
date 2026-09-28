@@ -7,9 +7,9 @@ import { createCodexProcess } from './codex-process.mjs';
 
 const limit = (value) => String(value ?? '').slice(-100000);
 const policy = {
-    approvalPolicy: 'on-request',
+    approvalPolicy: 'never',
     approvalsReviewer: 'user',
-    sandbox: 'workspace-write',
+    sandbox: 'danger-full-access',
 };
 
 function displayItem(item) {

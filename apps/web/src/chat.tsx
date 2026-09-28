@@ -1,4 +1,4 @@
-import { Folder, PanelLeft } from 'lucide-react';
+import { ArrowUp, Folder, PanelLeft, ShieldCheck, Square } from 'lucide-react';
 import { ProjectSidebar } from './project-sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +118,8 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     const [addingProject, setAddingProject] = useState(false);
     const [message, setMessage] = useState('');
     const [busy, setBusy] = useState(false);
+    const submitting = useRef(false);
+    const composerInput = useRef<HTMLTextAreaElement>(null);
     const [error, setError] = useState('');
     const [streamError, setStreamError] = useState('');
     const transcript = useRef<HTMLDivElement>(null);
@@ -175,8 +177,36 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     }
     async function send(event: FormEvent) {
         event.preventDefault();
+        if (
+            submitting.current || busy || running || streamError ||
+            !message.trim() || !project
+        ) return;
+        submitting.current = true;
+        const submitted = message;
         follow.current = true;
-        if (await run(() => backend.sendMessage(message))) setMessage('');
+        try {
+            await run(async () => {
+                if (draft) {
+                    const next = await backend.startChat({
+                        projectId: project.id,
+                        coaching: true,
+                    });
+                    setState((current) =>
+                        current?.instanceId === next.instanceId &&
+                        current.revision > next.revision ? current : next,
+                    );
+                    setNewChat(false);
+                }
+                const next = await backend.sendMessage(submitted);
+                setMessage((current) =>
+                    current === submitted ? '' : current,
+                );
+                return next;
+            });
+        } finally {
+            submitting.current = false;
+            composerInput.current?.focus();
+        }
     }
 
     useEffect(() => {
@@ -211,6 +241,7 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                 setProjectId(selected.id);
                 setAddingProject(false);
                 setNewChat(true);
+                setMessage('');
                 setError('');
             }}
             onAddProject={() => {
@@ -359,28 +390,6 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                         <h2>Start a new chat</h2>
                         <p>A new coaching chat in {project?.name}.</p>
                         <p className="runtime-note break-all">{project?.cwd}</p>
-                        <form
-                            onSubmit={async (event) => {
-                                event.preventDefault();
-                                if (!project) return;
-                                follow.current = true;
-                                if (
-                                    await run(() =>
-                                        backend.startChat({
-                                            projectId: project.id,
-                                            coaching: true,
-                                        }),
-                                    )
-                                ) {
-                                    setNewChat(false);
-                                    setMessage('');
-                                }
-                            }}
-                        >
-                            <Button disabled={!project || busy || running}>
-                                New chat
-                            </Button>
-                        </form>
                     </div>
                 ) : (
                     <div
@@ -455,57 +464,88 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                             }
                         />
                     ))}
-                    {!noProjects && !newChat && state?.thread && (
+                    {!noProjects && (
                         <form
                             className="composer"
                             onSubmit={(event) => void send(event)}
                         >
-                            <Label className="mb-2" htmlFor="chat-message">
+                            <Label className="sr-only" htmlFor="chat-message">
                                 Message Codex
                             </Label>
                             <Textarea
-                                className="min-h-[70px] max-h-[220px] resize-y"
+                                ref={composerInput}
+                                className="min-h-[88px] max-h-[240px] resize-none rounded-none border-0 bg-transparent px-4 py-3 shadow-none focus-visible:ring-0 dark:bg-transparent"
                                 id="chat-message"
-                                placeholder="What would you like to work on?"
+                                placeholder="Ask Codex anything…"
                                 value={message}
                                 onChange={(event) =>
                                     setMessage(event.target.value)
                                 }
                                 maxLength={12000}
-                                rows={3}
-                                disabled={!state?.thread}
+                                rows={2}
+                                readOnly={busy}
+                                onKeyDown={(event) => {
+                                    if (
+                                        event.key === 'Enter' &&
+                                        !event.shiftKey &&
+                                        !event.nativeEvent.isComposing &&
+                                        event.nativeEvent.keyCode !== 229
+                                    ) {
+                                        event.preventDefault();
+                                        if (!event.repeat)
+                                            event.currentTarget.form?.requestSubmit();
+                                    }
+                                }}
                                 required
                             />
                             <div className="composer-actions">
-                                <span className="hint">
-                                    Workspace edits enabled · Codex approval
-                                    requests appear here
-                                </span>
+                                <div className="flex min-w-0 items-center gap-3 text-xs text-muted-foreground">
+                                    <span>Codex</span>
+                                    <span
+                                        className="inline-flex items-center gap-1.5"
+                                        title="Commands can access files and the network without approval prompts"
+                                    >
+                                        <ShieldCheck className="size-3.5" />
+                                        Full Access
+                                    </span>
+                                </div>
                                 {running ? (
                                     <Button
                                         type="button"
                                         variant="secondary"
-                                        disabled={!state?.thread?.turnId}
+                                        size="icon"
+                                        className="shrink-0 rounded-full"
+                                        aria-label="Stop"
+                                        title="Stop"
+                                        disabled={busy || !state?.thread?.turnId}
                                         onClick={() =>
                                             void run(backend.interruptChat)
                                         }
                                     >
-                                        Stop
+                                        <Square className="size-3.5" fill="currentColor" />
                                     </Button>
                                 ) : (
                                     <Button
+                                        size="icon"
+                                        className="shrink-0 rounded-full"
+                                        aria-label="Send message"
+                                        title="Send message (Enter)"
                                         disabled={
                                             busy ||
-                                            !state?.thread ||
                                             !message.trim() ||
                                             Boolean(streamError)
                                         }
                                     >
-                                        Send message
+                                        <ArrowUp />
                                     </Button>
                                 )}
                             </div>
                         </form>
+                    )}
+                    {!noProjects && (
+                        <p className="composer-hint">
+                            Enter to send · Shift+Enter for a new line
+                        </p>
                     )}
                 </div>
             </section>

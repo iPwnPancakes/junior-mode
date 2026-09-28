@@ -92,13 +92,18 @@ test('Codex handshake, streamed turns, local thread index and resume survive a b
     );
     const start = requests.find((entry) => entry.method === 'thread/start');
     assert.equal(start.params.cwd, directory);
-    assert.equal(start.params.sandbox, 'workspace-write');
-    assert.equal(start.params.approvalPolicy, 'on-request');
+    assert.equal(start.params.sandbox, 'danger-full-access');
+    assert.equal(start.params.approvalPolicy, 'never');
     assert.equal(start.params.approvalsReviewer, 'user');
     service.dispose();
     const restored = await create();
     state = await restored.openChat(id);
     assert.equal(state.thread.items[1].text, 'Fixture reply');
+    const resumed = (await readFile(join(directory, 'codex.json.requests'), 'utf8'))
+        .trim().split('\n').map(JSON.parse)
+        .findLast((entry) => entry.method === 'thread/resume');
+    assert.equal(resumed.params.sandbox, 'danger-full-access');
+    assert.equal(resumed.params.approvalPolicy, 'never');
     assert.equal(state.threads[0].title, 'Hello Codex');
     await assert.rejects(restored.openChat('someone-elses-chat'), /Unknown/);
 });
