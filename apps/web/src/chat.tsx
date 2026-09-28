@@ -1,9 +1,10 @@
-import { Folder } from 'lucide-react';
+import { Folder, PanelLeft } from 'lucide-react';
 import { ProjectSidebar } from './project-sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ProjectDialog } from './project-dialog';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -107,6 +108,12 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
     const [state, setState] = useState<CodexState | null>(null);
     const [newChat, setNewChat] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    // Phones get the sidebar as a drawer so the conversation keeps the full width.
+    const mobile = useIsMobile();
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const drawer = useRef<HTMLDivElement>(null);
+    const drawerTrigger = useRef<HTMLButtonElement>(null);
+    const drawerWasOpen = useRef(false);
     const [projectId, setProjectId] = useState('');
     const [addingProject, setAddingProject] = useState(false);
     const [message, setMessage] = useState('');
@@ -172,10 +179,71 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
         if (await run(() => backend.sendMessage(message))) setMessage('');
     }
 
+    useEffect(() => {
+        if (drawerOpen) drawer.current?.focus({ preventScroll: true });
+        // Return focus unless a sidebar action (like Add project) moved it.
+        else if (
+            drawerWasOpen.current &&
+            (document.activeElement === document.body ||
+                drawer.current?.contains(document.activeElement))
+        )
+            drawerTrigger.current?.focus();
+        drawerWasOpen.current = drawerOpen;
+    }, [drawerOpen]);
+
+    const sidebar = (
+        <ProjectSidebar
+            collapsed={!mobile && sidebarCollapsed}
+            onToggle={() =>
+                mobile
+                    ? setDrawerOpen(false)
+                    : setSidebarCollapsed((value) => !value)
+            }
+            state={state}
+            disabled={busy || Boolean(running)}
+            draftProjectId={draft && !noProjects ? project?.id : undefined}
+            onNewChat={(selected = project) => {
+                setDrawerOpen(false);
+                if (!selected) {
+                    setAddingProject(true);
+                    return;
+                }
+                setProjectId(selected.id);
+                setAddingProject(false);
+                setNewChat(true);
+                setError('');
+            }}
+            onAddProject={() => {
+                setDrawerOpen(false);
+                setAddingProject(true);
+                setError('');
+            }}
+            onOpenChat={(id) => {
+                setDrawerOpen(false);
+                follow.current = true;
+                void run(() => backend.openChat(id)).then((opened) => {
+                    if (opened) {
+                        setProjectId(
+                            state?.threads.find((chat) => chat.id === id)
+                                ?.projectId || '',
+                        );
+                        setNewChat(false);
+                        setAddingProject(false);
+                        setMessage('');
+                    }
+                });
+            }}
+            onOpenSettings={() => {
+                setDrawerOpen(false);
+                onOpenSettings();
+            }}
+        />
+    );
+
     return (
         <main
             className={
-                sidebarCollapsed
+                !mobile && sidebarCollapsed
                     ? 'chat-layout sidebar-collapsed'
                     : 'chat-layout'
             }
@@ -196,51 +264,61 @@ export function Chat({ onOpenSettings }: { onOpenSettings: () => void }) {
                     setError('');
                 }}
             />
-            <ProjectSidebar
-                collapsed={sidebarCollapsed}
-                onToggle={() => setSidebarCollapsed((value) => !value)}
-                state={state}
-                disabled={busy || Boolean(running)}
-                draftProjectId={draft && !noProjects ? project?.id : undefined}
-                onNewChat={(selected = project) => {
-                    if (!selected) {
-                        setAddingProject(true);
-                        return;
-                    }
-                    setProjectId(selected.id);
-                    setAddingProject(false);
-                    setNewChat(true);
-                    setError('');
-                }}
-                onAddProject={() => {
-                    setAddingProject(true);
-                    setError('');
-                }}
-                onOpenChat={(id) => {
-                    follow.current = true;
-                    void run(() => backend.openChat(id)).then((opened) => {
-                        if (opened) {
-                            setProjectId(
-                                state?.threads.find((chat) => chat.id === id)
-                                    ?.projectId || '',
-                            );
-                            setNewChat(false);
-                            setAddingProject(false);
-                            setMessage('');
-                        }
-                    });
-                }}
-                onOpenSettings={onOpenSettings}
-            />
-            <section className="chat-panel" aria-label="Codex chat">
+            {mobile ? (
+                // Stays mounted so opening only toggles a compositor transform.
+                <>
+                    <div
+                        className="mobile-sidebar-overlay bg-black/50"
+                        data-state={drawerOpen ? 'open' : 'closed'}
+                        aria-hidden
+                        onClick={() => setDrawerOpen(false)}
+                    />
+                    <div
+                        ref={drawer}
+                        className="mobile-sidebar shadow-lg"
+                        data-state={drawerOpen ? 'open' : 'closed'}
+                        role="dialog"
+                        aria-modal
+                        aria-label="Chats"
+                        tabIndex={-1}
+                        inert={!drawerOpen}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') setDrawerOpen(false);
+                        }}
+                    >
+                        {sidebar}
+                    </div>
+                </>
+            ) : (
+                sidebar
+            )}
+            <section
+                className="chat-panel"
+                aria-label="Codex chat"
+                inert={mobile && drawerOpen}
+            >
                 <div className="chat-heading">
                     <div className="flex min-w-0 items-center gap-3">
+                        {mobile && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="sidebar-icon -ml-1.5"
+                                ref={drawerTrigger}
+                                aria-label="Open sidebar"
+                                aria-expanded={drawerOpen}
+                                title="Open sidebar"
+                                onClick={() => setDrawerOpen(true)}
+                            >
+                                <PanelLeft />
+                            </Button>
+                        )}
                         {!noProjects && (
                             <>
                                 <span className="project-monogram">
                                     {(project?.name || 'JM').slice(0, 2)}
                                 </span>
-                                <span className="max-w-48 truncate text-sm text-muted-foreground">
+                                <span className="max-w-24 truncate text-sm text-muted-foreground sm:max-w-48">
                                     {project?.name}
                                 </span>
                                 <span className="text-muted-foreground">/</span>

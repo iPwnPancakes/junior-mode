@@ -499,6 +499,44 @@ test('flat chat cards show project context and the toolbar keeps new chats scope
     assert.deepEqual(errors, []);
 });
 
+test('phones show the chat full width and open the sidebar as a drawer', async (t) => {
+    const { page, errors } = await fixture(t, true);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const panel = page.getByRole('region', { name: 'Codex chat' });
+    await page.getByRole('button', { name: 'Open sidebar' }).waitFor();
+    await page.locator('.chat-link').first().waitFor({ state: 'hidden' });
+    assert.equal((await panel.boundingBox()).width, 390);
+    await page.getByRole('button', { name: 'Open sidebar' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Chats' });
+    await drawer.getByText('Explain the repo').click();
+    await drawer.waitFor({ state: 'hidden' });
+    await page
+        .getByRole('log')
+        .getByText('What would you like to build?')
+        .waitFor();
+    await page.getByRole('button', { name: 'Open sidebar' }).click();
+    await drawer.getByRole('button', { name: 'Collapse sidebar' }).click();
+    await drawer.waitFor({ state: 'hidden' });
+    await page.getByRole('button', { name: 'Open sidebar' }).click();
+    assert.equal(
+        await page.evaluate(() => globalThis.document.activeElement?.ariaLabel),
+        'Chats',
+    );
+    await page.keyboard.press('Escape');
+    await drawer.waitFor({ state: 'hidden' });
+    assert.equal(
+        await page.evaluate(() => globalThis.document.activeElement?.ariaLabel),
+        'Open sidebar',
+    );
+    await page.setViewportSize({ width: 1120, height: 700 });
+    await page
+        .getByRole('button', { name: 'Open sidebar' })
+        .waitFor({ state: 'detached' });
+    await page.locator('.chat-sidebar').getByText('Explain the repo').waitFor();
+    assert.equal(await page.getByRole('dialog', { name: 'Chats' }).count(), 0);
+    assert.deepEqual(errors, []);
+});
+
 test('project picker preserves the chat, restores focus, and retries explicit folder creation', async (t) => {
     const { page, calls, errors } = await fixture(t, true);
     await page.locator('.chat-link').first().click();
