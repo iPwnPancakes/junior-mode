@@ -17,12 +17,12 @@ import { SubmitButton } from '@/components/submit-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { index, share } from '@/routes/handoffs';
+import { index, share } from '@/routes/help-requests';
 
 type Value =
     string | number | boolean | null | Value[] | { [key: string]: Value };
 type Props = {
-    handoff: {
+    helpRequest: {
         id: number;
         payload: {
             facts: Record<string, Value>;
@@ -229,8 +229,8 @@ function ProgressSummary({ progress }: { progress: Value | undefined }) {
     );
 }
 
-export default function Handoff({
-    handoff,
+export default function HelpRequest({
+    helpRequest,
     learnerName,
     canShare,
     mentorName,
@@ -238,18 +238,18 @@ export default function Handoff({
 }: Props) {
     const { auth } = usePage().props;
     const isMentor = auth.user?.role === 'mentor';
-    const { facts, mentor_questions, agent_hypotheses } = handoff.payload;
+    const { facts, mentor_questions, agent_hypotheses } = helpRequest.payload;
     const task = record(facts.task);
     const repository = record(facts.repository);
     const reference = text(task.reference);
-    const gap = record(handoff.payload.likely_knowledge_gap);
+    const gap = record(helpRequest.payload.likely_knowledge_gap);
     const gapSummary =
-        text(gap.summary) ?? text(handoff.payload.likely_knowledge_gap);
+        text(gap.summary) ?? text(helpRequest.payload.likely_knowledge_gap);
     const otherFacts = Object.entries(facts).filter(
         ([key]) => !knownFacts.includes(key),
     );
-    const progress = record(handoff.payload.progress);
-    const title = text(task.title) ?? 'Review handoff';
+    const progress = record(helpRequest.payload.progress);
+    const title = text(task.title) ?? 'Review Help Request';
 
     return (
         <>
@@ -258,17 +258,17 @@ export default function Handoff({
                 <PageHeader
                     eyebrow={
                         isMentor && learnerName
-                            ? `Handoff from ${learnerName}`
-                            : 'Handoff'
+                            ? `Help Request from ${learnerName}`
+                            : 'Help Request'
                     }
                     title={title}
                     description={
-                        handoff.sharedAt
-                            ? `Shared on ${handoff.sharedAt}. This snapshot cannot be changed.`
+                        helpRequest.sharedAt
+                            ? `Shared on ${helpRequest.sharedAt}. This snapshot cannot be changed.`
                             : 'Private preview. Review every field, including the progress summary, before choosing to share.'
                     }
                     actions={
-                        handoff.sharedAt ? (
+                        helpRequest.sharedAt ? (
                             <StatusBadge tone="success">Shared</StatusBadge>
                         ) : (
                             <StatusBadge tone="warning">
@@ -384,10 +384,10 @@ export default function Handoff({
                     }
                     icon={TrendingUp}
                 >
-                    <ProgressSummary progress={handoff.payload.progress} />
+                    <ProgressSummary progress={helpRequest.payload.progress} />
                 </SectionCard>
 
-                {!handoff.sharedAt && (
+                {!helpRequest.sharedAt && (
                     <Alert variant="info">
                         <Info aria-hidden="true" />
                         <AlertDescription>
@@ -400,7 +400,7 @@ export default function Handoff({
                 )}
 
                 {canShare && (
-                    <Form {...share.form(handoff.id)}>
+                    <Form {...share.form(helpRequest.id)}>
                         {({ processing, errors }) => (
                             <SectionCard
                                 title={`Share with ${mentorName}`}
@@ -415,16 +415,16 @@ export default function Handoff({
                                 />
                                 <div className="flex items-start gap-3">
                                     <Checkbox
-                                        id="handoff-reviewed"
+                                        id="help-request-reviewed"
                                         name="reviewed"
                                         value="1"
                                         required
-                                        aria-labelledby="handoff-reviewed-label"
+                                        aria-labelledby="help-request-reviewed-label"
                                         className="mt-0.5"
                                     />
                                     <Label
-                                        id="handoff-reviewed-label"
-                                        htmlFor="handoff-reviewed"
+                                        id="help-request-reviewed-label"
+                                        htmlFor="help-request-reviewed"
                                         className="leading-5 font-normal"
                                     >
                                         I reviewed this exact snapshot and
@@ -451,10 +451,10 @@ export default function Handoff({
                         )}
                     </Form>
                 )}
-                {!canShare && !handoff.sharedAt && (
+                {!canShare && !helpRequest.sharedAt && (
                     <p className="text-sm text-muted-foreground">
                         An active Mentor relationship is required to share this
-                        handoff.
+                        Help Request.
                     </p>
                 )}
             </div>
@@ -462,13 +462,13 @@ export default function Handoff({
     );
 }
 
-Handoff.layout = (props: Props) => ({
+HelpRequest.layout = (props: Props) => ({
     breadcrumbs: [
-        { title: 'Handoffs', href: index() },
+        { title: 'Help Requests', href: index() },
         {
             title:
-                text(record(props.handoff.payload.facts.task).title) ??
-                'Review handoff',
+                text(record(props.helpRequest.payload.facts.task).title) ??
+                'Review Help Request',
             href: '#',
         },
     ],

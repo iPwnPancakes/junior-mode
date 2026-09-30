@@ -13,7 +13,7 @@ const props = {
     setup: { hasPlan: true, hasClient: true, hasRepository: true },
     focus: [],
     activeSessions: [],
-    handoffsAwaitingReview: 0,
+    helpRequestsAwaitingReview: 0,
 };
 
 describe('Learner dashboard', () => {
@@ -63,7 +63,7 @@ describe('Learner dashboard', () => {
         ).not.toBeInTheDocument();
     });
 
-    it('shows current focus, active Sessions and handoffs waiting for review', () => {
+    it('shows current focus, active Sessions and Help Requests waiting for review', () => {
         renderPage(
             <LearnerDashboard
                 {...props}
@@ -84,7 +84,7 @@ describe('Learner dashboard', () => {
                         lastActive: '5 hours ago',
                     },
                 ]}
-                handoffsAwaitingReview={2}
+                helpRequestsAwaitingReview={2}
             />,
         );
 
@@ -98,10 +98,10 @@ describe('Learner dashboard', () => {
         ).toBeInTheDocument();
         expect(screen.getByText('Active 5 hours ago')).toBeInTheDocument();
         expect(
-            screen.getByText('2 handoffs are waiting for your review'),
+            screen.getByText('2 Help Requests are waiting for your review'),
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: 'Review handoffs' }),
-        ).toHaveAttribute('href', '/handoffs');
+            screen.getByRole('link', { name: 'Review Help Requests' }),
+        ).toHaveAttribute('href', '/help-requests');
     });
 });

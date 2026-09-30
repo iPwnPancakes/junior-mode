@@ -22,7 +22,7 @@ use App\Http\Controllers\CompetencyTemplateCopyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DevelopmentAccountSwitchController;
 use App\Http\Controllers\EnrolledRepositoryController;
-use App\Http\Controllers\HandoffController;
+use App\Http\Controllers\HelpRequestController;
 use App\Http\Controllers\LearnerController;
 use App\Http\Controllers\LearnerInvitationController;
 use App\Http\Controllers\LearningEvidenceCorrectionController;
@@ -52,9 +52,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::post('development/switch-account', DevelopmentAccountSwitchController::class)
         ->name('development.switch-account');
-    Route::get('handoffs', [HandoffController::class, 'index'])->name('handoffs.index');
-    Route::get('handoffs/{handoff}', [HandoffController::class, 'show'])->name('handoffs.show');
-    Route::post('handoffs/{handoff}/share', [HandoffController::class, 'share'])->name('handoffs.share');
+    Route::get('help-requests', [HelpRequestController::class, 'index'])->name('help-requests.index');
+    Route::get('help-requests/{helpRequest}', [HelpRequestController::class, 'show'])->name('help-requests.show');
+    Route::post('help-requests/{helpRequest}/share', [HelpRequestController::class, 'share'])->name('help-requests.share');
+    Route::redirect('handoffs', '/help-requests');
+    Route::redirect('handoffs/{helpRequest}', '/help-requests/{helpRequest}');
     Route::post('learner-invitations', [LearnerInvitationController::class, 'store'])
         ->name('learner-invitations.store');
     Route::get('client-connections', [ClientConnectionController::class, 'index'])

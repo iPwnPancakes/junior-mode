@@ -18,7 +18,7 @@ type NextStep = {
         | 'review_proposal'
         | 'set_up_plan'
         | 'enroll_repository'
-        | 'read_handoff'
+        | 'read_help_request'
         | 'focus_expired'
         | 'focus_ending'
         | 'choose_focus'

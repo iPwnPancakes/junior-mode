@@ -3,11 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\CoachingSession;
-use App\Models\HandoffSnapshot;
+use App\Models\HelpRequest;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/** @extends Factory<HandoffSnapshot> */
-class HandoffSnapshotFactory extends Factory
+/** @extends Factory<HelpRequest> */
+class HelpRequestFactory extends Factory
 {
     /** @return array<string, mixed> */
     public function definition(): array

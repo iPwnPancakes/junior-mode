@@ -47,6 +47,10 @@ _Avoid_: Guess
 **Solution Escape**:
 An explicit request for the complete solution after the learner has exhausted the required hints. Using it is visible to the mentor and forms part of the learning record.
 
+**Help Request**:
+A learner-reviewed snapshot of where they are stuck in a Coaching Session, with the facts, hypotheses, and one or two focused questions for their mentor. The learner keeps ownership of the work and asks for guidance, not a solution. It stays private until the learner shares it, and sharing neither notifies the mentor nor changes progress.
+_Avoid_: Handoff
+
 ## Development
 
 **Competency**:

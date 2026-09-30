@@ -3,11 +3,11 @@
 namespace App\Actions;
 
 use App\Models\CoachingSession;
-use App\Support\HandoffText;
+use App\Support\HelpRequestText;
 
-class BuildHandoffContext
+class BuildHelpRequestContext
 {
-    public function __construct(private HandoffText $text) {}
+    public function __construct(private HelpRequestText $text) {}
 
     /** @param array<string, mixed> $reported
      * @return array<string, mixed>

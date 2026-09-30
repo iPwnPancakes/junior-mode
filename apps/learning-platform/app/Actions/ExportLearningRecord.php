@@ -14,7 +14,7 @@ use App\Models\CoachingSession;
 use App\Models\Competency;
 use App\Models\CompetencyMerge;
 use App\Models\EnrolledRepository;
-use App\Models\HandoffSnapshot;
+use App\Models\HelpRequest;
 use App\Models\LearnerInvitation;
 use App\Models\LearningEvidence;
 use App\Models\User;
@@ -57,7 +57,7 @@ class ExportLearningRecord
             'coaching_sessions' => CoachingSession::query()->where('learner_id', $learner->id)->get(['id', 'work_item_id', 'primary_learning_objective_id', 'client_connection_id', 'status', 'desired_outcome', 'acceptance_criteria', 'responsibility_split', 'completion', 'completed_at', 'last_active_at', 'created_at', 'updated_at'])->toArray(),
             'coaching_activity_events' => CoachingActivityEvent::query()->where('learner_id', $learner->id)->orderBy('id')->get(['id', 'coaching_session_id', 'client_connection_id', 'kind', 'payload', 'created_at'])->toArray(),
             'learning_evidence' => LearningEvidence::query()->where('learner_id', $learner->id)->orderBy('id')->get(['id', 'coaching_session_id', 'competency_id', 'recorded_by_id', 'client_connection_id', 'supersedes_id', 'schema_version', 'evidence', 'created_at'])->toArray(),
-            'handoff_snapshots' => HandoffSnapshot::query()->where('learner_id', $learner->id)->get(['id', 'coaching_session_id', 'mentor_id', 'payload', 'shared_at', 'created_at', 'updated_at'])->toArray(),
+            'help_requests' => HelpRequest::query()->where('learner_id', $learner->id)->get(['id', 'coaching_session_id', 'mentor_id', 'payload', 'shared_at', 'created_at', 'updated_at'])->toArray(),
             'client_connections' => $clients->toArray(),
             'client_authorizations' => ClientAuthorization::query()->whereIn('client_connection_id', $clients->modelKeys())->get(['id', 'name', 'client_connection_id', 'expires_at', 'approved_at', 'exchanged_at', 'created_at', 'updated_at'])->toArray(),
             'accepted_invitations' => LearnerInvitation::query()->where('accepted_by_user_id', $learner->id)->get(['id', 'mentor_id', 'email', 'expires_at', 'accepted_at', 'created_at', 'updated_at'])->toArray(),

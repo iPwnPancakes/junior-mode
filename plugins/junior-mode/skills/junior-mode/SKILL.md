@@ -1,6 +1,6 @@
 ---
 name: junior-mode
-description: Coach an explicitly activated Learner through Help Me, I'm stuck, or Suggest in an Enrolled Repository, using Junior Mode MCP for context, evidence, progress, and private handoffs. Activate only when the Learner invokes Junior Mode or enables coaching for this chat.
+description: Coach an explicitly activated Learner through Help Me, I'm stuck, or Suggest in an Enrolled Repository, using Junior Mode MCP for context, evidence, progress, and private Help Requests. Activate only when the Learner invokes Junior Mode or enables coaching for this chat.
 ---
 
 # Junior Mode
@@ -61,13 +61,13 @@ Do not promise an advancement, call shipped code mastery, or mark a Session comp
 
 ## I'm stuck
 
-Read authorized context and the active Session before drafting a handoff. Ask only for missing facts that would change the Mentor's next action; never fabricate attempts or errors. Call `get-handoff-context` version `1` with the Session, concise current understanding, observed error/unexpected behavior, likely knowledge gap, relevant file/symbol/issue references, actual attempts, explicitly labeled hypotheses, and one or two focused Mentor questions. This read does not change progress.
+Read authorized context and the active Session before drafting a Help Request. Ask only for missing facts that would change the Mentor's next action; never fabricate attempts or errors. Call `get-help-request-context` version `1` with the Session, concise current understanding, observed error/unexpected behavior, likely knowledge gap, relevant file/symbol/issue references, actual attempts, explicitly labeled hypotheses, and one or two focused Mentor questions. This read does not change progress.
 
 Format the result as a concise Learner-visible summary: desired outcome and location; what the Learner currently understands; attempts and exact observed behavior; likely gap labeled as a hypothesis; remaining hypotheses; and the focused questions. Separate service/session facts and Learner-reported facts from agent inference. Use the supplied evidence rather than judging personality or motivation.
 
-If the Learner asks to save a handoff, call `prepare-handoff` with that same reviewed content and an idempotency key. Show the returned private preview URL. Saving is not sharing. Only the Learner's explicit web confirmation shares the exact snapshot with the named current Mentor; there is no MCP share operation. Do not send Slack, email, chat transcripts, or other notifications. A changed report needs a new preview, not an unseen edit to an already reviewed one.
+If the Learner asks to save a Help Request, call `prepare-help-request` with that same reviewed content and an idempotency key. Show the returned private preview URL. Saving is not sharing. Only the Learner's explicit web confirmation shares the exact snapshot with the named current Mentor; there is no MCP share operation. Do not send Slack, email, chat transcripts, or other notifications. A changed report needs a new preview, not an unseen edit to an already reviewed one.
 
-After mentoring, ask what changed in the Learner's understanding. Record only newly verified evidence through the normal review/teach-back path, or include the reflection when settling the Session. Being stuck or requesting a handoff never downgrades progress by itself.
+After mentoring, ask what changed in the Learner's understanding. Record only newly verified evidence through the normal review/teach-back path, or include the reflection when settling the Session. Being stuck or asking for a Help Request never downgrades progress by itself.
 
 ## Suggest
 

@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-class HandoffText
+class HelpRequestText
 {
     public function clean(?string $value): ?string
     {

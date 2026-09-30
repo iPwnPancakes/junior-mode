@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Database\Factories\HandoffSnapshotFactory;
+use Database\Factories\HelpRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,16 +23,16 @@ use LogicException;
  * @property Carbon $created_at
  */
 #[Fillable(['learner_id', 'coaching_session_id', 'mentor_id', 'payload', 'fingerprint', 'idempotency_key', 'request_hash', 'shared_at'])]
-class HandoffSnapshot extends Model
+class HelpRequest extends Model
 {
-    /** @use HasFactory<HandoffSnapshotFactory> */
+    /** @use HasFactory<HelpRequestFactory> */
     use HasFactory;
 
     protected static function booted(): void
     {
         static::updating(function (self $snapshot): void {
             if ($snapshot->isDirty(['payload', 'fingerprint', 'learner_id', 'coaching_session_id', 'idempotency_key', 'request_hash']) || $snapshot->getOriginal('shared_at') !== null) {
-                throw new LogicException('Handoff snapshots are immutable. Create a new preview for changes.');
+                throw new LogicException('Help Requests are immutable. Create a new preview for changes.');
             }
         });
     }

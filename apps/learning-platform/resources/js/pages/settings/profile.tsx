@@ -142,7 +142,7 @@ export default function Profile({
                 <div className="space-y-4">
                     <SectionHeading
                         title="Your learning record"
-                        description="Download your catalog, sessions, evidence, corrections, and handoff history as JSON. You may be asked to confirm your password."
+                        description="Download your catalog, sessions, evidence, corrections, and Help Request history as JSON. You may be asked to confirm your password."
                     />
                     <a
                         href={exportLearningRecord.url()}

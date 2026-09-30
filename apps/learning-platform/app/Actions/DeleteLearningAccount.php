@@ -23,7 +23,7 @@ class DeleteLearningAccount
             foreach (DB::table('learning_evidence')->where('learner_id', $owner->id)->orderByDesc('id')->pluck('id') as $evidenceId) {
                 DB::table('learning_evidence')->where('id', $evidenceId)->delete();
             }
-            DB::table('handoff_snapshots')->where('learner_id', $owner->id)->delete();
+            DB::table('help_requests')->where('learner_id', $owner->id)->delete();
             DB::table('coaching_sessions')->where('learner_id', $owner->id)->delete();
             DB::table('work_items')->where('learner_id', $owner->id)->delete();
             DB::table('assessments')->where('learner_id', $owner->id)->delete();

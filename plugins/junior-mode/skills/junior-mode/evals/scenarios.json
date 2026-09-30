@@ -28,9 +28,9 @@
       "context": "Authorized/enrolled Session 51/objective 12. get-progress returns stage independent, one qualifying evidence id 91 on Work Item 'validate quantity'; next_stage_requirement: repeat independently on a separate Work Item in a materially different context, with verification and demonstrated understanding. This is the same Work Item/context."
     },
     {
-      "id": "handoff-quality",
+      "id": "help-request-quality",
       "user": "I'm stuck. Help me prepare what to ask my Mentor, but don't share anything yet.",
-      "context": "Authorized/enrolled active Session 51. get-handoff-context response facts: desired_outcome 'charge once after retry'; task 'Fix retry idempotency', reference ISSUE-7; repository billing; objective 'Reason about idempotent writes'; artifacts PaymentService::charge, tests/retry_test.php; learner current_understanding 'The key should identify the purchase, but I generate a new UUID on every retry'; attempts 'Reused the request payload, reproduced two processor confirmations'; exact_error_or_unexpected_behavior 'One purchase produced two charge IDs'; likely_knowledge_gap {kind:hypothesis,summary:'Unclear difference between request identity and purchase identity'}; agent_hypotheses ['Retry handler may regenerate the key']; mentor_questions ['Where should the stable purchase key be created and persisted?']; progress guided. No prepare-handoff has been called."
+      "context": "Authorized/enrolled active Session 51. get-help-request-context response facts: desired_outcome 'charge once after retry'; task 'Fix retry idempotency', reference ISSUE-7; repository billing; objective 'Reason about idempotent writes'; artifacts PaymentService::charge, tests/retry_test.php; learner current_understanding 'The key should identify the purchase, but I generate a new UUID on every retry'; attempts 'Reused the request payload, reproduced two processor confirmations'; exact_error_or_unexpected_behavior 'One purchase produced two charge IDs'; likely_knowledge_gap {kind:hypothesis,summary:'Unclear difference between request identity and purchase identity'}; agent_hypotheses ['Retry handler may regenerate the key']; mentor_questions ['Where should the stable purchase key be created and persisted?']; progress guided. No prepare-handoff has been called."
     },
     {
       "id": "unavailable-service",

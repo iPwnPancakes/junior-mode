@@ -7,7 +7,7 @@ use App\CoachingPriorityStatus;
 use App\CoachingSessionStatus;
 use App\Models\CoachingPriority;
 use App\Models\CoachingSession;
-use App\Models\HandoffSnapshot;
+use App\Models\HelpRequest;
 use App\Models\LearnerInvitation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -99,7 +99,7 @@ class DashboardController extends Controller
                     'objective' => $session->primaryLearningObjective->name,
                     'lastActive' => $session->last_active_at->diffForHumans(),
                 ]),
-            'handoffsAwaitingReview' => HandoffSnapshot::query()
+            'helpRequestsAwaitingReview' => HelpRequest::query()
                 ->where('learner_id', $learner->id)
                 ->whereNull('shared_at')
                 ->count(),

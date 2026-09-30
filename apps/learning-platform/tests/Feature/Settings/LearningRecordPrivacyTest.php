@@ -13,7 +13,7 @@ use App\Models\CoachingSession;
 use App\Models\Competency;
 use App\Models\CompetencyMerge;
 use App\Models\EnrolledRepository;
-use App\Models\HandoffSnapshot;
+use App\Models\HelpRequest;
 use App\Models\LearnerInvitation;
 use App\Models\LearningEvidence;
 use App\Models\User;
@@ -42,9 +42,9 @@ function populatedLearningRecord(): array
     $activity = CoachingActivityEvent::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'client_connection_id' => $client->id, 'kind' => 'hint', 'payload' => ['summary' => 'Check the JSON response header.']]);
     $evidence = LearningEvidence::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'competency_id' => $competency->id, 'recorded_by_id' => $learner->id, 'client_connection_id' => $client->id]);
     $correction = LearningEvidence::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'competency_id' => $competency->id, 'recorded_by_id' => $mentor->id, 'client_connection_id' => $client->id, 'supersedes_id' => $evidence->id]);
-    $handoff = HandoffSnapshot::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'mentor_id' => $mentor->id, 'shared_at' => now()]);
+    $helpRequest = HelpRequest::factory()->create(['learner_id' => $learner->id, 'coaching_session_id' => $session->id, 'mentor_id' => $mentor->id, 'shared_at' => now()]);
 
-    return compact('mentor', 'learner', 'client', 'authorization', 'invitation', 'repository', 'competency', 'child', 'merge', 'proposal', 'node', 'baseline', 'assessment', 'priority', 'work', 'session', 'activity', 'evidence', 'correction', 'handoff');
+    return compact('mentor', 'learner', 'client', 'authorization', 'invitation', 'repository', 'competency', 'child', 'merge', 'proposal', 'node', 'baseline', 'assessment', 'priority', 'work', 'session', 'activity', 'evidence', 'correction', 'helpRequest');
 }
 
 beforeEach(function () {
@@ -71,9 +71,9 @@ test('the downloadable complete record contains only this Learner and excludes a
     expect($record['account']['id'])->toBe($own['learner']->id)
         ->and($record['learning_evidence'])->toHaveCount(2)
         ->and($record['learning_evidence'][1]['supersedes_id'])->toBe($own['evidence']->id)
-        ->and($record['handoff_snapshots'][0]['payload'])->toBe($own['handoff']->payload)
+        ->and($record['help_requests'][0]['payload'])->toBe($own['helpRequest']->payload)
         ->and($record['catalog_proposal_nodes'][0]['id'])->toBe($own['node']->id);
-    foreach (['competencies', 'competency_merges', 'catalog_proposals', 'catalog_proposal_nodes', 'baseline_assessment_proposals', 'assessments', 'coaching_priorities', 'repositories', 'work_items', 'coaching_sessions', 'coaching_activity_events', 'learning_evidence', 'handoff_snapshots', 'client_connections', 'client_authorizations', 'accepted_invitations'] as $section) {
+    foreach (['competencies', 'competency_merges', 'catalog_proposals', 'catalog_proposal_nodes', 'baseline_assessment_proposals', 'assessments', 'coaching_priorities', 'repositories', 'work_items', 'coaching_sessions', 'coaching_activity_events', 'learning_evidence', 'help_requests', 'client_connections', 'client_authorizations', 'accepted_invitations'] as $section) {
         expect($record[$section])->not->toBeEmpty();
     }
     expect($json)->not->toContain($other['learner']->email, $other['learner']->name, $own['learner']->password, $own['client']->token_hash,

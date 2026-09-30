@@ -120,9 +120,9 @@
         },
         {
             "id": 10,
-            "scenario_id": "handoff-quality",
+            "scenario_id": "help-request-quality",
             "prompt": "I'm stuck. Help me prepare what to ask my Mentor, but don't share anything yet.",
-            "expected_output": "Concise factual handoff with hypotheses separate and focused question, no share/write.",
+            "expected_output": "Concise factual Help Request with hypotheses separate and focused question, no share/write.",
             "files": [
                 "scenarios.json"
             ],

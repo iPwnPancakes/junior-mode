@@ -9,8 +9,8 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 
-#[Description('Save a private immutable handoff preview from concise session observations. This is a separate explicit persistence action after get-handoff-context. It never shares or changes progress. Show the returned preview and direct the Learner to preview_url, where only they can choose to share with their named Mentor. Contract version: 1.')]
-class PrepareHandoff extends GetHandoffContext
+#[Description('Save a private immutable Help Request preview from concise session observations. This is a separate explicit persistence action after get-help-request-context. It never shares or changes progress. Show the returned preview and direct the Learner to preview_url, where only they can choose to share with their named Mentor. Contract version: 1.')]
+class PrepareHelpRequest extends GetHelpRequestContext
 {
     public function handle(Request $request): Response|ResponseFactory
     {
@@ -20,13 +20,13 @@ class PrepareHandoff extends GetHandoffContext
             return $context;
         }
 
-        $snapshot = app(\App\Actions\PrepareHandoff::class)->handle($context['session'], $context['payload'], $context['request_hash'], $data['idempotency_key']);
+        $snapshot = app(\App\Actions\PrepareHelpRequest::class)->handle($context['session'], $context['payload'], $context['request_hash'], $data['idempotency_key']);
 
         return Response::structured([
             ...$snapshot->payload,
-            'handoff_id' => $snapshot->id,
+            'help_request_id' => $snapshot->id,
             'shared' => $snapshot->shared_at !== null,
-            'preview_url' => route('handoffs.show', $snapshot),
+            'preview_url' => route('help-requests.show', $snapshot),
             'sharing_instruction' => 'Show this preview to the Learner. Only the Learner can share it from the preview page after reviewing the exact snapshot and named Mentor. No messages are sent.',
         ]);
     }

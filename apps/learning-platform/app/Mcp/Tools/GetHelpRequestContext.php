@@ -2,10 +2,10 @@
 
 namespace App\Mcp\Tools;
 
-use App\Actions\BuildHandoffContext;
+use App\Actions\BuildHelpRequestContext;
 use App\CoachingSessionStatus;
 use App\Models\CoachingSession;
-use App\Models\HandoffSnapshot;
+use App\Models\HelpRequest;
 use App\Models\User;
 use App\Support\CurrentClientConnection;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -16,10 +16,10 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Read structured learner-visible handoff context for an active Coaching Session. Show the facts and separately marked hypotheses. Use prepare-handoff to save a private preview for learner review and optional sharing. This never shares, sends messages, or changes progress. Supply only concise observations and artifact references, never source files, conversations, secrets, hidden notes, or personal judgments. Contract version: 1.')]
-class GetHandoffContext extends Tool
+#[Description('Read structured learner-visible Help Request context for an active Coaching Session. Show the facts and separately marked hypotheses. Use prepare-help-request to save a private preview for learner review and optional sharing. This never shares, sends messages, or changes progress. Supply only concise observations and artifact references, never source files, conversations, secrets, hidden notes, or personal judgments. Contract version: 1.')]
+class GetHelpRequestContext extends Tool
 {
-    public function __construct(private CurrentClientConnection $connection, private BuildHandoffContext $build) {}
+    public function __construct(private CurrentClientConnection $connection, private BuildHelpRequestContext $build) {}
 
     public function handle(Request $request): Response|ResponseFactory
     {
@@ -54,7 +54,7 @@ class GetHandoffContext extends Tool
         ]);
         $requestHash = hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
         if ($idempotencyKey !== null) {
-            $existing = HandoffSnapshot::query()->where('learner_id', $learner->id)->where('idempotency_key', $idempotencyKey)->first();
+            $existing = HelpRequest::query()->where('learner_id', $learner->id)->where('idempotency_key', $idempotencyKey)->first();
             if ($existing !== null) {
                 return ['payload' => $existing->payload, 'session' => $existing->coachingSession, 'request_hash' => $requestHash];
             }

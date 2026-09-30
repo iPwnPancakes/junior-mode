@@ -7,7 +7,7 @@ use App\Models\CoachingPriority;
 use App\Models\CoachingSession;
 use App\Models\Competency;
 use App\Models\EnrolledRepository;
-use App\Models\HandoffSnapshot;
+use App\Models\HelpRequest;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -57,11 +57,11 @@ test('a new Learner sees which setup steps are missing and nothing to pick up ye
             ->where('setup', ['hasPlan' => false, 'hasClient' => false, 'hasRepository' => false])
             ->has('focus', 0)
             ->has('activeSessions', 0)
-            ->where('handoffsAwaitingReview', 0)
+            ->where('helpRequestsAwaitingReview', 0)
         );
 });
 
-test('a Learner dashboard shows current focus, active Sessions and handoffs awaiting review', function () {
+test('a Learner dashboard shows current focus, active Sessions and Help Requests awaiting review', function () {
     $mentor = User::factory()->mentor()->create();
     $learner = User::factory()->learner($mentor)->create();
     $competency = Competency::factory()->forLearner($learner)->create(['name' => 'Authorization']);
@@ -82,8 +82,8 @@ test('a Learner dashboard shows current focus, active Sessions and handoffs awai
     ]);
     $session = CoachingSession::factory()->create(['learner_id' => $learner->id]);
     CoachingSession::factory()->create(['learner_id' => $learner->id, 'status' => 'concluded']);
-    HandoffSnapshot::factory()->create(['coaching_session_id' => $session->id]);
-    HandoffSnapshot::factory()->create([
+    HelpRequest::factory()->create(['coaching_session_id' => $session->id]);
+    HelpRequest::factory()->create([
         'coaching_session_id' => $session->id,
         'mentor_id' => $mentor->id,
         'shared_at' => now(),
@@ -98,7 +98,7 @@ test('a Learner dashboard shows current focus, active Sessions and handoffs awai
             ->where('focus.0.expiresOn', now()->addDays(3)->toFormattedDateString())
             ->has('activeSessions', 1)
             ->where('activeSessions.0.id', $session->id)
-            ->where('handoffsAwaitingReview', 1)
+            ->where('helpRequestsAwaitingReview', 1)
         );
 });
 
@@ -128,10 +128,10 @@ test('the Mentor dashboard gives each Learner one next step in priority order', 
     $proposal = CatalogProposal::factory()->create(['learner_id' => $withProposal->id]);
     $withoutPlan = $learner(withCompetency: false);
     $withoutRepository = $learner(withRepository: false);
-    $withHandoff = $learner();
-    $focus($withHandoff, now()->subDay());
-    $handoff = HandoffSnapshot::factory()->create([
-        'coaching_session_id' => CoachingSession::factory()->create(['learner_id' => $withHandoff->id])->id,
+    $withHelpRequest = $learner();
+    $focus($withHelpRequest, now()->subDay());
+    $helpRequest = HelpRequest::factory()->create([
+        'coaching_session_id' => CoachingSession::factory()->create(['learner_id' => $withHelpRequest->id])->id,
         'mentor_id' => $mentor->id,
         'shared_at' => now()->subDay(),
     ]);
@@ -151,14 +151,14 @@ test('the Mentor dashboard gives each Learner one next step in priority order', 
         $withProposal->id => 'review_proposal',
         $withoutPlan->id => 'set_up_plan',
         $withoutRepository->id => 'enroll_repository',
-        $withHandoff->id => 'read_handoff',
+        $withHelpRequest->id => 'read_help_request',
         $withExpiredFocus->id => 'focus_expired',
         $withEndingFocus->id => 'focus_ending',
         $withoutFocus->id => 'choose_focus',
         $onTrack->id => 'on_track',
     ])
         ->and($steps[$withProposal->id]['href'])->toBe(route('catalog-proposals.show', [$withProposal, $proposal]))
-        ->and($steps[$withHandoff->id]['href'])->toBe(route('handoffs.show', $handoff))
+        ->and($steps[$withHelpRequest->id]['href'])->toBe(route('help-requests.show', $helpRequest))
         ->and($steps[$withoutRepository->id]['href'])->toBe(route('enrolled-repositories.index'))
         ->and($steps[$onTrack->id]['href'])->toBe(route('learners.show', $onTrack))
         ->and($steps->has($otherLearner->id))->toBeFalse();

@@ -53,7 +53,7 @@
       "tool_calls": []
     },
     {
-      "scenario_id": "handoff-quality",
+      "scenario_id": "help-request-quality",
       "reply": "Here\u2019s a draft to bring to your Mentor. Nothing has been saved or shared.\n\n- **Goal and location \u2014 Session facts:** Charge once after a retry, for ISSUE-7, \u201cFix retry idempotency,\u201d in billing. Relevant locations: `PaymentService::charge` and `tests/retry_test.php`. The learning objective is reasoning about idempotent writes.\n- **Your current understanding \u2014 Learner report:** \u201cThe key should identify the purchase, but I generate a new UUID on every retry.\u201d\n- **Attempts and observed behavior \u2014 Learner report:** You reused the request payload and reproduced two processor confirmations. Exact unexpected behavior: \u201cOne purchase produced two charge IDs.\u201d\n- **Likely gap \u2014 hypothesis:** The difference between request identity and purchase identity may be unclear.\n- **Remaining technical hypothesis:** The retry handler may regenerate the key; this is not yet confirmed.\n- **Question for your Mentor:** Where should the stable purchase key be created and persisted?",
       "tool_calls": []
     },

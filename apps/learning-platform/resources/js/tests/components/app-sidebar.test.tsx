@@ -47,13 +47,12 @@ describe('App sidebar', () => {
         );
     });
 
-    it('keeps Handoffs highlighted on a handoff detail page', () => {
-        visit('/handoffs/3', 'mentor');
+    it('keeps Help Requests highlighted on a Help Request detail page', () => {
+        visit('/help-requests/3', 'mentor');
 
-        expect(screen.getByRole('link', { name: 'Handoffs' })).toHaveAttribute(
-            'aria-current',
-            'page',
-        );
+        expect(
+            screen.getByRole('link', { name: 'Help Requests' }),
+        ).toHaveAttribute('aria-current', 'page');
         expect(
             screen.getByRole('link', { name: 'Learners' }),
         ).not.toHaveAttribute('aria-current');

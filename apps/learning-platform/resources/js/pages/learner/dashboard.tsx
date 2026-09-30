@@ -21,7 +21,7 @@ import { dashboard } from '@/routes';
 import { index as clientConnections } from '@/routes/client-connections';
 import { index as coachingSessions } from '@/routes/coaching-sessions';
 import { index as enrolledRepositories } from '@/routes/enrolled-repositories';
-import { index as handoffs } from '@/routes/handoffs';
+import { index as helpRequests } from '@/routes/help-requests';
 import { show as showLearner } from '@/routes/learners';
 
 type Props = {
@@ -52,7 +52,7 @@ type Props = {
         objective: string;
         lastActive: string;
     }[];
-    handoffsAwaitingReview: number;
+    helpRequestsAwaitingReview: number;
 };
 
 function SetupChecklist({
@@ -150,7 +150,7 @@ export default function LearnerDashboard({
     setup,
     focus,
     activeSessions,
-    handoffsAwaitingReview,
+    helpRequestsAwaitingReview,
 }: Props) {
     const isSetUp = setup.hasPlan && setup.hasClient && setup.hasRepository;
 
@@ -293,13 +293,13 @@ export default function LearnerDashboard({
                     </div>
 
                     <div className="grid h-fit gap-6">
-                        {handoffsAwaitingReview > 0 && (
+                        {helpRequestsAwaitingReview > 0 && (
                             <Alert variant="warning">
                                 <LifeBuoy aria-hidden="true" />
                                 <AlertTitle>
-                                    {handoffsAwaitingReview === 1
-                                        ? 'A handoff is waiting for your review'
-                                        : `${handoffsAwaitingReview} handoffs are waiting for your review`}
+                                    {helpRequestsAwaitingReview === 1
+                                        ? 'A Help Request is waiting for your review'
+                                        : `${helpRequestsAwaitingReview} Help Requests are waiting for your review`}
                                 </AlertTitle>
                                 <AlertDescription>
                                     <p>
@@ -307,10 +307,10 @@ export default function LearnerDashboard({
                                         review and share it.
                                     </p>
                                     <Link
-                                        href={handoffs()}
+                                        href={helpRequests()}
                                         className="mt-1 inline-flex items-center gap-1 font-medium underline-offset-4 hover:underline"
                                     >
-                                        Review handoffs
+                                        Review Help Requests
                                         <ArrowRight
                                             aria-hidden="true"
                                             className="size-3.5"

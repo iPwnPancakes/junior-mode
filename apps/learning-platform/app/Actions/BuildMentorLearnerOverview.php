@@ -6,7 +6,7 @@ use App\CatalogProposalStatus;
 use App\CoachingPriorityStatus;
 use App\Models\CatalogProposal;
 use App\Models\CoachingPriority;
-use App\Models\HandoffSnapshot;
+use App\Models\HelpRequest;
 use App\Models\User;
 
 /**
@@ -17,7 +17,7 @@ class BuildMentorLearnerOverview
 {
     private const int FocusEndingSoonDays = 2;
 
-    private const int RecentHandoffDays = 7;
+    private const int RecentHelpRequestDays = 7;
 
     /**
      * @return list<array{
@@ -53,10 +53,10 @@ class BuildMentorLearnerOverview
             ->get()
             ->unique('learner_id')
             ->keyBy('learner_id');
-        $handoffs = HandoffSnapshot::query()
+        $helpRequests = HelpRequest::query()
             ->whereIn('learner_id', $learnerIds)
             ->where('mentor_id', $mentor->id)
-            ->where('shared_at', '>=', now()->subDays(self::RecentHandoffDays))
+            ->where('shared_at', '>=', now()->subDays(self::RecentHelpRequestDays))
             ->latest('shared_at')
             ->get()
             ->unique('learner_id')
@@ -74,13 +74,13 @@ class BuildMentorLearnerOverview
             'nextStep' => $this->nextStep(
                 $learner,
                 $proposals->get($learner->id),
-                $handoffs->get($learner->id),
+                $helpRequests->get($learner->id),
             ),
         ])->all());
     }
 
     /** @return array{kind: string, label: string, detail: string, href: string} */
-    private function nextStep(User $learner, ?CatalogProposal $proposal, ?HandoffSnapshot $handoff): array
+    private function nextStep(User $learner, ?CatalogProposal $proposal, ?HelpRequest $helpRequest): array
     {
         $learnerPage = route('learners.show', $learner);
 
@@ -111,12 +111,12 @@ class BuildMentorLearnerOverview
             ];
         }
 
-        if ($handoff !== null) {
+        if ($helpRequest !== null) {
             return [
-                'kind' => 'read_handoff',
-                'label' => __('Read handoff'),
-                'detail' => __('Shared :date', ['date' => $handoff->shared_at->toFormattedDateString()]),
-                'href' => route('handoffs.show', $handoff),
+                'kind' => 'read_help_request',
+                'label' => __('Read Help Request'),
+                'detail' => __('Shared :date', ['date' => $helpRequest->shared_at->toFormattedDateString()]),
+                'href' => route('help-requests.show', $helpRequest),
             ];
         }
 

@@ -1,8 +1,8 @@
 import { usePage } from '@inertiajs/react';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import Handoffs from '@/pages/handoffs/index';
-import Handoff from '@/pages/handoffs/show';
+import HelpRequests from '@/pages/help-requests/index';
+import HelpRequest from '@/pages/help-requests/show';
 import { renderPage } from '@/test/render-page';
 
 function setRole(role: 'learner' | 'mentor') {
@@ -11,7 +11,7 @@ function setRole(role: 'learner' | 'mentor') {
     } as ReturnType<typeof usePage>);
 }
 
-const handoff = {
+const helpRequest = {
     id: 1,
     sharedAt: null,
     payload: {
@@ -33,12 +33,12 @@ const handoff = {
     },
 };
 
-describe('Mentor handoff review', () => {
+describe('Help Request review', () => {
     it('shows the exact facts, hypotheses and progress before the explicit named share action', () => {
         setRole('learner');
         renderPage(
-            <Handoff
-                handoff={handoff}
+            <HelpRequest
+                helpRequest={helpRequest}
                 canShare
                 mentorName="Morgan Mentor"
                 previewToken="preview-token"
@@ -75,8 +75,8 @@ describe('Mentor handoff review', () => {
     it('shows a shared snapshot to the Mentor without a sharing control', () => {
         setRole('mentor');
         renderPage(
-            <Handoff
-                handoff={{ ...handoff, sharedAt: 'Sep 24, 2026' }}
+            <HelpRequest
+                helpRequest={{ ...helpRequest, sharedAt: 'Sep 24, 2026' }}
                 learnerName="Lee Learner"
                 canShare={false}
                 mentorName="Morgan Mentor"
@@ -84,7 +84,7 @@ describe('Mentor handoff review', () => {
             />,
         );
         expect(
-            screen.getByText('Handoff from Lee Learner'),
+            screen.getByText('Help Request from Lee Learner'),
         ).toBeInTheDocument();
         expect(
             screen.getByRole('heading', { name: 'Questions for you' }),
@@ -99,8 +99,8 @@ describe('Mentor handoff review', () => {
     });
 });
 
-describe('Handoff list', () => {
-    const handoffs = [
+describe('Help Request list', () => {
+    const helpRequests = [
         {
             id: 3,
             title: 'Fix the webhook 500',
@@ -110,32 +110,36 @@ describe('Handoff list', () => {
         },
     ];
 
-    it('tells a Learner which handoffs still need their review', () => {
+    it('tells a Learner which Help Requests still need their review', () => {
         setRole('learner');
-        renderPage(<Handoffs handoffs={handoffs} />);
+        renderPage(<HelpRequests helpRequests={helpRequests} />);
 
         expect(
             screen.getByRole('link', { name: /Fix the webhook 500/ }),
-        ).toHaveAttribute('href', '/handoffs/3');
+        ).toHaveAttribute('href', '/help-requests/3');
         expect(screen.getByText('Waiting for your review')).toBeInTheDocument();
         expect(screen.queryByText(/Lee Learner/)).not.toBeInTheDocument();
     });
 
-    it('attributes each shared handoff to its Learner for a Mentor', () => {
+    it('attributes each shared Help Request to its Learner for a Mentor', () => {
         setRole('mentor');
-        renderPage(<Handoffs handoffs={[{ ...handoffs[0], shared: true }]} />);
+        renderPage(
+            <HelpRequests
+                helpRequests={[{ ...helpRequests[0], shared: true }]}
+            />,
+        );
 
         expect(
             screen.getByText('Lee Learner · Sep 27, 2026'),
         ).toBeInTheDocument();
     });
 
-    it('explains how a handoff appears when there are none', () => {
+    it('explains how a Help Request appears when there are none', () => {
         setRole('learner');
-        renderPage(<Handoffs handoffs={[]} />);
+        renderPage(<HelpRequests helpRequests={[]} />);
 
         expect(
-            screen.getByRole('heading', { name: 'No handoffs yet' }),
+            screen.getByRole('heading', { name: 'No Help Requests yet' }),
         ).toBeInTheDocument();
     });
 });
