@@ -21,7 +21,7 @@ Tokens are defined in `resources/css/app.css` as light and dark OKLCH values and
 | `primary`                  | Primary actions, selected emphasis, and brand identity  |
 | `secondary`                | Lower-emphasis actions and neutral role markers         |
 | `muted`                    | Subdued surfaces and supporting copy                    |
-| `accent`                   | Hover, active navigation, and selected controls         |
+| `accent`                   | Hover and selected controls                             |
 | `border`, `input`, `ring`  | Structure, form boundaries, and visible focus           |
 | `info`                     | Informational state that does not require action        |
 | `success`                  | Confirmed successful completion                         |
@@ -159,6 +159,7 @@ Validation appears next to its control, uses `role="alert"`, and is connected wi
 - Each page has one visible `h1`; cards and sections use logical `h2` and `h3` headings.
 - Use `main`, `header`, `nav`, `aside`, and `section` landmarks according to purpose.
 - Navigation identifies the current destination with `aria-current="page"`.
+- The current sidebar page is a raised `card` item with a `primary` icon, so it stays distinct from the `sidebar-accent` hover fill. Parent routes keep their section highlighted, for example a Learner page under Learners.
 - Dialogs have a title and description. Destructive dialogs state permanence before confirmation.
 - All interactive elements have accessible names and keyboard-visible focus. Do not attach click behavior to a non-interactive element.
 - Verify light and dark themes, 320px mobile width, keyboard order, zoom at 200%, and reduced motion before merging a new pattern.

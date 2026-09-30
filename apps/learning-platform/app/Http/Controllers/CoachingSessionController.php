@@ -34,6 +34,7 @@ class CoachingSessionController extends Controller
             ->get()
             ->map(fn (CoachingSession $session): array => [
                 'id' => $session->id,
+                'learnerId' => $session->learner_id,
                 'learnerName' => $session->learner->name,
                 'workItem' => [
                     'title' => $session->workItem->title,
@@ -47,7 +48,8 @@ class CoachingSessionController extends Controller
                 'objective' => $session->primaryLearningObjective->name,
                 'clientSource' => $session->clientConnection->name,
                 'status' => $session->status->value,
-                'lastActiveAt' => $session->last_active_at->toDateTimeString(),
+                'lastActiveAt' => $session->last_active_at->toIso8601String(),
+                'lastActive' => $session->last_active_at->diffForHumans(),
             ]);
 
         return Inertia::render('coaching-sessions/index', [

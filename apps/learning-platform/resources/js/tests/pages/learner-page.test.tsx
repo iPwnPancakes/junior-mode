@@ -164,7 +164,7 @@ describe('Learner page', () => {
         const row = screen.getByRole('article', { name: 'Authorization' });
         expect(within(row).getByText('Developing')).toBeInTheDocument();
         expect(
-            within(row).getByText('Focus until 2026-10-05'),
+            within(row).getByText('Focus until Oct 5, 2026'),
         ).toBeInTheDocument();
         expect(
             within(row)

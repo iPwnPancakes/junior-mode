@@ -2,6 +2,7 @@
 
 use App\Actions\BuildMentorLearnerOverview;
 use App\Models\CatalogProposal;
+use App\Models\ClientConnection;
 use App\Models\CoachingPriority;
 use App\Models\CoachingSession;
 use App\Models\Competency;
@@ -41,6 +42,63 @@ test('Learners see the Learner dashboard shell and their Mentor', function () {
             ->where('mentor.id', $mentor->id)
             ->where('mentor.name', $mentor->name)
             ->where('mentor.email', $mentor->email)
+        );
+});
+
+test('a new Learner sees which setup steps are missing and nothing to pick up yet', function () {
+    $mentor = User::factory()->mentor()->create();
+    $learner = User::factory()->learner($mentor)->create();
+    ClientConnection::factory()->revoked()->create(['learner_id' => $learner->id]);
+    EnrolledRepository::factory()->unenrolled()->create(['learner_id' => $learner->id]);
+
+    $this->actingAs($learner)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('setup', ['hasPlan' => false, 'hasClient' => false, 'hasRepository' => false])
+            ->has('focus', 0)
+            ->has('activeSessions', 0)
+            ->where('handoffsAwaitingReview', 0)
+        );
+});
+
+test('a Learner dashboard shows current focus, active Sessions and handoffs awaiting review', function () {
+    $mentor = User::factory()->mentor()->create();
+    $learner = User::factory()->learner($mentor)->create();
+    $competency = Competency::factory()->forLearner($learner)->create(['name' => 'Authorization']);
+    $expired = Competency::factory()->forLearner($learner)->create();
+    ClientConnection::factory()->create(['learner_id' => $learner->id]);
+    EnrolledRepository::factory()->create(['learner_id' => $learner->id]);
+    CoachingPriority::factory()->create([
+        'learner_id' => $learner->id,
+        'competency_id' => $competency->id,
+        'created_by_id' => $mentor->id,
+        'expires_at' => now()->addDays(3),
+    ]);
+    CoachingPriority::factory()->create([
+        'learner_id' => $learner->id,
+        'competency_id' => $expired->id,
+        'created_by_id' => $mentor->id,
+        'expires_at' => now()->subDay(),
+    ]);
+    $session = CoachingSession::factory()->create(['learner_id' => $learner->id]);
+    CoachingSession::factory()->create(['learner_id' => $learner->id, 'status' => 'concluded']);
+    HandoffSnapshot::factory()->create(['coaching_session_id' => $session->id]);
+    HandoffSnapshot::factory()->create([
+        'coaching_session_id' => $session->id,
+        'mentor_id' => $mentor->id,
+        'shared_at' => now(),
+    ]);
+
+    $this->actingAs($learner)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('setup', ['hasPlan' => true, 'hasClient' => true, 'hasRepository' => true])
+            ->has('focus', 1)
+            ->where('focus.0.competencyName', 'Authorization')
+            ->where('focus.0.expiresOn', now()->addDays(3)->toFormattedDateString())
+            ->has('activeSessions', 1)
+            ->where('activeSessions.0.id', $session->id)
+            ->where('handoffsAwaitingReview', 1)
         );
 });
 

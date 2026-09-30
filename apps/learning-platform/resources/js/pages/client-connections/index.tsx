@@ -14,6 +14,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { formatDate } from '@/lib/utils';
 import {
     destroy,
     index as clientConnections,
@@ -76,12 +77,20 @@ function ConnectionList({
                                 </StatusBadge>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                Approved {connection.authorizedAt}
+                                Approved {formatDate(connection.authorizedAt)}
                                 {connection.lastUsedAt && (
-                                    <> · Last used {connection.lastUsedAt}</>
+                                    <>
+                                        {' '}
+                                        · Last used{' '}
+                                        {formatDate(connection.lastUsedAt)}
+                                    </>
                                 )}
                                 {connection.revokedAt && (
-                                    <> · Revoked {connection.revokedAt}</>
+                                    <>
+                                        {' '}
+                                        · Revoked{' '}
+                                        {formatDate(connection.revokedAt)}
+                                    </>
                                 )}
                             </p>
                         </div>
@@ -160,9 +169,7 @@ export default function ClientConnections({
                             ? 'Review and revoke the named Codex installations connected to your learning record.'
                             : 'See which named Codex installations report activity for each Learner.'
                     }
-                    eyebrow={
-                        isLearner ? 'Client management' : 'Client visibility'
-                    }
+                    eyebrow="Setup"
                 />
 
                 {isLearner ? (

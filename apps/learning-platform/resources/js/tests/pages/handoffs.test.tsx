@@ -1,7 +1,15 @@
+import { usePage } from '@inertiajs/react';
 import { screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import Handoffs from '@/pages/handoffs/index';
 import Handoff from '@/pages/handoffs/show';
 import { renderPage } from '@/test/render-page';
+
+function setRole(role: 'learner' | 'mentor') {
+    vi.mocked(usePage).mockReturnValue({
+        props: { auth: { user: { id: 1, name: 'Lee', role } } },
+    } as ReturnType<typeof usePage>);
+}
 
 const handoff = {
     id: 1,
@@ -27,6 +35,7 @@ const handoff = {
 
 describe('Mentor handoff review', () => {
     it('shows the exact facts, hypotheses and progress before the explicit named share action', () => {
+        setRole('learner');
         renderPage(
             <Handoff
                 handoff={handoff}
@@ -44,7 +53,14 @@ describe('Mentor handoff review', () => {
         expect(
             screen.getByText('JSON content negotiation'),
         ).toBeInTheDocument();
-        expect(screen.getByText('guided')).toBeInTheDocument();
+        expect(screen.getByText('Request validation')).toBeInTheDocument();
+        expect(screen.getByText('Guided')).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', {
+                name: 'Questions for Morgan Mentor',
+            }),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/Kind/)).not.toBeInTheDocument();
         expect(
             screen.getByRole('checkbox', {
                 name: /I reviewed this exact snapshot/,
@@ -56,15 +72,23 @@ describe('Mentor handoff review', () => {
         ).toBeInTheDocument();
     });
 
-    it('shows a shared snapshot without a sharing control', () => {
+    it('shows a shared snapshot to the Mentor without a sharing control', () => {
+        setRole('mentor');
         renderPage(
             <Handoff
-                handoff={{ ...handoff, sharedAt: '2026-09-24 12:00:00' }}
+                handoff={{ ...handoff, sharedAt: 'Sep 24, 2026' }}
+                learnerName="Lee Learner"
                 canShare={false}
                 mentorName="Morgan Mentor"
                 previewToken={null}
             />,
         );
+        expect(
+            screen.getByText('Handoff from Lee Learner'),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: 'Questions for you' }),
+        ).toBeInTheDocument();
         expect(
             screen.getByText(/This snapshot cannot be changed/),
         ).toBeInTheDocument();
@@ -72,5 +96,46 @@ describe('Mentor handoff review', () => {
         expect(
             screen.queryByRole('button', { name: /Share with/ }),
         ).not.toBeInTheDocument();
+    });
+});
+
+describe('Handoff list', () => {
+    const handoffs = [
+        {
+            id: 3,
+            title: 'Fix the webhook 500',
+            learnerName: 'Lee Learner',
+            shared: false,
+            createdAt: 'Sep 27, 2026',
+        },
+    ];
+
+    it('tells a Learner which handoffs still need their review', () => {
+        setRole('learner');
+        renderPage(<Handoffs handoffs={handoffs} />);
+
+        expect(
+            screen.getByRole('link', { name: /Fix the webhook 500/ }),
+        ).toHaveAttribute('href', '/handoffs/3');
+        expect(screen.getByText('Waiting for your review')).toBeInTheDocument();
+        expect(screen.queryByText(/Lee Learner/)).not.toBeInTheDocument();
+    });
+
+    it('attributes each shared handoff to its Learner for a Mentor', () => {
+        setRole('mentor');
+        renderPage(<Handoffs handoffs={[{ ...handoffs[0], shared: true }]} />);
+
+        expect(
+            screen.getByText('Lee Learner · Sep 27, 2026'),
+        ).toBeInTheDocument();
+    });
+
+    it('explains how a handoff appears when there are none', () => {
+        setRole('learner');
+        renderPage(<Handoffs handoffs={[]} />);
+
+        expect(
+            screen.getByRole('heading', { name: 'No handoffs yet' }),
+        ).toBeInTheDocument();
     });
 });

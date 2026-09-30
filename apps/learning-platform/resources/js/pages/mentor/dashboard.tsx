@@ -5,8 +5,10 @@ import { FormField } from '@/components/form-field';
 import { PageHeader } from '@/components/page-header';
 import { SectionCard } from '@/components/section-card';
 import { SubmitButton } from '@/components/submit-button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useInitials } from '@/hooks/use-initials';
 import { dashboard } from '@/routes';
 import { store } from '@/routes/learner-invitations';
 import { show as showLearner } from '@/routes/learners';
@@ -57,9 +59,15 @@ function summary(learner: Learner): string {
 function LearnerCard({ learner }: { learner: Learner }) {
     const { nextStep } = learner;
     const needsAttention = nextStep.kind !== 'on_track';
+    const getInitials = useInitials();
 
     return (
-        <li className="grid gap-3 rounded-lg border bg-background p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <li className="grid gap-3 rounded-lg border bg-background p-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+            <Avatar size="lg" className="hidden sm:flex">
+                <AvatarFallback className="bg-secondary text-secondary-foreground">
+                    {getInitials(learner.name)}
+                </AvatarFallback>
+            </Avatar>
             <div className="grid min-w-0 gap-1">
                 <Link
                     href={showLearner(learner.id)}
@@ -233,7 +241,7 @@ export default function MentorDashboard({
 MentorDashboard.layout = {
     breadcrumbs: [
         {
-            title: 'Mentor dashboard',
+            title: 'Learners',
             href: dashboard(),
         },
     ],

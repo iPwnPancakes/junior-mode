@@ -357,11 +357,7 @@ export default function EnrolledRepositories({
                             ? 'Choose exactly where Junior Mode may coach and record learning evidence.'
                             : 'Manage the repositories where Junior Mode may operate for each Learner.'
                     }
-                    eyebrow={
-                        isLearner
-                            ? 'Learner repository access'
-                            : 'Mentor repository access'
-                    }
+                    eyebrow="Setup"
                 />
 
                 {isLearner && learner ? (

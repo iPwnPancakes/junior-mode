@@ -3,6 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Actions\BuildMentorLearnerOverview;
+use App\CoachingPriorityStatus;
+use App\CoachingSessionStatus;
+use App\Models\CoachingPriority;
+use App\Models\CoachingSession;
+use App\Models\HandoffSnapshot;
 use App\Models\LearnerInvitation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -36,7 +41,7 @@ class DashboardController extends Controller
                 ->map(fn (LearnerInvitation $invitation): array => [
                     'id' => $invitation->id,
                     'email' => $invitation->email,
-                    'expiresAt' => $invitation->expires_at->toDateString(),
+                    'expiresAt' => $invitation->expires_at->toFormattedDateString(),
                 ]),
         ]);
     }
@@ -55,6 +60,49 @@ class DashboardController extends Controller
                 'name' => $mentor->name,
                 'email' => $mentor->email,
             ],
+            'setup' => [
+                'hasPlan' => $learner->competencies()
+                    ->whereNull('archived_at')
+                    ->whereNull('merged_into_id')
+                    ->exists(),
+                'hasClient' => $learner->clientConnections()
+                    ->whereNull('revoked_at')
+                    ->whereNotNull('token_hash')
+                    ->exists(),
+                'hasRepository' => $learner->enrolledRepositories()
+                    ->whereNull('unenrolled_at')
+                    ->exists(),
+            ],
+            'focus' => $learner->coachingPriorities()
+                ->where('status', CoachingPriorityStatus::Active)
+                ->with('competency:id,name')
+                ->orderBy('expires_at')
+                ->get()
+                ->reject(fn (CoachingPriority $priority): bool => $priority->isExpired())
+                ->map(fn (CoachingPriority $priority): array => [
+                    'id' => $priority->id,
+                    'competencyName' => $priority->competency->name,
+                    'emphasis' => $priority->emphasis->value,
+                    'expiresOn' => $priority->expires_at?->toFormattedDateString(),
+                    'note' => $priority->note,
+                ])
+                ->values(),
+            'activeSessions' => $learner->coachingSessions()
+                ->where('status', CoachingSessionStatus::Active)
+                ->with(['workItem:id,title', 'primaryLearningObjective:id,name'])
+                ->latest('last_active_at')
+                ->limit(3)
+                ->get()
+                ->map(fn (CoachingSession $session): array => [
+                    'id' => $session->id,
+                    'title' => $session->workItem->title,
+                    'objective' => $session->primaryLearningObjective->name,
+                    'lastActive' => $session->last_active_at->diffForHumans(),
+                ]),
+            'handoffsAwaitingReview' => HandoffSnapshot::query()
+                ->where('learner_id', $learner->id)
+                ->whereNull('shared_at')
+                ->count(),
         ]);
     }
 }

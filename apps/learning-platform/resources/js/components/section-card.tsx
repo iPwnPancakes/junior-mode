@@ -31,7 +31,7 @@ export function SectionCard({
     return (
         <Card className={cn('min-w-0', className)}>
             <CardHeader>
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <div className="flex min-w-0 items-start gap-3">
                         {Icon && (
                             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -43,11 +43,19 @@ export function SectionCard({
                                 {title}
                             </CardTitle>
                             {description && (
-                                <CardDescription>{description}</CardDescription>
+                                <CardDescription className="break-words">
+                                    {description}
+                                </CardDescription>
                             )}
                         </div>
                     </div>
-                    {action && <div className="shrink-0">{action}</div>}
+                    {action && (
+                        <div
+                            className={cn('shrink-0', Icon && 'pl-12 sm:pl-0')}
+                        >
+                            {action}
+                        </div>
+                    )}
                 </div>
             </CardHeader>
             <CardContent className={contentClassName}>{children}</CardContent>

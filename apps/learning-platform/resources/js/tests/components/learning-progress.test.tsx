@@ -73,7 +73,7 @@ describe('Learning progress', () => {
                 ]}
             />,
         );
-        expect(screen.getByText('independent')).toBeInTheDocument();
+        expect(screen.getByText('Independent')).toBeInTheDocument();
         expect(
             screen.getByText('Repeat in a materially different context.'),
         ).toBeInTheDocument();
@@ -130,7 +130,7 @@ it('explains recorded assistance without rewriting the original observation', ()
             /4 requested hints and a Solution Escape were recorded/,
         ),
     ).toBeVisible();
-    expect(screen.getAllByText(/review only · 0 hints/).length).toBeGreaterThan(
+    expect(screen.getAllByText(/Review only · 0 hints/).length).toBeGreaterThan(
         0,
     );
 });

@@ -35,6 +35,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDate } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { store as decideAssessment } from '@/routes/baseline-assessment-proposal-decisions';
 import { store as decideProposal } from '@/routes/catalog-proposal-decisions';
@@ -489,7 +490,7 @@ export default function CatalogProposalShow({
                 <PageHeader
                     eyebrow="Mentor review"
                     title={`Catalog Proposal for ${learner.name}`}
-                    description={`Submitted through ${proposal.clientName} on ${proposal.submittedAt ?? 'an unknown date'}. Nothing enters the catalog until you approve it.`}
+                    description={`Submitted through ${proposal.clientName} on ${proposal.submittedAt ? formatDate(proposal.submittedAt) : 'an unknown date'}. Nothing enters the catalog until you approve it.`}
                     actions={
                         <>
                             <StatusBadge
@@ -763,9 +764,10 @@ export default function CatalogProposalShow({
     );
 }
 
-CatalogProposalShow.layout = {
+CatalogProposalShow.layout = (props: { learner: Learner }) => ({
     breadcrumbs: [
-        { title: 'Mentor dashboard', href: dashboard() },
+        { title: 'Learners', href: dashboard() },
+        { title: props.learner.name, href: showLearner(props.learner.id) },
         { title: 'Catalog Proposal', href: '#' },
     ],
-};
+});

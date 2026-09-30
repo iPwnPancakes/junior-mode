@@ -29,7 +29,13 @@ test('only the learner sees a private handoff and must review it before explicit
     Notification::assertNothingSent();
 
     $this->actingAs($mentor)->get(route('handoffs.show', $handoff))->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->where('handoff.payload', $payload)->where('canShare', false));
+        ->assertInertia(fn (Assert $page) => $page->where('handoff.payload', $payload)->where('canShare', false)
+            ->where('learnerName', $learner->name)
+            ->where('handoff.sharedAt', $handoff->fresh()->shared_at->toFormattedDateString()));
+    $this->get(route('handoffs.index'))->assertInertia(fn (Assert $page) => $page
+        ->has('handoffs', 1)
+        ->where('handoffs.0.learnerName', $learner->name)
+        ->where('handoffs.0.shared', true));
     $this->actingAs(User::factory()->mentor()->create())->get(route('handoffs.show', $handoff))->assertForbidden();
     $this->actingAs(User::factory()->learner()->create())->get(route('handoffs.show', $handoff))->assertForbidden();
 });

@@ -22,12 +22,14 @@ class HandoffController extends Controller
             ->when($user->isLearner(), fn ($query) => $query->where('learner_id', $user->id),
                 fn ($query) => $query->where('mentor_id', $user->id)->whereNotNull('shared_at')
                     ->whereHas('learner', fn ($query) => $query->where('mentor_id', $user->id)))
+            ->with('learner:id,name')
             ->latest()->limit(50)->get()
             ->map(fn (HandoffSnapshot $snapshot): array => [
                 'id' => $snapshot->id,
                 'title' => data_get($snapshot->payload, 'facts.task.title'),
+                'learnerName' => $snapshot->learner->name,
                 'shared' => $snapshot->shared_at !== null,
-                'createdAt' => $snapshot->created_at->toDateTimeString(),
+                'createdAt' => $snapshot->created_at->toFormattedDateString(),
             ]);
 
         return Inertia::render('handoffs/index', ['handoffs' => $snapshots]);
@@ -50,7 +52,8 @@ class HandoffController extends Controller
         }
 
         return Inertia::render('handoffs/show', [
-            'handoff' => ['id' => $handoff->id, 'payload' => $handoff->payload, 'sharedAt' => $handoff->shared_at?->toDateTimeString()],
+            'handoff' => ['id' => $handoff->id, 'payload' => $handoff->payload, 'sharedAt' => $handoff->shared_at?->toFormattedDateString()],
+            'learnerName' => $handoff->learner->name,
             'canShare' => (bool) $canShare,
             'mentorName' => $mentor?->name,
             'previewToken' => $previewToken,

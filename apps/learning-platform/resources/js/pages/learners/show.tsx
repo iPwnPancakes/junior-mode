@@ -1,5 +1,6 @@
 import { Form, Head, router } from '@inertiajs/react';
 import {
+    Activity,
     ArrowDown,
     ArrowUp,
     ChevronDown,
@@ -41,9 +42,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { formatDate } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { update as moveCompetency } from '@/routes/competency-positions';
 import { store as copyTemplate } from '@/routes/competency-template-copies';
+import { show as showLearner } from '@/routes/learners';
 import { update as updateSettings } from '@/routes/mentor-coaching-settings';
 import type {
     AssessmentRecord,
@@ -109,7 +112,7 @@ function FocusBadge({ focus }: { focus: CoachingFocus }) {
     if (focus.displayStatus === 'expired') {
         return (
             <StatusBadge tone="warning">
-                Focus ended {focus.expiresOn}
+                Focus ended {formatDate(focus.expiresOn ?? '')}
             </StatusBadge>
         );
     }
@@ -117,7 +120,7 @@ function FocusBadge({ focus }: { focus: CoachingFocus }) {
     return (
         <StatusBadge tone="success">
             {focus.emphasis === 'high' ? 'High focus' : 'Focus'}
-            {focus.expiresOn ? ` until ${focus.expiresOn}` : ''}
+            {focus.expiresOn ? ` until ${formatDate(focus.expiresOn)}` : ''}
         </StatusBadge>
     );
 }
@@ -400,44 +403,66 @@ function TemplatePicker({
     );
 }
 
+const activityKinds: Record<
+    string,
+    { label: string; tone: 'info' | 'success' | 'warning' }
+> = {
+    hint: { label: 'Hint requested', tone: 'info' },
+    accepted_attempt: { label: 'Attempt accepted', tone: 'success' },
+    solution_escape: { label: 'Solution Escape', tone: 'warning' },
+};
+
 function ActivityList({ activities }: { activities: LearningActivity[] }) {
     return (
-        <div className="grid gap-3">
-            {activities.map((activity) => (
-                <article
-                    key={activity.id}
-                    className="rounded-md border p-3 text-sm"
-                >
-                    <h3 className="font-medium">
-                        {activity.kind.replaceAll('_', ' ')} ·{' '}
-                        {activity.session_title}
-                    </h3>
-                    <p className="mt-1">{activity.payload.summary}</p>
-                    {activity.payload.acceptance_rationale && (
-                        <p className="mt-1">
-                            Accepted because:{' '}
-                            {activity.payload.acceptance_rationale}
-                        </p>
-                    )}
-                    {activity.payload.reason && (
-                        <p className="mt-1">
-                            Reason:{' '}
-                            {activity.payload.reason.replaceAll('_', ' ')}
-                        </p>
-                    )}
-                    {activity.payload.explanation && (
-                        <p className="mt-1">{activity.payload.explanation}</p>
-                    )}
-                    {activity.kind === 'solution_escape' && (
-                        <p className="mt-1 text-muted-foreground">
-                            Evidence from this Session can support Guided
-                            progress at most. Agent-provided solutions do not
-                            demonstrate independence.
-                        </p>
-                    )}
-                </article>
-            ))}
-        </div>
+        <ul className="grid gap-3" aria-label="Coaching activity">
+            {activities.map((activity) => {
+                const kind = activityKinds[activity.kind] ?? {
+                    label: activity.kind.replaceAll('_', ' '),
+                    tone: 'info' as const,
+                };
+
+                return (
+                    <li
+                        key={activity.id}
+                        className="grid gap-1.5 rounded-lg border bg-background p-4 text-sm"
+                    >
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <StatusBadge tone={kind.tone}>
+                                {kind.label}
+                            </StatusBadge>
+                            <span className="truncate text-muted-foreground">
+                                {activity.session_title}
+                            </span>
+                        </div>
+                        <p className="leading-6">{activity.payload.summary}</p>
+                        {activity.payload.acceptance_rationale && (
+                            <p className="leading-6 text-muted-foreground">
+                                Accepted because:{' '}
+                                {activity.payload.acceptance_rationale}
+                            </p>
+                        )}
+                        {activity.payload.reason && (
+                            <p className="leading-6 text-muted-foreground">
+                                Reason:{' '}
+                                {activity.payload.reason.replaceAll('_', ' ')}
+                            </p>
+                        )}
+                        {activity.payload.explanation && (
+                            <p className="leading-6">
+                                {activity.payload.explanation}
+                            </p>
+                        )}
+                        {activity.kind === 'solution_escape' && (
+                            <p className="text-muted-foreground">
+                                Evidence from this Session can support Guided
+                                progress at most. Agent-provided solutions do
+                                not demonstrate independence.
+                            </p>
+                        )}
+                    </li>
+                );
+            })}
+        </ul>
     );
 }
 
@@ -484,7 +509,7 @@ function HistoryCard({
                                         <StatusBadge>
                                             {focus.displayStatusLabel}
                                             {focus.resolvedAt
-                                                ? ` · ${focus.resolvedAt}`
+                                                ? ` · ${formatDate(focus.resolvedAt)}`
                                                 : ''}
                                         </StatusBadge>
                                     </li>
@@ -518,7 +543,7 @@ function HistoryCard({
                                         )}
                                         <p className="text-xs text-muted-foreground">
                                             {assessment.assessedBy} ·{' '}
-                                            {assessment.assessedAt}
+                                            {formatDate(assessment.assessedAt)}
                                         </p>
                                     </li>
                                 ))}
@@ -586,7 +611,7 @@ export default function LearnerPage({
             <Head title={canManage ? learner.name : 'Your coaching plan'} />
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
                 <PageHeader
-                    eyebrow={canManage ? 'Learner' : 'Your coaching plan'}
+                    eyebrow={canManage ? 'Learner' : undefined}
                     title={canManage ? learner.name : 'Your coaching plan'}
                     description={
                         canManage
@@ -715,6 +740,7 @@ export default function LearnerPage({
                     <SectionCard
                         title="Coaching activity"
                         description="Requested hints, accepted attempts and Solution Escapes remain visible in the learning record."
+                        icon={Activity}
                     >
                         <ActivityList activities={learningActivities} />
                     </SectionCard>
@@ -731,6 +757,14 @@ export default function LearnerPage({
     );
 }
 
-LearnerPage.layout = {
-    breadcrumbs: [{ title: 'Dashboard', href: dashboard() }],
-};
+LearnerPage.layout = (props: Props) => ({
+    breadcrumbs: props.canManage
+        ? [
+              { title: 'Learners', href: dashboard() },
+              {
+                  title: props.learner.name,
+                  href: showLearner(props.learner.id),
+              },
+          ]
+        : [{ title: 'Coaching plan', href: showLearner(props.learner.id) }],
+});

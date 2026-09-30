@@ -1,20 +1,28 @@
-import { Head } from '@inertiajs/react';
-import { ExternalLink, MessagesSquare } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import {
+    CircleDot,
+    Clock,
+    ExternalLink,
+    FolderGit2,
+    History,
+    MessagesSquare,
+    MonitorSmartphone,
+    Target,
+    UserRound,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
-import { Badge } from '@/components/ui/badge';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import AppLayout from '@/layouts/app-layout';
+import { SectionCard } from '@/components/section-card';
+import { StatusBadge } from '@/components/status-badge';
+import { buttonVariants } from '@/components/ui/button';
 import { index as coachingSessions } from '@/routes/coaching-sessions';
+import { show as showLearner } from '@/routes/learners';
 
 export type CoachingSession = {
     id: number;
+    learnerId: number;
     learnerName: string;
     workItem: {
         title: string;
@@ -26,6 +34,7 @@ export type CoachingSession = {
     clientSource: string;
     status: string;
     lastActiveAt: string;
+    lastActive: string;
 };
 
 type Props = {
@@ -33,22 +42,123 @@ type Props = {
     sessions: CoachingSession[];
 };
 
-export default function CoachingSessions({ viewerRole, sessions }: Props) {
+function Detail({
+    icon: Icon,
+    label,
+    children,
+}: {
+    icon: LucideIcon;
+    label: string;
+    children: ReactNode;
+}) {
     return (
-        <AppLayout
-            breadcrumbs={[
-                { title: 'Coaching Sessions', href: coachingSessions() },
-            ]}
-        >
+        <div className="flex min-w-0 items-center gap-1.5" title={label}>
+            <dt className="sr-only">{label}</dt>
+            <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+            <dd className="truncate">{children}</dd>
+        </div>
+    );
+}
+
+function SessionRow({
+    session,
+    showLearnerName,
+}: {
+    session: CoachingSession;
+    showLearnerName: boolean;
+}) {
+    const isActive = session.status === 'active';
+    const statusLabel =
+        session.status.charAt(0).toUpperCase() + session.status.slice(1);
+
+    return (
+        <li className="grid gap-3 rounded-lg border bg-background p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+            <div className="grid min-w-0 gap-1.5">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <h3 className="font-medium">{session.workItem.title}</h3>
+                    {!isActive && <StatusBadge>{statusLabel}</StatusBadge>}
+                </div>
+                <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+                    {session.workItem.description}
+                </p>
+                <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                    {showLearnerName && (
+                        <Detail icon={UserRound} label="Learner">
+                            <Link
+                                href={showLearner(session.learnerId)}
+                                className="font-medium text-foreground hover:underline"
+                            >
+                                {session.learnerName}
+                            </Link>
+                        </Detail>
+                    )}
+                    <Detail icon={Target} label="Learning Objective">
+                        {session.objective}
+                    </Detail>
+                    <Detail icon={FolderGit2} label="Repository">
+                        {session.repository.name}
+                    </Detail>
+                    <Detail icon={MonitorSmartphone} label="Client source">
+                        {session.clientSource}
+                    </Detail>
+                    <Detail icon={Clock} label="Last active">
+                        <time dateTime={session.lastActiveAt}>
+                            {session.lastActive}
+                        </time>
+                    </Detail>
+                </dl>
+            </div>
+            {session.workItem.externalUrl && (
+                <a
+                    href={session.workItem.externalUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonVariants({
+                        variant: 'outline',
+                        size: 'sm',
+                        className: 'w-fit',
+                    })}
+                >
+                    Open Work Item
+                    <ExternalLink aria-hidden="true" />
+                </a>
+            )}
+        </li>
+    );
+}
+
+export default function CoachingSessions({ viewerRole, sessions }: Props) {
+    const isMentor = viewerRole === 'mentor';
+    const active = sessions.filter((session) => session.status === 'active');
+    const settled = sessions.filter((session) => session.status !== 'active');
+    const groups = [
+        {
+            title: 'Active',
+            description: isMentor
+                ? 'Work your Learners are doing with Junior Mode right now.'
+                : 'Work you are doing with Junior Mode right now.',
+            icon: CircleDot,
+            sessions: active,
+        },
+        {
+            title: 'Settled',
+            description:
+                'Settled Sessions no longer accept coaching activity. Their evidence stays in the learning record.',
+            icon: History,
+            sessions: settled,
+        },
+    ].filter((group) => group.sessions.length > 0);
+
+    return (
+        <>
             <Head title="Coaching Sessions" />
-            <div className="flex h-full flex-1 flex-col gap-6 p-4 sm:p-6">
+            <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
                 <PageHeader
-                    eyebrow="Junior Mode"
                     title="Coaching Sessions"
                     description={
-                        viewerRole === 'mentor'
-                            ? 'Review the active learning context reported by each named Codex client.'
-                            : 'See the Work Items and Learning Objectives currently active in Junior Mode.'
+                        isMentor
+                            ? 'The Work Items and Learning Objectives each Learner is coached on, as reported by their Codex clients.'
+                            : 'The Work Items and Learning Objectives Junior Mode is coaching you on.'
                     }
                 />
 
@@ -59,76 +169,33 @@ export default function CoachingSessions({ viewerRole, sessions }: Props) {
                         description="A Session appears here after Junior Mode starts relevant work in an Enrolled Repository."
                     />
                 ) : (
-                    <div className="grid gap-4 lg:grid-cols-2">
-                        {sessions.map((session) => (
-                            <Card key={session.id}>
-                                <CardHeader className="gap-3">
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                        <div className="grid gap-1">
-                                            <CardTitle>
-                                                {session.workItem.title}
-                                            </CardTitle>
-                                            <CardDescription>
-                                                {session.repository.name}
-                                            </CardDescription>
-                                        </div>
-                                        <Badge variant="success">
-                                            {session.status}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="grid gap-4 text-sm">
-                                    <p className="leading-6 text-muted-foreground">
-                                        {session.workItem.description}
-                                    </p>
-                                    <dl className="grid gap-3 sm:grid-cols-2">
-                                        {viewerRole === 'mentor' && (
-                                            <div className="grid gap-1">
-                                                <dt className="text-xs font-medium text-muted-foreground">
-                                                    Learner
-                                                </dt>
-                                                <dd>{session.learnerName}</dd>
-                                            </div>
-                                        )}
-                                        <div className="grid gap-1">
-                                            <dt className="text-xs font-medium text-muted-foreground">
-                                                Learning Objective
-                                            </dt>
-                                            <dd>{session.objective}</dd>
-                                        </div>
-                                        <div className="grid gap-1">
-                                            <dt className="text-xs font-medium text-muted-foreground">
-                                                Client source
-                                            </dt>
-                                            <dd>{session.clientSource}</dd>
-                                        </div>
-                                        <div className="grid gap-1">
-                                            <dt className="text-xs font-medium text-muted-foreground">
-                                                Last active
-                                            </dt>
-                                            <dd>{session.lastActiveAt}</dd>
-                                        </div>
-                                    </dl>
-                                    {session.workItem.externalUrl && (
-                                        <a
-                                            href={session.workItem.externalUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="inline-flex w-fit items-center gap-1.5 font-medium text-primary hover:underline"
-                                        >
-                                            Open Work Item
-                                            <ExternalLink
-                                                aria-hidden="true"
-                                                className="size-3.5"
-                                            />
-                                        </a>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                    groups.map((group) => (
+                        <SectionCard
+                            key={group.title}
+                            title={group.title}
+                            description={group.description}
+                            icon={group.icon}
+                        >
+                            <ul
+                                className="grid gap-3"
+                                aria-label={`${group.title} Coaching Sessions`}
+                            >
+                                {group.sessions.map((session) => (
+                                    <SessionRow
+                                        key={session.id}
+                                        session={session}
+                                        showLearnerName={isMentor}
+                                    />
+                                ))}
+                            </ul>
+                        </SectionCard>
+                    ))
                 )}
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+CoachingSessions.layout = {
+    breadcrumbs: [{ title: 'Coaching Sessions', href: coachingSessions() }],
+};

@@ -1,5 +1,5 @@
 import { Form, router } from '@inertiajs/react';
-import { Check, Crosshair, TimerReset } from 'lucide-react';
+import { Check, Crosshair, Pencil, TimerReset } from 'lucide-react';
 import { useState } from 'react';
 import { FormField } from '@/components/form-field';
 import { SubmitButton } from '@/components/submit-button';
@@ -29,7 +29,7 @@ import type {
     PlanCompetency,
 } from '@/types/coaching-plan';
 
-const selectClasses =
+export const selectClasses =
     'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
 
 export const levels: { value: AssessmentLevel; label: string; hint: string }[] =
@@ -145,7 +145,12 @@ export function FocusActions({
                 label="Done"
                 icon={<Check aria-hidden="true" />}
             />
-            <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
+            <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditing(true)}
+            >
+                <Pencil aria-hidden="true" />
                 Edit focus
             </Button>
             <EditFocusDialog
